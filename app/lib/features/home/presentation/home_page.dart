@@ -283,17 +283,21 @@ class _HeroCard extends StatelessWidget {
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(18),
-      child: SizedBox(
-        height: 210,
+      // La altura se adapta al contenido (textos largos, letra grande).
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 210, minWidth: double.infinity),
         child: Stack(
-          fit: StackFit.expand,
+          alignment: Alignment.bottomLeft,
           children: [
-            Image.asset(
-              'assets/illustrations/aves/cisnes.jpg',
-              fit: BoxFit.cover,
-              errorBuilder: (context, _, _) => const ColoredBox(color: AppColors.forestDark),
+            Positioned.fill(
+              child: Image.asset(
+                'assets/illustrations/aves/cisnes.jpg',
+                fit: BoxFit.cover,
+                errorBuilder: (context, _, _) => const ColoredBox(color: AppColors.forestDark),
+              ),
             ),
-            const DecoratedBox(
+            const Positioned.fill(
+              child: DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
@@ -301,12 +305,13 @@ class _HeroCard extends StatelessWidget {
                   colors: [Color(0x331C3320), Color(0xE61C3320)],
                 ),
               ),
+              ),
             ),
             Padding(
-              padding: const EdgeInsets.all(18),
+              padding: const EdgeInsets.fromLTRB(18, 72, 18, 18),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   Text(
                     user == null ? l10n.appTitle : l10n.homeGreeting(name.isEmpty ? (user.email ?? '') : name),
