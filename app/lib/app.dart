@@ -23,7 +23,7 @@ class NaturistaApp extends StatefulWidget {
 
 class _NaturistaAppState extends State<NaturistaApp> {
   late final GoRouter _router = buildRouter(
-    initialLocation: widget.initialLocation ?? '/',
+    initialLocation: widget.initialLocation,
   );
 
   @override

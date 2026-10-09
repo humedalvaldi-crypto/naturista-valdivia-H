@@ -18,7 +18,10 @@ import '../l10n/l10n.dart';
 
 /// Rutas de la aplicación. En la Fase 3 se añade `redirect` para proteger
 /// las pantallas privadas según el estado de autenticación.
-GoRouter buildRouter({String initialLocation = '/'}) {
+///
+/// [initialLocation] solo se usa en pruebas. En la web debe quedar en `null`
+/// para que un enlace directo (p. ej. `#/settings`) abra esa pantalla.
+GoRouter buildRouter({String? initialLocation}) {
   return GoRouter(
     initialLocation: initialLocation,
     routes: [
