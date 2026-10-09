@@ -15,7 +15,7 @@ biodiversidad y comunidad naturalista. App para **Android y web**.
 
 ## Estado
 
-**Fase 1 completada: estructura, base de la app, API mínima, documentación y auditoría de migración.**
+**Fases 1 y 3 completadas.** App publicada: https://humedalvaldi-crypto.github.io/naturista-valdivia-H/
 Qué funciona hoy y qué está planificado: ver la pantalla de inicio de la app o
 `app/lib/core/router/app_modules.dart`, y `docs/`.
 
@@ -23,7 +23,7 @@ Qué funciona hoy y qué está planificado: ver la pantalla de inicio de la app 
 |---|---|---|
 | 1 | Auditoría del entorno y estructura | ✅ |
 | 2 | App Flutter: navegación, temas, idiomas | Base hecha en Fase 1 (navegación adaptable, tema claro/oscuro, es/en) |
-| 3 | Firebase Auth + Google Sign-In | Pendiente |
+| 3 | Firebase Auth + Google Sign-In | ✅ Google y correo/contraseña, registro, verificación, recuperación, rutas protegidas |
 | 4 | Worker, D1, R2, seguridad | API base hecha (`/health`, `/me`, verificación de tokens) |
 | 5 | Perfiles, publicaciones, social | Pendiente |
 | 6 | Cuadernos de campo y editor de dibujo | Pendiente |

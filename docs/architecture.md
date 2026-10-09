@@ -70,3 +70,13 @@ El script `npm run deploy` del Worker está **deshabilitado** a propósito en es
 ## Módulos y fases
 
 El estado real de cada módulo está en `app/lib/core/router/app_modules.dart` y se muestra en la pantalla de inicio. Un módulo marcado "En desarrollo · Fase N" no guarda ni muestra datos.
+
+## Autenticación (Fase 3)
+
+- **Proveedores** (habilitados en Firebase Console): Google y correo/contraseña. Se mantienen ambos para que las cuentas de la app antigua conserven su UID.
+- **Web**: Google con ventana emergente (`signInWithPopup`). Dominio autorizado añadido: `humedalvaldi-crypto.github.io`.
+- **Android**: Google con `signInWithProvider`. ⚠️ La app Android registrada en Firebase usa el paquete `App_val.nat`, distinto del de esta app (`cl.naturistavaldivia.naturista_valdivia`). Antes de publicar en Android hay que registrar el paquete nuevo en Firebase y añadir sus huellas SHA-1/SHA-256.
+- **Verificación en dos pasos por SMS**: está habilitada en el proyecto. Esta versión aún no la admite; quien la tenga activada ve un mensaje claro en lugar de un error genérico.
+- **Rutas protegidas**: `/profile`, `/notebooks`, `/drawing`, `/observations`, `/messages`, `/notifications`. El retorno tras el login solo acepta rutas internas (sin redirecciones abiertas).
+- **API**: `ApiClient` adjunta el Firebase ID token y, ante un 401, pide uno nuevo y reintenta una sola vez. Mientras `API_BASE_URL` esté vacío (API sin desplegar), la app lo indica y no intenta conectarse.
+- La configuración web de Firebase (`lib/core/config/firebase_config.dart`) no es secreta: Firebase la entrega para incluirla en la app.
