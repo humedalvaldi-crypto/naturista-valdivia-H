@@ -1,0 +1,54 @@
+# Base de datos (Cloudflare D1)
+
+## Reglas
+
+- Esquema versionado en `worker/migrations/NNNN_descripcion.sql`. **Una migración aplicada nunca se edita**; los cambios van en una migración nueva.
+- Todas las consultas usan parámetros (`?1`, `?2`…). Nunca se concatena texto del usuario en SQL.
+- Fechas en ISO 8601 UTC (`TEXT`), generadas por `strftime('%Y-%m-%dT%H:%M:%fZ','now')` o por el Worker.
+- Identificadores: `users.id` es el UID de Firebase. Las tablas con origen en Firestore guardan el ID original en una columna `legacy_id` única (desde la Fase 5).
+- Listados paginados por cursor (`created_at`, `id`) con límite máximo por petición.
+
+## Estado actual — migración `0001_initial.sql`
+
+| Tabla | Propósito |
+|---|---|
+| `users` | Cuenta. PK = UID de Firebase. Estado (`active/suspended/deleted`), trazabilidad `legacy_source`, `migrated_at`. |
+| `user_settings` | Idioma (`es/en`), tema (`system/light/dark`) y `extra_json` para secciones heredadas. |
+| `profiles` | Perfil **público** (usuario, nombre, bio, ubicación, fotos, visibilidad). |
+| `migration_runs` | Cada ejecución de auditoría/migración y su informe. |
+| `migration_checkpoints` | Último documento procesado por colección, para reanudar. |
+
+Pruebas: `worker/test/api.test.ts` aplica esta migración sobre un D1 local y verifica creación idempotente de usuarios y aislamiento de preferencias entre usuarios.
+
+## Esquema previsto (fases 4–7)
+
+| Tabla | Origen Firestore | Fase |
+|---|---|---|
+| `profile_private` | `profiles` (rut, fechaNacimiento, telefono, whatsapp, genero, addressValdivia) | 4 — **pendiente de decisión**, ver `security.md` |
+| `media_assets` | `user_file_assets` + Firebase Storage | 4 |
+| `posts`, `comments`, `reactions`, `bookmarks` | `posts`, `notebook_likes` | 5 |
+| `follows` | `follows` (ID `${follower}_${followed}`) | 5 |
+| `communities`, `community_members` | `groups`, `group_members` | 5 |
+| `conversations`, `messages` | `chat_messages` (`chatId`) | 5 |
+| `notifications` | `notifications` y `users/{uid}/notifications` | 5 |
+| `reports` | `reports` | 5 |
+| `notebooks`, `notebook_pages`, `notebook_elements` | `notebooks`, `notebook_pages` | 6 |
+| `observations`, `species` | `observations`, `species_catalog`, `species_album`, `user_collections` | 7 |
+| `map_layers`, puntos del mapa | `wetlands`, `places` | 7 |
+
+El mapeo definitivo se fija con el informe real de la auditoría (`migration/`), no solo con el código antiguo.
+
+## Políticas de borrado
+
+- Borrar un usuario: `ON DELETE CASCADE` en sus preferencias y perfil. El contenido social se decidirá en la Fase 5 (anonimizar vs. borrar) y quedará documentado aquí.
+- Los archivos en R2 se eliminan de forma coordinada con su fila en `media_assets` (Fase 4), con barrido periódico de huérfanos.
+
+## Comandos
+
+```bash
+cd worker
+npm run db:migrate:local            # aplica migraciones al D1 local
+npx wrangler d1 migrations list naturista-valdivia-db --local
+```
+
+Antes de aplicar migraciones a una base remota: ver `backup-and-recovery.md`.

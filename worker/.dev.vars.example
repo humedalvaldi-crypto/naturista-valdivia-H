@@ -1,0 +1,3 @@
+# Copiar a .dev.vars para desarrollo local (ignorado por git).
+APP_ENV=development
+ALLOWED_ORIGINS=http://localhost:8080,http://localhost:5173

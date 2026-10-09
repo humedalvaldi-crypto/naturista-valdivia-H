@@ -1,0 +1,90 @@
+{
+  "@@locale": "es",
+  "appTitle": "Naturista Valdivia",
+  "@appTitle": {
+    "description": "Nombre de la aplicación. No se traduce."
+  },
+  "appTagline": "Observa, registra y comparte la biodiversidad de Valdivia y sus humedales.",
+  "navHome": "Inicio",
+  "navMap": "Mapa",
+  "navNotebooks": "Cuadernos",
+  "navCommunity": "Comunidad",
+  "navProfile": "Perfil",
+  "navSettings": "Configuración",
+  "settingsTitle": "Configuración",
+  "settingsLanguage": "Idioma",
+  "settingsLanguageHint": "El cambio se aplica al instante y se guarda en este dispositivo.",
+  "languageSpanish": "Español",
+  "@languageSpanish": {
+    "description": "Nombre del idioma en su propia lengua."
+  },
+  "languageEnglish": "English",
+  "@languageEnglish": {
+    "description": "Nombre del idioma en su propia lengua."
+  },
+  "settingsTheme": "Apariencia",
+  "themeSystem": "Según el sistema",
+  "themeLight": "Claro",
+  "themeDark": "Oscuro",
+  "settingsSyncNote": "La sincronización de preferencias con tu cuenta se activa al iniciar sesión (Fase 3).",
+  "homeHowItWorks": "¿Cómo funciona?",
+  "stepEnterTitle": "Entra",
+  "stepEnterBody": "Inicia sesión con Google y completa tu perfil.",
+  "stepObserveTitle": "Observa",
+  "stepObserveBody": "Registra una planta, animal, hongo u otro hallazgo.",
+  "stepDetailTitle": "Agrega detalles",
+  "stepDetailBody": "Añade foto, ubicación y una descripción.",
+  "stepOrganizeTitle": "Organiza",
+  "stepOrganizeBody": "Guarda el registro en tus cuadernos de campo.",
+  "stepShareTitle": "Comparte",
+  "stepShareBody": "Explora el mapa, el feed y la comunidad.",
+  "homeModulesTitle": "Módulos de la aplicación",
+  "homeModulesBody": "Estado real de cada módulo en esta versión.",
+  "statusAvailable": "Disponible",
+  "statusInPhase": "En desarrollo · Fase {phase}",
+  "@statusInPhase": {
+    "placeholders": {
+      "phase": {
+        "type": "int"
+      }
+    }
+  },
+  "plannedTitle": "Este módulo aún no está disponible",
+  "plannedBody": "Se construirá en la Fase {phase} del plan de desarrollo. Esta pantalla no guarda ni muestra datos.",
+  "@plannedBody": {
+    "placeholders": {
+      "phase": {
+        "type": "int"
+      }
+    }
+  },
+  "moduleObservations": "Observaciones",
+  "moduleObservationsBody": "Registro de flora, fauna, hongos y ecosistemas con foto y ubicación.",
+  "moduleMap": "Mapa de biodiversidad",
+  "moduleMapBody": "Mapa real con capas de flora, fauna, funga, amenazas, patrimonio y usos del río.",
+  "moduleNotebooks": "Cuadernos de campo",
+  "moduleNotebooksBody": "Páginas con texto, fotos, dibujos, pegatinas y coordenadas.",
+  "moduleDrawing": "Editor de dibujo",
+  "moduleDrawingBody": "Lápiz, pinceles, borrador, capas de color y deshacer.",
+  "moduleSocial": "Publicaciones",
+  "moduleSocialBody": "Feed con publicaciones, comentarios y reacciones.",
+  "moduleCommunities": "Comunidades",
+  "moduleCommunitiesBody": "Grupos temáticos y seguidores.",
+  "moduleMessages": "Mensajes",
+  "moduleMessagesBody": "Conversaciones privadas entre usuarios.",
+  "moduleNotifications": "Notificaciones",
+  "moduleNotificationsBody": "Avisos de actividad guardados en el servidor.",
+  "moduleProfile": "Perfil",
+  "moduleProfileBody": "Tu información pública, álbum de especies y logros.",
+  "moduleSettings": "Configuración",
+  "moduleSettingsBody": "Idioma y apariencia. Disponible ahora.",
+  "galleryTitle": "Ilustraciones del cuaderno",
+  "galleryBody": "Recursos propios del proyecto para los cuadernos de campo.",
+  "historyTitle": "Valdivia en el tiempo",
+  "retry": "Reintentar",
+  "errorGeneric": "Algo salió mal. Inténtalo de nuevo.",
+  "emptyGeneric": "Todavía no hay nada aquí.",
+  "loading": "Cargando…",
+  "goHome": "Volver al inicio",
+  "notFoundTitle": "Página no encontrada"
+}

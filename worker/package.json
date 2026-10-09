@@ -1,0 +1,26 @@
+{
+  "name": "naturista-valdivia-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "echo 'Despliegue deshabilitado en Fase 1. Ver docs/architecture.md' && exit 1",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "db:migrate:local": "wrangler d1 migrations apply naturista-valdivia-db --local",
+    "cf-typegen": "wrangler types"
+  },
+  "dependencies": {
+    "hono": "^4.13.13",
+    "jose": "^6.2.12",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.4.0",
+    "@cloudflare/workers-types": "^5.20261009.1",
+    "typescript": "~5.9.3",
+    "vitest": "^4.1.11",
+    "wrangler": "^4.149.0"
+  }
+}

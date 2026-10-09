@@ -1,0 +1,21 @@
+{
+  "name": "naturista-valdivia-migration",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Auditoría y migración Firestore → Cloudflare D1/R2. Fase 1: solo auditoría de lectura.",
+  "scripts": {
+    "audit": "tsx scripts/audit-firestore.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "tsx": "^4.23.15",
+    "typescript": "~5.9.3",
+    "vitest": "^4.1.11"
+  }
+}

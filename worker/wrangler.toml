@@ -1,0 +1,27 @@
+# Naturista Valdivia — API (Cloudflare Worker)
+# Los IDs reales de D1/R2 se completan al crear los recursos (ver docs/architecture.md).
+# No hay secretos en este archivo.
+name = "naturista-valdivia-api"
+main = "src/index.ts"
+compatibility_date = "2026-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+APP_ENV = "development"
+FIREBASE_PROJECT_ID = "humedalvaldivia-c7d08"
+ALLOWED_ORIGINS = "http://localhost:8080,http://localhost:5173"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "naturista-valdivia-db"
+# Reemplazar por el ID devuelto por `wrangler d1 create naturista-valdivia-db`.
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
+
+[[r2_buckets]]
+binding = "MEDIA"
+# Bucket privado. Ver docs/security.md para el acceso a archivos.
+bucket_name = "naturista-valdivia-media"
+
+[observability]
+enabled = true

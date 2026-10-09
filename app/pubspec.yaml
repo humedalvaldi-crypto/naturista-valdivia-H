@@ -1,0 +1,36 @@
+name: naturista_valdivia
+description: "Naturista Valdivia — biodiversidad, cuadernos de campo y comunidad naturalista de Valdivia."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.9.0
+  flutter: ">=3.35.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: any
+  go_router: ^16.0.0
+  shared_preferences: ^2.5.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  generate: true
+  assets:
+    - assets/illustrations/aves/
+    - assets/illustrations/flora/
+    - assets/illustrations/funga/
+    - assets/illustrations/mamiferos/
+    - assets/illustrations/insectos/
+    - assets/illustrations/ecosistemas/
+    - assets/illustrations/desafios/
+    - assets/history/
+    - assets/stickers/

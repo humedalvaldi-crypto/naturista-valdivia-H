@@ -1,0 +1,48 @@
+# --- Secrets: never commit ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+**/service-account*.json
+**/serviceAccount*.json
+**/*-firebase-adminsdk-*.json
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+
+# Firebase client config files (they are not secrets, but are per-environment;
+# generate them locally with `flutterfire configure`).
+app/android/app/google-services.json
+app/ios/Runner/GoogleService-Info.plist
+app/lib/firebase_options.dart
+
+# --- Node / Worker / Migration ---
+node_modules/
+dist/
+coverage/
+.wrangler/
+migration/output/
+migration/backups/
+*.log
+
+# --- Flutter / Dart ---
+app/.dart_tool/
+app/.flutter-plugins
+app/.flutter-plugins-dependencies
+app/build/
+app/.packages
+app/lib/core/l10n/generated/
+app/android/.gradle/
+app/android/local.properties
+app/android/app/*.jks
+app/android/key.properties
+app/ios/Pods/
+app/ios/.symlinks/
+
+# --- OS / IDE ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
