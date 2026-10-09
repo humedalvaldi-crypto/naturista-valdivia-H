@@ -1,6 +1,6 @@
 import { createLocalJWKSet, exportJWK, generateKeyPair, SignJWT, type JWK } from 'jose';
 import { env } from 'cloudflare:test';
-import { createApp } from '../src/index';
+import { createApp } from '../src/app';
 
 export const PROJECT_ID = 'test-project';
 

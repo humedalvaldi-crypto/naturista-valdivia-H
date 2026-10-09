@@ -7,7 +7,7 @@
 | Verificación de Firebase ID token (firma RS256 con JWKS de Google, `iss`, `aud`, `exp`, `iat`, `auth_time`, `sub`) | `worker/src/services/firebase-auth.ts` | Sí: 9 casos (sin token, malformado, otra clave, kid desconocido, audiencia, emisor, expirado, `auth_time` futuro, válido) |
 | La identidad sale solo del token, nunca del cuerpo/URL | `worker/src/routes/me.ts` | Sí: un usuario no modifica las preferencias de otro |
 | Validación estricta de entrada (rechaza campos desconocidos) | `worker/src/validators/` | Sí |
-| Límite de cuerpo JSON (64 KB) | `worker/src/index.ts` | Sí (413) |
+| Límite de cuerpo JSON (64 KB) | `worker/src/app.ts` | Sí (413) |
 | CORS con lista blanca, sin `*` | `worker/src/middleware/common.ts` | Sí |
 | Errores uniformes sin trazas internas; registros sin tokens | `worker/src/middleware/` | Parcial |
 | `X-Content-Type-Options`, `Referrer-Policy`, `Cache-Control: no-store` | `worker/src/middleware/common.ts` | Sí |
