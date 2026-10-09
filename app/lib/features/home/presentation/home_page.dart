@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/l10n/l10n.dart';
 import '../../../core/router/app_modules.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../auth/application/auth_controller.dart';
 
 /// Inicio: guía de uso, estado real de los módulos e ilustraciones propias.
 class HomePage extends StatelessWidget {
@@ -44,11 +46,9 @@ class HomePage extends StatelessWidget {
                   : 1;
           return CustomScrollView(
             slivers: [
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                sliver: SliverToBoxAdapter(
-                  child: Text(l10n.appTagline, style: theme.textTheme.titleMedium),
-                ),
+              const SliverPadding(
+                padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+                sliver: SliverToBoxAdapter(child: _HeroCard()),
               ),
               _SectionTitle(l10n.homeHowItWorks),
               SliverToBoxAdapter(child: _Steps()),
@@ -262,6 +262,78 @@ class _Illustration extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(label, style: Theme.of(context).textTheme.labelMedium, maxLines: 1, overflow: TextOverflow.ellipsis),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Cabecera del inicio (pantalla 41 de la lámina): ilustración con velo
+/// oscuro, saludo o invitación a iniciar sesión.
+class _HeroCard extends StatelessWidget {
+  const _HeroCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final text = Theme.of(context).textTheme;
+    final auth = AuthScope.of(context);
+    final user = auth.user;
+    final name = user?.displayName?.split(' ').first ?? '';
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: SizedBox(
+        height: 210,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.asset(
+              'assets/illustrations/aves/cisnes.jpg',
+              fit: BoxFit.cover,
+              errorBuilder: (context, _, _) => const ColoredBox(color: AppColors.forestDark),
+            ),
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0x331C3320), Color(0xE61C3320)],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    user == null ? l10n.appTitle : l10n.homeGreeting(name.isEmpty ? (user.email ?? '') : name),
+                    style: text.headlineSmall?.copyWith(color: Colors.white),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    user == null ? l10n.homeSignInPrompt : l10n.appTagline,
+                    style: text.bodyMedium?.copyWith(color: Colors.white.withValues(alpha: 0.85)),
+                  ),
+                  if (user == null) ...[
+                    const SizedBox(height: 12),
+                    FilledButton(
+                      key: const Key('home-sign-in'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.gold,
+                        foregroundColor: AppColors.forestDark,
+                        minimumSize: const Size(140, 44),
+                      ),
+                      onPressed: () => context.go('/login'),
+                      child: Text(l10n.signIn),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ],
         ),
       ),

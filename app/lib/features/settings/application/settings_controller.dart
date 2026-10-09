@@ -43,6 +43,8 @@ class SettingsController extends ChangeNotifier {
   Future<bool> setTheme(AppThemePreference theme) =>
       _update(_settings.copyWith(theme: theme));
 
+  Future<bool> completeOnboarding() => _update(_settings.copyWith(onboardingDone: true));
+
   Future<bool> _update(AppSettings next) async {
     if (next == _settings) return true;
     _settings = next;
@@ -69,4 +71,8 @@ class SettingsScope extends InheritedNotifier<SettingsController> {
     assert(scope != null, 'SettingsScope no encontrado en el árbol de widgets.');
     return scope!.notifier!;
   }
+
+  /// Sin suscribirse a cambios (para callbacks).
+  static SettingsController read(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<SettingsScope>()!.notifier!;
 }

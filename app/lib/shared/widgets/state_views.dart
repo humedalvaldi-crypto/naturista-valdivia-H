@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/l10n/l10n.dart';
+import '../branding/brand.dart';
 
 /// Vistas estándar de estado: carga, error, vacío y módulo planificado.
 /// Todas las pantallas que cargan datos deben usar estas piezas.
@@ -39,8 +40,7 @@ class ErrorView extends StatelessWidget {
   Widget build(BuildContext context) {
     final retry = onRetry;
     return _CenteredMessage(
-      icon: Icons.error_outline,
-      iconColor: Theme.of(context).colorScheme.error,
+      frog: FrogSticker.crying,
       title: message ?? context.l10n.errorGeneric,
       action: retry == null
           ? null
@@ -61,7 +61,7 @@ class EmptyView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _CenteredMessage(icon: icon, title: message ?? context.l10n.emptyGeneric);
+    return _CenteredMessage(frog: FrogSticker.tired, title: message ?? context.l10n.emptyGeneric);
   }
 }
 
@@ -87,7 +87,7 @@ class PlannedFeatureView extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(title)),
       body: _CenteredMessage(
-        icon: icon,
+        frog: FrogSticker.idea,
         title: l10n.plannedTitle,
         body: '$description\n\n${l10n.plannedBody(phase)}',
         badge: l10n.statusInPhase(phase),
@@ -98,20 +98,18 @@ class PlannedFeatureView extends StatelessWidget {
 
 class _CenteredMessage extends StatelessWidget {
   const _CenteredMessage({
-    required this.icon,
+    required this.frog,
     required this.title,
     this.body,
     this.badge,
     this.action,
-    this.iconColor,
   });
 
-  final IconData icon;
+  final FrogSticker frog;
   final String title;
   final String? body;
   final String? badge;
   final Widget? action;
-  final Color? iconColor;
 
   @override
   Widget build(BuildContext context) {
@@ -127,7 +125,7 @@ class _CenteredMessage extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 56, color: iconColor ?? theme.colorScheme.primary),
+              FrogImage(frog, size: 120),
               const SizedBox(height: 16),
               if (badge != null) ...[
                 Chip(label: Text(badge)),

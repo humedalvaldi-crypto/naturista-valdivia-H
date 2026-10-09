@@ -28,21 +28,34 @@ enum AppThemePreference {
 }
 
 class AppSettings {
-  const AppSettings({this.language, this.theme = AppThemePreference.system});
+  const AppSettings({
+    this.language,
+    this.theme = AppThemePreference.system,
+    this.onboardingDone = false,
+  });
 
   /// `null` = seguir el idioma del dispositivo.
   final AppLanguage? language;
   final AppThemePreference theme;
 
-  AppSettings copyWith({AppLanguage? language, AppThemePreference? theme}) =>
-      AppSettings(language: language ?? this.language, theme: theme ?? this.theme);
+  /// La bienvenida ya se mostró en este dispositivo.
+  final bool onboardingDone;
+
+  AppSettings copyWith({AppLanguage? language, AppThemePreference? theme, bool? onboardingDone}) => AppSettings(
+        language: language ?? this.language,
+        theme: theme ?? this.theme,
+        onboardingDone: onboardingDone ?? this.onboardingDone,
+      );
 
   @override
   bool operator ==(Object other) =>
-      other is AppSettings && other.language == language && other.theme == theme;
+      other is AppSettings &&
+      other.language == language &&
+      other.theme == theme &&
+      other.onboardingDone == onboardingDone;
 
   @override
-  int get hashCode => Object.hash(language, theme);
+  int get hashCode => Object.hash(language, theme, onboardingDone);
 }
 
 /// Persistencia de preferencias. La versión local usa SharedPreferences;
@@ -57,6 +70,7 @@ class LocalSettingsRepository implements SettingsRepository {
 
   static const languageKey = 'settings.language';
   static const themeKey = 'settings.theme';
+  static const onboardingKey = 'settings.onboardingDone';
 
   final SharedPreferences _prefs;
 
@@ -66,6 +80,7 @@ class LocalSettingsRepository implements SettingsRepository {
       language: AppLanguage.tryParse(_prefs.getString(languageKey)),
       theme: AppThemePreference.tryParse(_prefs.getString(themeKey)) ??
           AppThemePreference.system,
+      onboardingDone: _prefs.getBool(onboardingKey) ?? false,
     );
   }
 
@@ -78,6 +93,7 @@ class LocalSettingsRepository implements SettingsRepository {
       else
         _prefs.setString(languageKey, language.name),
       _prefs.setString(themeKey, settings.theme.name),
+      _prefs.setBool(onboardingKey, settings.onboardingDone),
     ]);
     if (ok.contains(false)) {
       throw const SettingsPersistenceException();

@@ -96,7 +96,6 @@ final List<AppModule> appModules = [
     icon: Icons.person_outline,
     title: (l) => l.moduleProfile,
     description: (l) => l.moduleProfileBody,
-    phase: 5,
   ),
   AppModule(
     id: 'settings',

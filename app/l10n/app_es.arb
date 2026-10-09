@@ -75,7 +75,7 @@
   "moduleNotifications": "Notificaciones",
   "moduleNotificationsBody": "Avisos de actividad guardados en el servidor.",
   "moduleProfile": "Perfil",
-  "moduleProfileBody": "Tu información pública, álbum de especies y logros.",
+  "moduleProfileBody": "Tu cuenta y tu sesión. El perfil público, álbum y logros llegan en la Fase 5.",
   "moduleSettings": "Configuración",
   "moduleSettingsBody": "Idioma y apariencia. Disponible ahora.",
   "galleryTitle": "Ilustraciones del cuaderno",
@@ -86,5 +86,96 @@
   "emptyGeneric": "Todavía no hay nada aquí.",
   "loading": "Cargando…",
   "goHome": "Volver al inicio",
-  "notFoundTitle": "Página no encontrada"
+  "notFoundTitle": "Página no encontrada",
+  "splashTagline": "Explora, observa y protege tu naturaleza",
+  "onb1Title": "Descubre los humedales de Valdivia",
+  "onb1Body": "Aves, plantas y hongos de la Región de Los Ríos, a un paso de la ciudad.",
+  "onb2Title": "Registra lo que observas",
+  "onb2Body": "Guarda tus hallazgos con foto, ubicación y notas en tus cuadernos de campo.",
+  "onb3Title": "Comparte y aprende",
+  "onb3Body": "Conecta con otros naturalistas y ayuda a conocer y proteger la biodiversidad.",
+  "next": "Siguiente",
+  "skip": "Omitir",
+  "getStarted": "Comenzar",
+  "cancel": "Cancelar",
+  "loginTitle": "Iniciar sesión",
+  "loginSubtitle": "Bienvenido de vuelta, naturalista.",
+  "emailLabel": "Correo electrónico",
+  "passwordLabel": "Contraseña",
+  "showPassword": "Mostrar contraseña",
+  "hidePassword": "Ocultar contraseña",
+  "forgotPassword": "¿Olvidaste tu contraseña?",
+  "orDivider": "o",
+  "continueWithGoogle": "Continuar con Google",
+  "noAccount": "¿No tienes cuenta?",
+  "createAccount": "Crear cuenta",
+  "haveAccount": "¿Ya tienes cuenta?",
+  "registerSubtitle": "Únete a la comunidad naturalista de Valdivia.",
+  "nameLabel": "Nombre",
+  "confirmPasswordLabel": "Repite la contraseña",
+  "passwordHint": "Mínimo 8 caracteres",
+  "errorRequired": "Este campo es obligatorio.",
+  "errorEmail": "Escribe un correo válido.",
+  "errorPasswordShort": "Usa al menos 8 caracteres.",
+  "errorPasswordMismatch": "Las contraseñas no coinciden.",
+  "forgotTitle": "Recuperar contraseña",
+  "forgotBody": "Te enviaremos un enlace para crear una contraseña nueva.",
+  "forgotButton": "Enviar enlace",
+  "forgotSent": "Si existe una cuenta con {email}, recibirás un correo con el enlace. Revisa también la carpeta de spam.",
+  "@forgotSent": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "backToLogin": "Volver a iniciar sesión",
+  "verifyTitle": "Verifica tu correo",
+  "verifyBody": "Enviamos un enlace a {email}. Ábrelo para confirmar tu cuenta y luego vuelve aquí.",
+  "@verifyBody": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "verifyCheck": "Ya lo verifiqué",
+  "verifyResend": "Reenviar correo",
+  "verifyResent": "Correo reenviado.",
+  "verifyStillPending": "Tu correo todavía no aparece verificado.",
+  "verifyLater": "Hacerlo más tarde",
+  "authErrInvalidCredentials": "Correo o contraseña incorrectos.",
+  "authErrEmailInUse": "Ya existe una cuenta con ese correo. Inicia sesión.",
+  "authErrWeakPassword": "La contraseña es demasiado débil.",
+  "authErrInvalidEmail": "El correo no es válido.",
+  "authErrUserDisabled": "Esta cuenta está deshabilitada.",
+  "authErrTooMany": "Demasiados intentos. Espera unos minutos.",
+  "authErrNetwork": "Sin conexión. Revisa tu internet.",
+  "authErrDifferentCredential": "Ese correo ya está registrado con otro método. Prueba con Google o con tu contraseña.",
+  "authErrMfa": "Tu cuenta tiene verificación en dos pasos por SMS, que esta versión todavía no admite.",
+  "authErrRecentLogin": "Por seguridad, vuelve a iniciar sesión.",
+  "authErrNotConfigured": "El inicio de sesión no está disponible en este momento.",
+  "authErrUnknown": "No se pudo completar. Inténtalo de nuevo.",
+  "profileSignedInAs": "Sesión iniciada como",
+  "signOut": "Cerrar sesión",
+  "signOutConfirmTitle": "¿Cerrar sesión?",
+  "signOutConfirmBody": "Tendrás que volver a entrar para ver tus cuadernos y tu perfil.",
+  "emailNotVerified": "Correo sin verificar",
+  "emailVerified": "Correo verificado",
+  "verifyNow": "Verificar",
+  "accountMethods": "Método de acceso",
+  "providerGoogle": "Google",
+  "providerPassword": "Correo y contraseña",
+  "serverSyncPending": "Tu cuenta todavía no se sincroniza con el servidor de Naturista Valdivia: se conectará cuando la API esté publicada (Fase 4).",
+  "publicProfileSoon": "Perfil público, álbum de especies y logros: Fase 5.",
+  "signIn": "Entrar",
+  "homeGreeting": "Hola, {name}",
+  "@homeGreeting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeSignInPrompt": "Inicia sesión para guardar tus observaciones y cuadernos de campo."
 }
