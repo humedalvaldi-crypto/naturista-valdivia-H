@@ -156,7 +156,8 @@ jobs:
           import json, sys
           r = json.load(open(sys.argv[1]))
           rows = ", ".join(f"{t}: {n}" for t, n in sorted(r["expected"].items()))
-          lines = [f"Filas a crear → {rows}", f"Fotos: {r['media']['total']} ({r['media']['inline']} incrustadas, {r['media']['fromStorage']} de Storage)"]
+          hosts = ", ".join(f"{h} ({n})" for h, n in r["media"]["externalHosts"].items())
+          lines = [f"Filas a crear → {rows}", f"Fotos: {r['media']['total']} ({r['media']['inline']} incrustadas, {r['media']['fromStorage']} de Storage)", f"Fotos en otros servidores (dominio): {hosts or 'ninguna'}"]
           for name, c in r["collections"].items():
               skipped = "; ".join(f"{k} ({v})" for k, v in c["skipped"].items())
               personal = ", ".join(f"{k} ({v})" for k, v in c["excludedPersonalFields"].items())
@@ -166,6 +167,8 @@ jobs:
               if personal: line += f" · datos personales no copiados: {personal}"
               if unmapped: line += f" · campos sin mapear: {unmapped}"
               lines.append(line)
+              for field, shapes in c.get("unmappedShapes", {}).items():
+                  lines.append(f"    forma de {name}.{field}: " + " || ".join(shapes))
           print("::notice title=Plan de migración::" + "%0A".join(l.replace("%", "%25") for l in lines))
           PY
       - name: 4. Fotos (ensayo o copia a D1)

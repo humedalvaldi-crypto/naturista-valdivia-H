@@ -33,6 +33,7 @@ export interface CatalogSpecies {
 export const PERSONAL_FIELDS = new Set([
   'rut', 'fechaNacimiento', 'birthDate', 'birthday', 'telefono', 'phone', 'phoneNumber', 'whatsapp',
   'genero', 'gender', 'addressValdivia', 'address', 'direccion', 'email', 'userEmail',
+  'birthdate', 'birthdatePublic', 'age', 'ageVerified', 'rutVerified', 'edad',
 ]);
 
 /** Contexto compartido entre colecciones. */
@@ -77,6 +78,7 @@ function ref(ctx: Context, table: string, where: Record<string, string>, column:
 function finish(ctx: Context, collection: string, r: FieldReader) {
   for (const f of r.unused()) {
     if (PERSONAL_FIELDS.has(f)) ctx.plan.excluded(collection, f);
+    else ctx.plan.shape(collection, f, r.data[f]);
   }
   ctx.plan.unmapped(collection, r.unused().filter((f) => !PERSONAL_FIELDS.has(f)));
 }

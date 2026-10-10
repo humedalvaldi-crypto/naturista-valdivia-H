@@ -29,6 +29,8 @@ export interface CollectionStats {
   skipped: Record<string, number>;
   unmappedFields: Record<string, number>;
   excludedPersonalFields: Record<string, number>;
+  /** Forma (solo nombres de campos y tipos, nunca valores) de campos sin mapear que son objetos o listas. */
+  unmappedShapes: Record<string, string[]>;
   notes: string[];
 }
 
@@ -50,7 +52,7 @@ export class Plan {
   collection(name: string): CollectionStats {
     let s = this.stats.get(name);
     if (!s) {
-      s = { read: 0, written: {}, skipped: {}, unmappedFields: {}, excludedPersonalFields: {}, notes: [] };
+      s = { read: 0, written: {}, skipped: {}, unmappedFields: {}, excludedPersonalFields: {}, unmappedShapes: {}, notes: [] };
       this.stats.set(name, s);
     }
     return s;
@@ -75,6 +77,15 @@ export class Plan {
   unmapped(collection: string, fields: string[]) {
     const s = this.collection(collection);
     for (const f of fields) s.unmappedFields[f] = (s.unmappedFields[f] ?? 0) + 1;
+  }
+
+  /** Registra la forma de un valor sin mapear (tipos y nombres de campos, sin contenido). */
+  shape(collection: string, field: string, value: unknown) {
+    const sig = shapeOf(value, 0);
+    if (!sig.startsWith('{') && !sig.startsWith('[')) return;
+    const s = this.collection(collection);
+    const list = (s.unmappedShapes[field] ??= []);
+    if (!list.includes(sig) && list.length < 5) list.push(sig);
   }
 
   excluded(collection: string, field: string) {
@@ -149,4 +160,26 @@ export class Plan {
     });
     return assetId;
   }
+}
+
+/** Firma de tipos de un valor: `{a: texto, b: [ {x: número} ]}`. Nunca incluye valores. */
+export function shapeOf(v: unknown, depth: number): string {
+  if (v === null || v === undefined) return 'nulo';
+  if (typeof v === 'string') return v.startsWith('data:image') ? 'imagen-base64' : /^https?:\/\//.test(v) ? 'url' : 'texto';
+  if (typeof v === 'number') return 'número';
+  if (typeof v === 'boolean') return 'sí/no';
+  if (Array.isArray(v)) {
+    if (depth > 3) return '[…]';
+    const kinds = [...new Set(v.slice(0, 20).map((x) => shapeOf(x, depth + 1)))].slice(0, 3);
+    return `[${kinds.join(' | ')}]`;
+  }
+  if (typeof v === 'object') {
+    const o = v as Record<string, unknown>;
+    if ('$ts' in o) return 'fecha';
+    if ('$geo' in o) return 'geopunto';
+    if (depth > 3) return '{…}';
+    const keys = Object.keys(o).sort().slice(0, 25);
+    return `{${keys.map((k) => `${k}: ${shapeOf(o[k], depth + 1)}`).join(', ')}}`;
+  }
+  return typeof v;
 }
