@@ -130,7 +130,7 @@
   "providerGoogle": "Google",
   "providerPassword": "Email and password",
   "serverSyncPending": "Your account isn't synced with the Naturista Valdivia server yet: it will connect once the API is published (Phase 4).",
-  "publicProfileSoon": "Public profile, species album and achievements: Phase 5.",
+  "publicProfileSoon": "Species album and achievements: coming soon.",
   "signIn": "Sign in",
   "homeGreeting": "Hello, {name}",
   "homeSignInPrompt": "Sign in to keep your observations and field notebooks.",

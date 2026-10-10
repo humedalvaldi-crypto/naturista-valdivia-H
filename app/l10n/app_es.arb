@@ -167,7 +167,7 @@
   "providerGoogle": "Google",
   "providerPassword": "Correo y contraseña",
   "serverSyncPending": "Tu cuenta todavía no se sincroniza con el servidor de Naturista Valdivia: se conectará cuando la API esté publicada (Fase 4).",
-  "publicProfileSoon": "Perfil público, álbum de especies y logros: Fase 5.",
+  "publicProfileSoon": "Álbum de especies y logros: próximamente.",
   "signIn": "Entrar",
   "homeGreeting": "Hola, {name}",
   "@homeGreeting": {
