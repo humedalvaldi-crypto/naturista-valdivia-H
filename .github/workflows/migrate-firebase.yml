@@ -51,12 +51,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Modo pedido
+        env:
+          IN_MODE: ${{ inputs.mode }}
+          IN_CONFIRM: ${{ inputs.confirm }}
         run: |
           if [ "${{ github.event_name }}" = "push" ]; then
             MODE=$(python3 -c "import json;print(json.load(open('migration/run-request.json')).get('mode','ensayo'))")
             CONFIRM=$(python3 -c "import json;print(json.load(open('migration/run-request.json')).get('confirm',''))")
           else
-            MODE="${{ inputs.mode }}"; CONFIRM="${{ inputs.confirm }}"
+            MODE="$IN_MODE"; CONFIRM="$IN_CONFIRM"
           fi
           case "$MODE" in ensayo|migrar) ;; *) echo "::error::Modo no válido: $MODE"; exit 1;; esac
           echo "MODE=$MODE" >> "$GITHUB_ENV"
@@ -97,22 +100,22 @@ jobs:
 
       - name: 1. Auditoría (solo lectura)
         working-directory: migration
-        run: npm run audit -- --project "$PROJECT" --out "$OUT/audit"
+        run: bash scripts/ci-run.sh npm run audit -- --project "$PROJECT" --out "$OUT/audit"
       - name: 2. Exportar (solo lectura)
         working-directory: migration
-        run: npm run export -- --project "$PROJECT" --out "$OUT"
+        run: bash scripts/ci-run.sh npm run export -- --project "$PROJECT" --out "$OUT"
       - name: 3. Plan e informe
         working-directory: migration
         run: |
           SNAP=$(ls -d "$OUT"/snapshot-* | head -1)
-          npm run plan -- --snapshot "$SNAP" --out "$OUT/plan"
+          bash scripts/ci-run.sh npm run plan -- --snapshot "$SNAP" --out "$OUT/plan"
       - name: 4. Fotos (ensayo o copia a D1)
         working-directory: migration
         run: |
           if [ "$MODE" = "migrar" ]; then
-            npm run copy-media -- --plan "$OUT/plan" --project "$PROJECT" --store d1 --confirm
+            bash scripts/ci-run.sh npm run copy-media -- --plan "$OUT/plan" --project "$PROJECT" --store d1 --confirm
           else
-            npm run copy-media -- --plan "$OUT/plan" --project "$PROJECT"
+            bash scripts/ci-run.sh npm run copy-media -- --plan "$OUT/plan" --project "$PROJECT"
           fi
 
       - name: Base D1 de producción
@@ -128,21 +131,21 @@ jobs:
       - name: 5. Copiar datos a la app nueva
         if: env.MODE == 'migrar'
         working-directory: migration
-        run: npm run apply -- --plan "$OUT/plan" --remote --mode production --confirm "$DB_NAME" --skip-backup
+        run: bash scripts/ci-run.sh npm run apply -- --plan "$OUT/plan" --remote --mode production --confirm "$DB_NAME" --skip-backup
       - name: 6. Validar
         if: env.MODE == 'migrar'
         working-directory: migration
-        run: npm run validate -- --plan "$OUT/plan" --remote
+        run: bash scripts/ci-run.sh npm run validate -- --plan "$OUT/plan" --remote
 
       - name: Resumen
         if: always()
         run: |
           {
             echo "## Migración desde Firebase — modo $MODE"
-            [ -f "$OUT/plan/report.md" ] && sed -n '1,60p' "$OUT/plan/report.md"
-            ls "$OUT"/plan/media-report-*.json >/dev/null 2>&1 && { echo; echo '### Fotos'; echo '```'; cat "$OUT"/plan/media-report-*.json; echo '```'; }
-            [ -f "$OUT/plan/validation-remote.md" ] && { echo; echo '### Validación'; cat "$OUT/plan/validation-remote.md"; }
-          } >> "$GITHUB_STEP_SUMMARY"
+            if [ -f "$OUT/plan/report.md" ]; then sed -n '1,80p' "$OUT/plan/report.md"; fi
+            if ls "$OUT"/plan/media-report-*.json >/dev/null 2>&1; then echo; echo '### Fotos'; echo '```'; cat "$OUT"/plan/media-report-*.json; echo '```'; fi
+            if [ -f "$OUT/plan/validation-remote.md" ]; then echo; echo '### Validación'; cat "$OUT/plan/validation-remote.md"; fi
+          } >> "$GITHUB_STEP_SUMMARY" || true
       - name: Informes (sin datos personales)
         if: always()
         uses: actions/upload-artifact@v4
