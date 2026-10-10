@@ -65,6 +65,12 @@ jobs:
           fi
       - run: flutter pub get
       - run: flutter gen-l10n
-      - run: flutter analyze
+      - name: flutter analyze
+        run: |
+          if ! flutter analyze; then
+            # Repite el análisis en formato máquina y publica cada hallazgo como anotación.
+            dart analyze --format=machine 2>&1 | awk -F'|' 'NF>=8 {printf "::error file=%s,line=%s,col=%s::%s %s\n", $4, $5, $6, $3, $8}'
+            exit 1
+          fi
       - run: flutter test
       - run: flutter build web --release
