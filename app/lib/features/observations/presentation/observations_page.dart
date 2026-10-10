@@ -127,7 +127,7 @@ class _ObservationListState extends State<ObservationList> {
                       leading: GroupDot(group: o.group, faded: o.obscured && !o.isMine),
                       title: Text(o.title(lang)),
                       subtitle: Text(
-                        [formatWhen(context, o.observedAt), if (where != null) where, if (!o.isMine) o.owner.name].join('\n'),
+                        [formatObservedAt(context, o.observedAt), ?where, if (!o.isMine) o.owner.name].join('\n'),
                       ),
                       isThreeLine: true,
                       trailing: o.visibility == 'private'

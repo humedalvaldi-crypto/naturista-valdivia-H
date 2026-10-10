@@ -179,7 +179,7 @@ class _ObservationDetailPageState extends State<ObservationDetailPage> {
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.event),
-              title: Text(formatWhen(context, o.observedAt)),
+              title: Text(formatObservedAt(context, o.observedAt)),
               subtitle: o.count == null ? null : Text(l10n.individualsCount(o.count!)),
             ),
             ListTile(

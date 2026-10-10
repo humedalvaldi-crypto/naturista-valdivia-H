@@ -330,7 +330,7 @@ class _ObservationFormPageState extends State<ObservationFormPage> {
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.event),
                   title: Text(l10n.observedAtLabel),
-                  subtitle: Text(formatWhen(context, _observedAt)),
+                  subtitle: Text(formatObservedAt(context, _observedAt)),
                   onTap: _pickDateTime,
                 ),
                 const Divider(),

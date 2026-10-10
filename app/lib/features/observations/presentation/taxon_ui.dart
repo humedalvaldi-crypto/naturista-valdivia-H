@@ -96,7 +96,7 @@ class GroupDot extends StatelessWidget {
   }
 }
 
-String formatWhen(BuildContext context, DateTime when) {
+String formatObservedAt(BuildContext context, DateTime when) {
   final m = MaterialLocalizations.of(context);
   return '${m.formatMediumDate(when)} · ${m.formatTimeOfDay(TimeOfDay.fromDateTime(when))}';
 }

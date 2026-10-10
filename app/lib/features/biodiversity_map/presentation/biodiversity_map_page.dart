@@ -147,7 +147,7 @@ class _BiodiversityMapPageState extends State<BiodiversityMapPage> {
                 ],
               ),
               const SizedBox(height: 12),
-              Text(formatWhen(sheet, o.observedAt)),
+              Text(formatObservedAt(sheet, o.observedAt)),
               Text(l10n.observedBy(o.owner.name)),
               if (o.count != null) Text(l10n.individualsCount(o.count!)),
               if (o.obscured && !o.isMine) ...[
