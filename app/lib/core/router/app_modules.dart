@@ -64,7 +64,6 @@ final List<AppModule> appModules = [
     icon: Icons.dynamic_feed_outlined,
     title: (l) => l.moduleSocial,
     description: (l) => l.moduleSocialBody,
-    phase: 5,
   ),
   AppModule(
     id: 'communities',
@@ -72,7 +71,6 @@ final List<AppModule> appModules = [
     icon: Icons.groups_outlined,
     title: (l) => l.moduleCommunities,
     description: (l) => l.moduleCommunitiesBody,
-    phase: 5,
   ),
   AppModule(
     id: 'messages',
@@ -88,7 +86,6 @@ final List<AppModule> appModules = [
     icon: Icons.notifications_none,
     title: (l) => l.moduleNotifications,
     description: (l) => l.moduleNotificationsBody,
-    phase: 5,
   ),
   AppModule(
     id: 'profile',

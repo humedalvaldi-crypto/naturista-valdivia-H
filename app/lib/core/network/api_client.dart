@@ -29,6 +29,10 @@ class ApiClient {
 
   bool get isConfigured => baseUrl.isNotEmpty;
 
+  /// Hay sesión: las lecturas públicas envían el token para personalizar
+  /// la respuesta (p. ej. "me gusta" propios).
+  bool get hasSession => _auth.currentUser != null;
+
   Uri _uri(String path) => Uri.parse('$baseUrl/api/v1$path');
 
   Future<Map<String, dynamic>> get(String path, {bool authenticated = true}) =>
@@ -36,6 +40,20 @@ class ApiClient {
 
   Future<Map<String, dynamic>> patch(String path, Map<String, Object?> body) =>
       _send('PATCH', path, body: body);
+
+  Future<Map<String, dynamic>> post(String path, [Map<String, Object?> body = const {}]) =>
+      _send('POST', path, body: body);
+
+  Future<Map<String, dynamic>> put(String path) => _send('PUT', path);
+
+  Future<Map<String, dynamic>> delete(String path) => _send('DELETE', path);
+
+  /// URL absoluta para rutas de archivos devueltas por la API (`/api/v1/media/...`).
+  String? absolute(String? path) {
+    if (path == null || path.isEmpty) return null;
+    if (path.startsWith('http')) return path;
+    return '$baseUrl$path';
+  }
 
   Future<Map<String, dynamic>> _send(
     String method,

@@ -19,13 +19,15 @@ import '../../features/observations/presentation/observations_page.dart';
 import '../../features/profile/presentation/profile_page.dart';
 import '../../features/settings/application/settings_controller.dart';
 import '../../features/settings/presentation/settings_page.dart';
+import '../../features/social/presentation/compose_post_page.dart';
+import '../../features/social/presentation/post_detail_page.dart';
 import '../../features/social/presentation/social_page.dart';
 import '../../shared/widgets/adaptive_shell.dart';
 import '../../shared/widgets/state_views.dart';
 import '../l10n/l10n.dart';
 
 /// Rutas que exigen sesión iniciada.
-const privateRoutes = {'/profile', '/notebooks', '/drawing', '/observations', '/messages', '/notifications'};
+const privateRoutes = {'/profile', '/notebooks', '/drawing', '/observations', '/messages', '/notifications', '/community/new'};
 
 /// Pantallas de acceso: con sesión iniciada no tienen sentido.
 const authRoutes = {'/login', '/register', '/forgot-password'};
@@ -127,6 +129,14 @@ GoRouter buildRouter({
         ],
       ),
       GoRoute(path: '/settings', builder: (context, state) => const SettingsPage()),
+      GoRoute(
+        path: '/community/new',
+        builder: (context, state) => ComposePostPage(communitySlug: state.uri.queryParameters['community']),
+      ),
+      GoRoute(
+        path: '/posts/:id',
+        builder: (context, state) => PostDetailPage(postId: state.pathParameters['id']!),
+      ),
       GoRoute(path: '/observations', builder: (context, state) => const ObservationsPage()),
       GoRoute(path: '/drawing', builder: (context, state) => const DrawingEditorPage()),
       GoRoute(path: '/communities', builder: (context, state) => const CommunitiesPage()),
