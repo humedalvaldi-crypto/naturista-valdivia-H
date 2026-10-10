@@ -70,8 +70,25 @@ jobs:
           SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
           [ -n "$SA" ] || { echo "::error::Falta el secreto FIREBASE_SERVICE_ACCOUNT (ver docs/migration-plan.md)."; exit 1; }
-          echo "$SA" | python3 -c "import sys,json;d=json.load(sys.stdin);assert d.get('type')=='service_account' and d.get('project_id')=='$PROJECT'" \
-            || { echo "::error::FIREBASE_SERVICE_ACCOUNT no es una cuenta de servicio JSON del proyecto $PROJECT."; exit 1; }
+          # Diagnóstico sin revelar la clave: forma del JSON y validez de la clave privada.
+          printf '%s' "$SA" | python3 -c '
+          import json, subprocess, sys, tempfile
+          try:
+              d = json.loads(sys.stdin.read())
+          except Exception:
+              print("::error::FIREBASE_SERVICE_ACCOUNT no es JSON válido: pega el contenido COMPLETO del archivo .json, sin cambios."); sys.exit(1)
+          if d.get("type") != "service_account" or d.get("project_id") != sys.argv[1]:
+              print("::error::La credencial no es una cuenta de servicio del proyecto " + sys.argv[1] + "."); sys.exit(1)
+          key = d.get("private_key", "")
+          if not key.startswith("-----BEGIN PRIVATE KEY-----") or "\n" not in key:
+              print("::error::La clave privada del JSON está alterada (faltan saltos de línea o el encabezado). Vuelve a copiar el archivo completo."); sys.exit(1)
+          with tempfile.NamedTemporaryFile("w", suffix=".pem", delete=True) as f:
+              f.write(key); f.flush()
+              ok = subprocess.run(["openssl", "pkey", "-in", f.name, "-noout"], capture_output=True).returncode == 0
+          if not ok:
+              print("::error::La clave privada del JSON está dañada. Crea una clave nueva y pega el archivo completo."); sys.exit(1)
+          print("Credencial con formato correcto: cuenta " + d.get("client_email", "?").split("@")[0] + ", clave " + d.get("private_key_id", "")[:6] + "…")
+          ' "$PROJECT"
           if [ "$MODE" = "migrar" ]; then
             [ "$CONFIRM" = "MIGRAR" ] || { echo "::error::Para migrar escribe MIGRAR en la confirmación."; exit 1; }
             [ -n "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLARE_ACCOUNT_ID" ] || { echo "::error::Faltan los secretos de Cloudflare."; exit 1; }
