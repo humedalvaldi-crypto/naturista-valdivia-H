@@ -99,7 +99,12 @@ void main() {
     await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/settings/profile', api: server.client);
     await tester.enterText(find.byKey(const Key('profile-username')), 'tomado');
     await tester.ensureVisible(find.byKey(const Key('profile-save')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('profile-save')));
+    await tester.pumpAndSettle();
+    expect(server.requests, contains('PATCH /me/profile'));
+    expect(find.text('Perfil guardado'), findsNothing);
+    await tester.ensureVisible(find.byKey(const Key('profile-username')));
     await tester.pumpAndSettle();
     expect(find.text('Ese nombre de usuario ya está en uso.'), findsOneWidget);
   });
