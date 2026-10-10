@@ -324,31 +324,79 @@ class _DrawingEditorPageState extends State<DrawingEditorPage> {
         return Scaffold(
             appBar: AppBar(
               title: Text(doc?.title?.isNotEmpty ?? false ? doc!.title! : l10n.notebooksTitle, overflow: TextOverflow.ellipsis),
-              actions: [
-                if (doc != null && !c.editable)
-                  Padding(padding: const EdgeInsets.only(right: 12), child: Chip(label: Text(l10n.readOnly)))
-                else if (doc != null) ...[
-                  _SaveChip(controller: c, onConflict: _reload),
-                  if (selected != null) ...[
-                    if (selected.type == ElementType.text)
-                      IconButton(tooltip: l10n.editText, icon: const Icon(Icons.edit_outlined), onPressed: () => _editText(selected)),
-                    IconButton(tooltip: l10n.bringToFront, icon: const Icon(Icons.flip_to_front), onPressed: c.bringToFront),
-                    IconButton(key: const Key('delete-element'), tooltip: l10n.deleteElement, icon: const Icon(Icons.delete_outline), onPressed: c.deleteSelected),
-                  ],
-                  IconButton(key: const Key('undo'), tooltip: l10n.undo, icon: const Icon(Icons.undo), onPressed: c.canUndo ? c.undo : null),
-                  IconButton(key: const Key('redo'), tooltip: l10n.redo, icon: const Icon(Icons.redo), onPressed: c.canRedo ? c.redo : null),
-                ],
-                if (doc != null) ...[
-                  IconButton(key: const Key('export-image'), tooltip: l10n.exportImage, icon: const Icon(Icons.image_outlined), onPressed: _exportImage),
-                  IconButton(tooltip: l10n.zoomOut, icon: const Icon(Icons.zoom_out), onPressed: _zoom > 0.5 ? () => setState(() => _zoom = math.max(0.5, _zoom - 0.25)) : null),
-                  IconButton(tooltip: l10n.zoomIn, icon: const Icon(Icons.zoom_in), onPressed: _zoom < 3 ? () => setState(() => _zoom = math.min(3, _zoom + 0.25)) : null),
-                ],
-              ],
+              actions: _actions(c, doc, selected),
             ),
             body: body,
         );
       },
     );
+  }
+
+  /// Acciones de la barra superior. En pantallas angostas (teléfono) las menos
+  /// frecuentes van al menú "Más" para que nada se desborde.
+  List<Widget> _actions(PageEditorController c, PageDocument? doc, PageElement? selected) {
+    if (doc == null) return const [];
+    final l10n = context.l10n;
+    final narrow = MediaQuery.sizeOf(context).width < 700;
+    void zoomOut() => setState(() => _zoom = math.max(0.5, _zoom - 0.25));
+    void zoomIn() => setState(() => _zoom = math.min(3, _zoom + 0.25));
+    final canZoomOut = _zoom > 0.5;
+    final canZoomIn = _zoom < 3;
+
+    final menu = PopupMenuButton<String>(
+      key: const Key('editor-more'),
+      tooltip: l10n.more,
+      onSelected: (v) {
+        switch (v) {
+          case 'edit':
+            _editText(selected!);
+          case 'front':
+            c.bringToFront();
+          case 'export':
+            _exportImage();
+          case 'zoom-out':
+            zoomOut();
+          case 'zoom-in':
+            zoomIn();
+        }
+      },
+      itemBuilder: (context) => [
+        if (narrow && c.editable && selected?.type == ElementType.text)
+          PopupMenuItem(value: 'edit', child: ListTile(leading: const Icon(Icons.edit_outlined), title: Text(l10n.editText))),
+        if (narrow && c.editable && selected != null)
+          PopupMenuItem(value: 'front', child: ListTile(leading: const Icon(Icons.flip_to_front), title: Text(l10n.bringToFront))),
+        PopupMenuItem(
+          key: const Key('export-image'),
+          value: 'export',
+          child: ListTile(leading: const Icon(Icons.image_outlined), title: Text(l10n.exportImage)),
+        ),
+        if (narrow) ...[
+          PopupMenuItem(value: 'zoom-out', enabled: canZoomOut, child: ListTile(leading: const Icon(Icons.zoom_out), title: Text(l10n.zoomOut))),
+          PopupMenuItem(value: 'zoom-in', enabled: canZoomIn, child: ListTile(leading: const Icon(Icons.zoom_in), title: Text(l10n.zoomIn))),
+        ],
+      ],
+    );
+
+    return [
+      if (!c.editable)
+        Padding(padding: const EdgeInsets.only(right: 4), child: Chip(label: Text(l10n.readOnly)))
+      else ...[
+        _SaveChip(controller: c, onConflict: _reload),
+        if (selected != null) ...[
+          if (!narrow && selected.type == ElementType.text)
+            IconButton(tooltip: l10n.editText, icon: const Icon(Icons.edit_outlined), onPressed: () => _editText(selected)),
+          if (!narrow) IconButton(tooltip: l10n.bringToFront, icon: const Icon(Icons.flip_to_front), onPressed: c.bringToFront),
+          IconButton(key: const Key('delete-element'), tooltip: l10n.deleteElement, icon: const Icon(Icons.delete_outline), onPressed: c.deleteSelected),
+        ],
+        IconButton(key: const Key('undo'), tooltip: l10n.undo, icon: const Icon(Icons.undo), onPressed: c.canUndo ? c.undo : null),
+        IconButton(key: const Key('redo'), tooltip: l10n.redo, icon: const Icon(Icons.redo), onPressed: c.canRedo ? c.redo : null),
+      ],
+      if (!narrow) ...[
+        IconButton(tooltip: l10n.zoomOut, icon: const Icon(Icons.zoom_out), onPressed: canZoomOut ? zoomOut : null),
+        IconButton(tooltip: l10n.zoomIn, icon: const Icon(Icons.zoom_in), onPressed: canZoomIn ? zoomIn : null),
+      ],
+      menu,
+    ];
   }
 
   Widget _canvasArea(PageEditorController c) {

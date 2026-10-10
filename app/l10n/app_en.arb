@@ -344,5 +344,6 @@
   "audioStop": "Stop",
   "audioPlayError": "Couldn't play the audio.",
   "audioDefaultLabel": "Audio note",
-  "audioLabelHint": "Note name (optional)"
+  "audioLabelHint": "Note name (optional)",
+  "more": "More options"
 }

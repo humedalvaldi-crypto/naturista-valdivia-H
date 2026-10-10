@@ -545,5 +545,6 @@
   "audioStop": "Detener",
   "audioPlayError": "No se pudo reproducir el audio.",
   "audioDefaultLabel": "Nota de audio",
-  "audioLabelHint": "Nombre de la nota (opcional)"
+  "audioLabelHint": "Nombre de la nota (opcional)",
+  "more": "Más opciones"
 }
