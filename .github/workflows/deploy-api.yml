@@ -6,7 +6,7 @@ name: Desplegar API (Cloudflare, plan gratuito)
 #                           Account Settings Read; opcional Workers R2 Storage Edit)
 #   CLOUDFLARE_ACCOUNT_ID
 # Sin esos secretos el flujo termina sin hacer nada (no falla).
-# También se ejecuta solo con cada cambio en worker/ que llegue a main.
+# También se ejecuta solo con cada cambio en worker/ (o en este archivo) que llegue a main.
 #
 # Qué hace: pruebas → crea la base D1 si no existe → respaldo → migraciones →
 # despliega → crea la clave de enlaces firmados si falta → comprueba /health →
