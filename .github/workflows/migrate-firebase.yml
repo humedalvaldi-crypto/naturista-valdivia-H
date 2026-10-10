@@ -150,6 +150,24 @@ jobs:
         run: |
           SNAP=$(ls -d "$OUT"/snapshot-* | head -1)
           bash scripts/ci-run.sh npm run plan -- --snapshot "$SNAP" --out "$OUT/plan"
+      - name: Resumen del plan (solo conteos)
+        run: |
+          python3 - "$OUT/plan/report.json" <<'PY'
+          import json, sys
+          r = json.load(open(sys.argv[1]))
+          rows = ", ".join(f"{t}: {n}" for t, n in sorted(r["expected"].items()))
+          lines = [f"Filas a crear → {rows}", f"Fotos: {r['media']['total']} ({r['media']['inline']} incrustadas, {r['media']['fromStorage']} de Storage)"]
+          for name, c in r["collections"].items():
+              skipped = "; ".join(f"{k} ({v})" for k, v in c["skipped"].items())
+              personal = ", ".join(f"{k} ({v})" for k, v in c["excludedPersonalFields"].items())
+              unmapped = ", ".join(f"{k} ({v})" for k, v in sorted(c["unmappedFields"].items(), key=lambda x: -x[1])[:15])
+              line = f"[{name}] leídos {c['read']}"
+              if skipped: line += f" · omitidos: {skipped}"
+              if personal: line += f" · datos personales no copiados: {personal}"
+              if unmapped: line += f" · campos sin mapear: {unmapped}"
+              lines.append(line)
+          print("::notice title=Plan de migración::" + "%0A".join(l.replace("%", "%25") for l in lines))
+          PY
       - name: 4. Fotos (ensayo o copia a D1)
         working-directory: migration
         run: |
