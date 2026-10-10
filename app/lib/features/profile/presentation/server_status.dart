@@ -74,7 +74,7 @@ class _Note extends StatelessWidget {
           Expanded(
             child: Text(text, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           ),
-          if (action != null) action,
+          ?action,
         ],
       ),
     );
