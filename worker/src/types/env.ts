@@ -1,7 +1,8 @@
 /** Bindings y variables declarados en wrangler.toml. */
 export interface Env {
   DB: D1Database;
-  MEDIA: R2Bucket;
+  /** Bucket R2 (opcional). Sin él, los archivos se guardan en D1 (plan gratuito sin tarjeta). */
+  MEDIA?: R2Bucket;
   APP_ENV: string;
   FIREBASE_PROJECT_ID: string;
   /** Lista separada por comas de orígenes permitidos para CORS. */

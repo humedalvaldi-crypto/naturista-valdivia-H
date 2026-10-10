@@ -69,6 +69,12 @@ Todas las tablas que vienen de Firestore tienen `legacy_id` único para migrar s
 - El catálogo inicial trae 17 especies de los humedales de Valdivia con su estado UICN **global**; el equipo debe validarlo con la clasificación nacional (RCE) y ampliarlo al migrar `species_catalog`.
 - `places` empieza vacía: se llena solo con datos reales en la migración.
 
+## Migración `0006_media_chunks.sql` (plan gratuito)
+
+| Tabla | Propósito |
+|---|---|
+| `media_chunks` | Bytes de los archivos guardados en D1 cuando no hay R2: trozos de hasta 1 MB por `object_key` (32 KB al migrar). Se borran con el archivo y el barrido diario elimina huérfanos. |
+
 ## Políticas de borrado
 
 - Borrar un usuario: `ON DELETE CASCADE` en sus preferencias y perfil. El contenido social se decidirá en la Fase 5 (anonimizar vs. borrar) y quedará documentado aquí.

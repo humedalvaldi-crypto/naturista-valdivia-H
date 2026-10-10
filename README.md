@@ -13,6 +13,13 @@ biodiversidad y comunidad naturalista. App para **Android y web**.
 | Archivos | Cloudflare R2 |
 | Migración | Scripts Node de solo lectura sobre Firestore (Fase 1) |
 
+## Costo
+
+Todo funciona en planes **gratuitos y sin tarjeta**: GitHub Pages (app web),
+Cloudflare Workers + D1 (API y base de datos; las fotos se guardan en D1 si no
+hay R2), Firebase Authentication (inicio de sesión) y OpenStreetMap (mapas).
+Cómo activarlo: `docs/deployment.md` (4 pasos).
+
 ## Estado
 
 **Fases 1, 3 a 7 completadas; Fase 8: herramientas de migración listas (falta el ensayo con datos reales, con tu autorización).** App publicada: https://humedalvaldi-crypto.github.io/naturista-valdivia-H/

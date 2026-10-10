@@ -43,7 +43,8 @@ escritura exigen una opción de confirmación explícita.
 | 1. Exportar | `npm run export -- --project humedalvaldivia-c7d08` | Firebase (solo lectura) | `output/snapshot-<fecha>/` |
 | 2. Planificar | `npm run plan -- --snapshot output/snapshot-<fecha>` | la instantánea | `output/plan/` (SQL, manifiesto, informe) |
 | 3. Archivos (ensayo) | `npm run copy-media -- --plan output/plan --project humedalvaldivia-c7d08` | Firebase Storage (solo lectura) | nada |
-| 3b. Archivos (real) | igual + `--r2-bucket <bucket> --confirm` y credenciales R2 | Firebase Storage | R2 + `output/plan/sql/035-*.sql` |
+| 3b. Archivos (real, sin R2 — gratis) | igual + `--store d1 --confirm` | Firebase Storage | `output/plan/sql/034-*.sql` y `035-*.sql` (se escriben en D1 en el paso 4) |
+| 3c. Archivos (real, con R2) | igual + `--r2-bucket <bucket> --confirm` y credenciales R2 | Firebase Storage | R2 + `output/plan/sql/035-*.sql` |
 | 4. Aplicar | `npm run apply -- --plan output/plan` (D1 local) | plan | D1 **local** |
 | 4b. Aplicar remoto | `npm run apply -- --plan output/plan --remote --mode staging --confirm <base>` | plan | respaldo + D1 remota |
 | 5. Validar | `npm run validate -- --plan output/plan [--remote]` | D1 | `output/plan/validation-*.md` |
@@ -86,7 +87,7 @@ paso 3. Por defecto:
 ### Credenciales
 
 - Firebase: cuenta de servicio de **solo lectura** (ver arriba).
-- R2 (solo paso 3b): un token de API de R2 con permiso de escritura **solo**
+- R2 (solo paso 3c, si la cuenta tiene R2): un token de API de R2 con permiso de escritura **solo**
   sobre el bucket de archivos, en variables de entorno `R2_ACCOUNT_ID`,
   `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`. Nunca en archivos del repositorio.
 - D1 remota (paso 4b): `wrangler login` o `CLOUDFLARE_API_TOKEN`.

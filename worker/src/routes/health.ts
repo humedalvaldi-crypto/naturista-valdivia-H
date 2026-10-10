@@ -11,7 +11,7 @@ export const healthRoutes = new Hono<AppBindings>().get('/', async (c) => {
   }
   const status = database === 'ok' ? 'ok' : 'degraded';
   return c.json(
-    { status, version: 'v1', environment: c.env.APP_ENV, checks: { database }, time: new Date().toISOString() },
+    { status, version: 'v1', environment: c.env.APP_ENV, checks: { database }, storage: c.env.MEDIA ? 'r2' : 'd1', time: new Date().toISOString() },
     status === 'ok' ? 200 : 503,
   );
 });

@@ -1,5 +1,7 @@
 # Naturista Valdivia — API (Cloudflare Worker)
-# Los IDs reales de D1/R2 se completan al crear los recursos (ver docs/architecture.md).
+# Funciona en el plan GRATUITO de Cloudflare, sin tarjeta: Workers + D1.
+# El despliegue automático (.github/workflows/deploy-api.yml) crea la base D1,
+# completa su ID y, solo si la cuenta tiene R2 activado, usa R2 para archivos.
 # No hay secretos en este archivo.
 name = "naturista-valdivia-api"
 main = "src/index.ts"
@@ -18,10 +20,12 @@ database_name = "naturista-valdivia-db"
 database_id = "00000000-0000-0000-0000-000000000000"
 migrations_dir = "migrations"
 
-[[r2_buckets]]
-binding = "MEDIA"
-# Bucket privado. Ver docs/security.md para el acceso a archivos.
-bucket_name = "naturista-valdivia-media"
+# R2 es OPCIONAL (Cloudflare pide registrar un medio de pago para activarlo).
+# Sin R2 los archivos se guardan en D1 (tabla media_chunks). El despliegue
+# automático añade este bloque si detecta R2 activado en la cuenta:
+# [[r2_buckets]]
+# binding = "MEDIA"
+# bucket_name = "naturista-valdivia-media"
 
 [observability]
 enabled = true

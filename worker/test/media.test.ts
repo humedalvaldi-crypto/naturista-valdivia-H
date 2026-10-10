@@ -43,7 +43,7 @@ describe('subida de archivos', () => {
     const row = await env.DB.prepare('SELECT object_key, owner_id FROM media_assets WHERE id = ?1').bind(data.id).first<{ object_key: string; owner_id: string }>();
     expect(row?.owner_id).toBe('uid-up1');
     expect(row?.object_key).toBe(`u/uid-up1/observation-photo/${data.id}.jpg`);
-    expect(await env.MEDIA.head(row!.object_key)).not.toBeNull();
+    expect(await env.MEDIA!.head(row!.object_key)).not.toBeNull();
   });
 
   it('rechaza un propósito desconocido', async () => {
@@ -160,22 +160,22 @@ describe('borrado de archivos', () => {
     const key = `u/uid-del/observation-photo/${data.id}.jpg`;
 
     expect((await call(`/api/v1/media/${data.id}`, { method: 'DELETE', headers: bearer(other) })).status).toBe(404);
-    expect(await env.MEDIA.head(key)).not.toBeNull();
+    expect(await env.MEDIA!.head(key)).not.toBeNull();
 
     expect((await call(`/api/v1/media/${data.id}`, { method: 'DELETE', headers: bearer(owner) })).status).toBe(204);
-    expect(await env.MEDIA.head(key)).toBeNull();
+    expect(await env.MEDIA!.head(key)).toBeNull();
     expect((await call(data.url, { headers: bearer(owner) })).status).toBe(404);
   });
 
   it('el barrido elimina huérfanos antiguos y respeta los registrados', async () => {
-    await env.MEDIA.put('u/uid-x/observation-photo/huerfano.jpg', jpeg());
+    await env.MEDIA!.put('u/uid-x/observation-photo/huerfano.jpg', jpeg());
     const owner = await signer.sign({ sub: 'uid-keep' });
     const { data } = await (await upload(owner, jpeg(), 'image/jpeg')).json<{ data: MediaDto }>();
 
     const report = await purgeMedia(env, Date.now() + 2 * 24 * 60 * 60 * 1000);
     expect(report.orphansRemoved).toBeGreaterThanOrEqual(1);
-    expect(await env.MEDIA.head('u/uid-x/observation-photo/huerfano.jpg')).toBeNull();
-    expect(await env.MEDIA.head(`u/uid-keep/observation-photo/${data.id}.jpg`)).not.toBeNull();
+    expect(await env.MEDIA!.head('u/uid-x/observation-photo/huerfano.jpg')).toBeNull();
+    expect(await env.MEDIA!.head(`u/uid-keep/observation-photo/${data.id}.jpg`)).not.toBeNull();
   });
 });
 

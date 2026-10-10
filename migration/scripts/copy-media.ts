@@ -6,7 +6,10 @@
  * Uso (desde migration/):
  *   # Ensayo: descarga y valida, NO sube nada.
  *   npm run copy-media -- --plan output/plan --project humedalvaldivia-c7d08
- *   # Copia real (requiere tu autorización):
+ *   # Sin R2 (plan gratuito): los bytes se guardan en D1. Genera SQL en el plan;
+ *   # se escribe en D1 solo al aplicar el plan (paso 4).
+ *   npm run copy-media -- --plan output/plan --project humedalvaldivia-c7d08 --store d1 --confirm
+ *   # Copia real a R2 (requiere tu autorización):
  *   R2_ACCOUNT_ID=... R2_ACCESS_KEY_ID=... R2_SECRET_ACCESS_KEY=... \
  *   npm run copy-media -- --plan output/plan --project humedalvaldivia-c7d08 --r2-bucket naturista-valdivia-media --confirm
  *
@@ -20,7 +23,7 @@ import { AwsClient } from 'aws4fetch';
 import { applicationDefault, initializeApp } from 'firebase-admin/app';
 import { getStorage } from 'firebase-admin/storage';
 import type { MediaEntry } from './transform/media';
-import { mediaInsertSql, prepareMedia, type CopiedMedia } from './transform/media-copy';
+import { mediaChunkSql, mediaInsertSql, prepareMedia, type CopiedMedia } from './transform/media-copy';
 
 const { values } = parseArgs({
   options: {
@@ -30,8 +33,10 @@ const { values } = parseArgs({
     'r2-bucket': { type: 'string' },
     concurrency: { type: 'string', default: '4' },
     confirm: { type: 'boolean', default: false },
+    store: { type: 'string', default: 'r2' },
   },
 });
+const store = values.store === 'd1' ? 'd1' : 'r2';
 
 const planDir = resolve(values.plan ?? 'output/plan');
 const manifestFile = join(planDir, 'media-manifest.jsonl');
@@ -61,7 +66,7 @@ const storageBucket = values.project ? getStorageBucket(values.project, values.b
 
 const confirm = values.confirm === true;
 let r2: { client: AwsClient; base: string } | null = null;
-if (confirm) {
+if (confirm && store === 'r2') {
   const account = process.env['R2_ACCOUNT_ID'];
   const key = process.env['R2_ACCESS_KEY_ID'];
   const secret = process.env['R2_SECRET_ACCESS_KEY'];
@@ -102,13 +107,16 @@ async function putObject(m: CopiedMedia, bytes: Uint8Array) {
   if (!head.ok || Number(head.headers.get('content-length')) !== m.size) throw new Error('verificación fallida tras subir');
 }
 
+const d1Dir = join(planDir, 'media-d1');
+if (confirm && store === 'd1') mkdirSync(d1Dir, { recursive: true });
+
 const failures: Record<string, number> = {};
 const fail = (reason: string) => (failures[reason] = (failures[reason] ?? 0) + 1);
 let copied = 0;
 let checked = 0;
 
 const pending = entries.filter((e) => !isDone(e.assetId));
-console.log(`${entries.length} archivos en el plan, ${Object.keys(done).length} ya copiados, ${pending.length} pendientes. Modo: ${confirm ? 'COPIA REAL a R2' : 'ensayo (no sube nada)'}`);
+console.log(`${entries.length} archivos en el plan, ${Object.keys(done).length} ya copiados, ${pending.length} pendientes. Modo: ${confirm ? (store === 'r2' ? 'COPIA REAL a R2' : 'SQL para guardar en D1 (se escribe al aplicar)') : 'ensayo (no sube nada)'}`);
 
 const queue = [...pending];
 async function worker() {
@@ -121,7 +129,8 @@ async function worker() {
       }
       checked++;
       if (!confirm) continue;
-      await putObject(prepared.media, prepared.bytes);
+      if (store === 'r2') await putObject(prepared.media, prepared.bytes);
+      else writeFileSync(join(d1Dir, `${e.assetId}.sql`), `${mediaChunkSql(prepared.media.objectKey, prepared.bytes).join('\n')}\n`);
       appendFileSync(doneFile, `${JSON.stringify(prepared.media)}\n`);
       done[e.assetId] = prepared.media;
       copied++;
@@ -140,6 +149,14 @@ for (let i = 0, part = 1; i < Math.max(rows.length, 1); i += 400, part++) {
   if (rows.length === 0) break;
   writeFileSync(join(planDir, 'sql', `035-media-assets-p${String(part).padStart(3, '0')}.sql`), `-- 035-media-assets (parte ${part})\n${rows.slice(i, i + 400).join('\n')}\n`);
 }
-const summary = { at: new Date().toISOString(), mode: confirm ? 'copy' : 'dry-run', planned: entries.length, valid: checked, copiedNow: copied, copiedTotal: Object.keys(done).length, failures };
+// Sin R2: los bytes van en SQL (media_chunks) antes de las filas de media_assets.
+if (store === 'd1' && existsSync(d1Dir)) {
+  const chunkFiles = Object.keys(done).map((id) => join(d1Dir, `${id}.sql`)).filter((f) => existsSync(f));
+  const statements = chunkFiles.flatMap((f) => readFileSync(f, 'utf8').split('\n').filter(Boolean));
+  for (let i = 0, part = 1; i < statements.length; i += 40, part++) {
+    writeFileSync(join(planDir, 'sql', `034-media-chunks-p${String(part).padStart(3, '0')}.sql`), `-- 034-media-chunks (parte ${part})\n${statements.slice(i, i + 40).join('\n')}\n`);
+  }
+}
+const summary = { at: new Date().toISOString(), mode: confirm ? `copy-${store}` : 'dry-run', store, planned: entries.length, valid: checked, copiedNow: copied, copiedTotal: Object.keys(done).length, failures };
 writeFileSync(join(planDir, `media-report-${confirm ? 'copy' : 'dry-run'}.json`), JSON.stringify(summary, null, 2));
 console.log(JSON.stringify(summary, null, 2));

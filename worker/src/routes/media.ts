@@ -5,6 +5,7 @@ import { declaredMatches, isPurpose, MAX_UPLOAD_BYTES, PURPOSES, sniff, type Med
 import { badRequest, HttpError, notFound } from '../services/http-error';
 import { decodeCursor, paginate, parseLimit } from '../services/pagination';
 import { MetadataError, stripLocationMetadata } from '../services/image-metadata';
+import { deleteMedia, mediaStore, readMedia } from '../services/media-store';
 import { signMediaAccess, verifyMediaAccess } from '../services/signed-url';
 import type { AppBindings } from '../types/env';
 
@@ -99,11 +100,8 @@ export const mediaRoutes = new Hono<AppBindings>()
     const hash = await sha256Hex(bytes);
     const visibility = PUBLIC_PURPOSES.has(purpose) ? 'public' : 'private';
 
-    await c.env.MEDIA.put(objectKey, bytes, {
-      httpMetadata: { contentType: type.mime },
-      customMetadata: { owner: user.uid, assetId: id },
-      sha256: hash,
-    });
+    const store = mediaStore(c.env);
+    await store.put(objectKey, bytes, { contentType: type.mime, owner: user.uid, assetId: id, sha256: hash });
     try {
       const row = await new MediaRepository(c.env.DB).insert({
         id,
@@ -118,7 +116,7 @@ export const mediaRoutes = new Hono<AppBindings>()
       return c.json({ data: toMediaDto(row) }, 201);
     } catch (err) {
       // Si no se pudo registrar, no dejamos el objeto huérfano en R2.
-      await c.env.MEDIA.delete(objectKey).catch(() => undefined);
+      await store.delete(objectKey).catch(() => undefined);
       throw err;
     }
   })
@@ -143,7 +141,7 @@ export const mediaRoutes = new Hono<AppBindings>()
     // Mismo 404 si no existe o es de otra persona: no revela qué IDs existen.
     if (!row) throw notFound('Archivo no encontrado.');
     try {
-      await c.env.MEDIA.delete(row.object_key);
+      await deleteMedia(c.env, row.object_key);
       await repo.markPurged(row.id);
     } catch {
       // Queda pendiente: el barrido programado lo eliminará.
@@ -165,7 +163,7 @@ export const mediaDownloadRoutes = new Hono<AppBindings>().get('/:id', async (c)
   const signed = await verifyMediaAccess(c.env.MEDIA_SIGNING_KEY ?? '', row.id, c.req.query('exp'), c.req.query('sig'));
   if (row.visibility !== 'public' && !isOwner && !signed) throw notFound('Archivo no encontrado.');
 
-  const object = await c.env.MEDIA.get(row.object_key);
+  const object = await readMedia(c.env, row.object_key);
   if (!object) throw notFound('Archivo no encontrado.');
 
   const headers = new Headers({
@@ -177,5 +175,5 @@ export const mediaDownloadRoutes = new Hono<AppBindings>().get('/:id', async (c)
     ETag: `"${row.sha256}"`,
     'Cache-Control': row.visibility === 'public' ? 'public, max-age=86400, immutable' : 'private, max-age=300',
   });
-  return new Response(object.body, { status: 200, headers });
+  return new Response(object, { status: 200, headers });
 });

@@ -71,3 +71,17 @@ export function mediaInsertSql(m: CopiedMedia): string {
     legacy_asset_id: m.legacyAssetId,
   });
 }
+
+/** Trozo por sentencia al migrar a D1: 32 KB → ~64 KB en hexadecimal (D1 admite ~100 KB por sentencia). */
+export const MIGRATION_CHUNK_BYTES = 32 * 1024;
+
+/** SQL para guardar los bytes en D1 (tabla media_chunks) cuando no hay R2. */
+export function mediaChunkSql(objectKey: string, bytes: Uint8Array): string[] {
+  const out: string[] = [];
+  for (let i = 0, part = 0; i < bytes.byteLength; i += MIGRATION_CHUNK_BYTES, part++) {
+    const hex = Buffer.from(bytes.subarray(i, i + MIGRATION_CHUNK_BYTES)).toString('hex');
+    out.push(`INSERT INTO media_chunks (object_key, part, bytes) VALUES (${insertKey(objectKey)}, ${part}, X'${hex}') ON CONFLICT DO NOTHING;`);
+  }
+  return out;
+}
+const insertKey = (k: string) => `'${k.replace(/'/g, "''")}'`;

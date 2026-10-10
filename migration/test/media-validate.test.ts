@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { MediaEntry } from '../scripts/transform/media';
-import { mediaInsertSql, prepareMedia, type CopiedMedia } from '../scripts/transform/media-copy';
+import { MIGRATION_CHUNK_BYTES, mediaChunkSql, mediaInsertSql, prepareMedia, type CopiedMedia } from '../scripts/transform/media-copy';
 import { transform, type PlanReport } from '../scripts/transform/run';
 import { validate } from '../scripts/transform/validate-core';
 import { PNG_1x1, writeFixtureSnapshot } from './support/fixture';
@@ -34,6 +34,19 @@ describe('preparar archivos', () => {
     expect(prepareMedia(entry(), new Uint8Array(Buffer.from('<html>hola</html>')))).toEqual({ ok: false, reason: 'tipo de archivo no admitido' });
     expect(prepareMedia(entry({ purpose: 'notebook-audio' }), png())).toMatchObject({ ok: false });
     expect(prepareMedia(entry(), new Uint8Array())).toEqual({ ok: false, reason: 'archivo vacío' });
+  });
+});
+
+describe('archivos en D1 (sin R2)', () => {
+  it('trozos de SQL que reconstruyen el archivo exacto', () => {
+    const db = freshDb();
+    const bytes = new Uint8Array(MIGRATION_CHUNK_BYTES * 2 + 77).map((_, i) => i % 256);
+    const sql = mediaChunkSql("u/uidAna/post-photo/a'b.png", bytes);
+    expect(sql).toHaveLength(3);
+    for (const s of sql) expect(Buffer.byteLength(s)).toBeLessThan(90_000);
+    for (const s of [...sql, ...sql]) db.exec(s); // idempotente
+    const rows = db.prepare("SELECT bytes FROM media_chunks WHERE object_key = 'u/uidAna/post-photo/a''b.png' ORDER BY part").all() as { bytes: Uint8Array }[];
+    expect(Buffer.concat(rows.map((r) => Buffer.from(r.bytes)))).toEqual(Buffer.from(bytes));
   });
 });
 

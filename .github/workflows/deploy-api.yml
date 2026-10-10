@@ -1,10 +1,15 @@
-name: Desplegar API (Cloudflare)
+name: Desplegar API (Cloudflare, plan gratuito)
 
-# Solo manual. Requiere en GitHub → Settings → Secrets and variables → Actions:
-#   CLOUDFLARE_API_TOKEN  (permisos: Workers Scripts, D1 y R2 de edición)
+# Funciona con una cuenta GRATUITA de Cloudflare (sin tarjeta): Workers + D1.
+# Solo necesita dos secretos en GitHub → Settings → Secrets and variables → Actions:
+#   CLOUDFLARE_API_TOKEN   (token con permisos: Workers Scripts Edit, D1 Edit,
+#                           Account Settings Read; opcional Workers R2 Storage Edit)
 #   CLOUDFLARE_ACCOUNT_ID
-#   D1_DATABASE_ID        (ID devuelto por `wrangler d1 create naturista-valdivia-db`)
-# y el entorno "production" (Settings → Environments) con aprobación obligatoria.
+# Sin esos secretos el flujo termina sin hacer nada (no falla).
+#
+# Qué hace: pruebas → crea la base D1 si no existe → respaldo → migraciones →
+# despliega → crea la clave de enlaces firmados si falta → comprueba /health →
+# guarda la URL en deploy/api-url.txt y vuelve a publicar la app web con ella.
 on:
   workflow_dispatch:
     inputs:
@@ -12,9 +17,13 @@ on:
         description: "Aplicar migraciones de base de datos (se exporta un respaldo antes)"
         type: boolean
         default: true
+  push:
+    branches: [main]
+    paths: ["worker/**", ".github/workflows/deploy-api.yml"]
 
 permissions:
-  contents: read
+  contents: write # guardar deploy/api-url.txt
+  actions: write # volver a publicar la app web
 
 concurrency:
   group: deploy-api
@@ -30,36 +39,124 @@ jobs:
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      DB_NAME: naturista-valdivia-db
+      R2_BUCKET: naturista-valdivia-media
     steps:
       - uses: actions/checkout@v4
+
+      - name: ¿Está configurado Cloudflare?
+        id: cfg
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::notice::Faltan los secretos CLOUDFLARE_API_TOKEN y CLOUDFLARE_ACCOUNT_ID. Ver docs/deployment.md. No se despliega."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/setup-node@v4
+        if: steps.cfg.outputs.ready == 'true'
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: worker/package-lock.json
-      - name: Comprobar configuración
+      - if: steps.cfg.outputs.ready == 'true'
+        run: npm ci
+      - if: steps.cfg.outputs.ready == 'true'
+        run: npm run typecheck
+      - if: steps.cfg.outputs.ready == 'true'
+        run: npm test
+
+      - name: Base de datos D1 (se crea si no existe)
+        if: steps.cfg.outputs.ready == 'true'
         run: |
-          for v in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID; do
-            if [ -z "${!v}" ]; then echo "::error::Falta el secreto $v"; exit 1; fi
-          done
-          if [ -z "${{ secrets.D1_DATABASE_ID }}" ]; then echo "::error::Falta el secreto D1_DATABASE_ID"; exit 1; fi
-      - run: npm ci
-      - run: npm run typecheck
-      - run: npm test
-      - name: Usar el ID real de la base de datos
-        run: sed -i 's/00000000-0000-0000-0000-000000000000/${{ secrets.D1_DATABASE_ID }}/' wrangler.toml
+          find_id() { npx wrangler d1 list --json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const l=JSON.parse(s.slice(s.indexOf("[")));const d=l.find(x=>x.name===process.argv[1]);process.stdout.write(d?(d.uuid||d.id||""):"")})' "$DB_NAME"; }
+          ID=$(find_id)
+          if [ -z "$ID" ]; then
+            echo "Creando la base $DB_NAME (plan gratuito)…"
+            npx wrangler d1 create "$DB_NAME"
+            ID=$(find_id)
+          fi
+          if [ -z "$ID" ]; then echo "::error::No se pudo obtener el ID de la base D1"; exit 1; fi
+          sed -i "s/00000000-0000-0000-0000-000000000000/$ID/" wrangler.toml
+          echo "Base D1: $DB_NAME ($ID)"
+
+      - name: Archivos en R2 si la cuenta lo tiene; si no, en D1
+        if: steps.cfg.outputs.ready == 'true'
+        run: |
+          if npx wrangler r2 bucket list > r2.txt 2>&1; then
+            grep -q "$R2_BUCKET" r2.txt || npx wrangler r2 bucket create "$R2_BUCKET"
+            printf '\n[[r2_buckets]]\nbinding = "MEDIA"\nbucket_name = "%s"\n' "$R2_BUCKET" >> wrangler.toml
+            echo "::notice::Archivos en R2 ($R2_BUCKET)."
+          else
+            echo "::notice::R2 no está activado en la cuenta: los archivos se guardan en D1 (gratis, sin tarjeta)."
+          fi
+
       - name: Respaldo de D1 antes de migrar
-        if: inputs.apply_migrations
-        run: npx wrangler d1 export naturista-valdivia-db --remote --output "d1-backup-$(date -u +%Y%m%dT%H%M%SZ).sql"
+        if: steps.cfg.outputs.ready == 'true' && (github.event_name == 'push' || inputs.apply_migrations)
+        run: npx wrangler d1 export "$DB_NAME" --remote --output "d1-backup-$(date -u +%Y%m%dT%H%M%SZ).sql"
       - name: Guardar respaldo
-        if: inputs.apply_migrations
+        if: steps.cfg.outputs.ready == 'true' && (github.event_name == 'push' || inputs.apply_migrations)
         uses: actions/upload-artifact@v4
         with:
           name: d1-backup
           path: worker/d1-backup-*.sql
           retention-days: 30
       - name: Aplicar migraciones
-        if: inputs.apply_migrations
-        run: npx wrangler d1 migrations apply naturista-valdivia-db --remote
+        if: steps.cfg.outputs.ready == 'true' && (github.event_name == 'push' || inputs.apply_migrations)
+        run: npx wrangler d1 migrations apply "$DB_NAME" --remote
+
       - name: Desplegar Worker
-        run: npx wrangler deploy --var APP_ENV:production
+        if: steps.cfg.outputs.ready == 'true'
+        run: |
+          set -o pipefail
+          if ! npx wrangler deploy --var APP_ENV:production 2>&1 | tee deploy.log; then
+            if grep -qi "ratelimit\|rate limit\|unsafe" deploy.log; then
+              echo "::warning::La cuenta no admite los límites de frecuencia: se despliega sin ellos."
+              node -e 'const fs=require("fs");let t=fs.readFileSync("wrangler.toml","utf8");t=t.replace(/\[\[ratelimits\]\][\s\S]*?(?=\n\[|\n#|$)/g,"");fs.writeFileSync("wrangler.toml",t)'
+              npx wrangler deploy --var APP_ENV:production 2>&1 | tee deploy.log
+            elif grep -qi "workers.dev subdomain" deploy.log; then
+              echo "::error::Falta elegir el subdominio workers.dev: abre dash.cloudflare.com → Workers y Pages una vez y vuelve a ejecutar."
+              exit 1
+            else
+              exit 1
+            fi
+          fi
+
+      - name: Clave para enlaces firmados (se crea una sola vez)
+        if: steps.cfg.outputs.ready == 'true'
+        run: |
+          if ! npx wrangler secret list 2>/dev/null | grep -q MEDIA_SIGNING_KEY; then
+            openssl rand -hex 32 | npx wrangler secret put MEDIA_SIGNING_KEY
+          fi
+
+      - name: Comprobar que responde
+        id: url
+        if: steps.cfg.outputs.ready == 'true'
+        run: |
+          URL=$(grep -oE 'https://[a-z0-9.-]+\.workers\.dev' deploy.log | head -1)
+          if [ -z "$URL" ]; then echo "::error::No se encontró la URL del Worker en la salida de wrangler"; exit 1; fi
+          for i in 1 2 3 4 5 6; do
+            if curl -fsS "$URL/api/v1/health" > health.json; then cat health.json; echo; break; fi
+            sleep 5
+          done
+          curl -fsS "$URL/api/v1/health" > /dev/null
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "::notice::API desplegada en $URL"
+
+      - name: Guardar la URL y volver a publicar la app
+        if: steps.cfg.outputs.ready == 'true'
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+          URL: ${{ steps.url.outputs.url }}
+        run: |
+          if [ "$(cat deploy/api-url.txt 2>/dev/null)" != "$URL" ]; then
+            echo "$URL" > deploy/api-url.txt
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add deploy/api-url.txt
+            git commit -m "Despliegue: URL de la API ($URL)"
+            git push
+          fi
+          gh workflow run pages.yml --ref main

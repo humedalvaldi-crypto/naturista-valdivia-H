@@ -9,6 +9,8 @@ export default defineConfig(async () => {
       cloudflareTest({
         wrangler: { configPath: './wrangler.toml' },
         miniflare: {
+          // R2 es opcional en producción; en pruebas se simula para cubrir ambos almacenes.
+          r2Buckets: ['MEDIA'],
           bindings: {
             TEST_MIGRATIONS: migrations,
             APP_ENV: 'test',

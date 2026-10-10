@@ -26,7 +26,8 @@ export async function makeSigner(kid = 'test-kid') {
   return { jwks, sign };
 }
 
-export function makeApp(jwks: ReturnType<typeof createLocalJWKSet>) {
+export function makeApp(jwks: ReturnType<typeof createLocalJWKSet>, overrides: Record<string, unknown> = {}) {
   const app = createApp({ keyResolver: () => jwks });
-  return (path: string, init: RequestInit = {}) => app.request(path, init, env);
+  const bindings = { ...env, ...overrides };
+  return (path: string, init: RequestInit = {}) => app.request(path, init, bindings);
 }
