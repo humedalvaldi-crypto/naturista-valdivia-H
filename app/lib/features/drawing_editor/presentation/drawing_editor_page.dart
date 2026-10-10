@@ -81,34 +81,8 @@ class _DrawingEditorPageState extends State<DrawingEditorPage> {
     super.dispose();
   }
 
-  Future<String?> _askText(String initial) async {
-    final l10n = context.l10n;
-    final text = TextEditingController(text: initial);
-    final result = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.editText),
-        content: SizedBox(
-          width: 420,
-          child: TextField(
-            key: const Key('element-text'),
-            controller: text,
-            autofocus: true,
-            minLines: 2,
-            maxLines: 6,
-            maxLength: 2000,
-            decoration: InputDecoration(hintText: l10n.textHint),
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
-          FilledButton(key: const Key('element-text-ok'), onPressed: () => Navigator.pop(context, text.text), child: Text(l10n.ok)),
-        ],
-      ),
-    );
-    text.dispose();
-    return result;
-  }
+  Future<String?> _askText(String initial) =>
+      showDialog<String>(context: context, builder: (context) => _TextDialog(initial: initial));
 
   Future<void> _addText() async {
     final value = await _askText('');
@@ -537,6 +511,50 @@ class _DrawOptions extends StatelessWidget {
           Text(l10n.pressureNote, style: Theme.of(context).textTheme.bodySmall),
         ],
       ),
+    );
+  }
+}
+
+/// Diálogo de texto; libera su controlador al terminar de cerrarse.
+class _TextDialog extends StatefulWidget {
+  const _TextDialog({required this.initial});
+
+  final String initial;
+
+  @override
+  State<_TextDialog> createState() => _TextDialogState();
+}
+
+class _TextDialogState extends State<_TextDialog> {
+  late final _text = TextEditingController(text: widget.initial);
+
+  @override
+  void dispose() {
+    _text.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return AlertDialog(
+      title: Text(l10n.editText),
+      content: SizedBox(
+        width: 420,
+        child: TextField(
+          key: const Key('element-text'),
+          controller: _text,
+          autofocus: true,
+          minLines: 2,
+          maxLines: 6,
+          maxLength: 2000,
+          decoration: InputDecoration(hintText: l10n.textHint),
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
+        FilledButton(key: const Key('element-text-ok'), onPressed: () => Navigator.pop(context, _text.text), child: Text(l10n.ok)),
+      ],
     );
   }
 }

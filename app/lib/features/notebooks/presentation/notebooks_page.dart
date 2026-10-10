@@ -23,8 +23,6 @@ class _NotebooksPageState extends State<NotebooksPage> {
   Object? _error;
   bool _loading = true;
 
-  static const colors = ['#2E5B2A', '#2F6F7E', '#8A5A2B', '#7A3E65', '#B3261E', '#C9A646'];
-
   @override
   void initState() {
     super.initState();
@@ -63,62 +61,11 @@ class _NotebooksPageState extends State<NotebooksPage> {
   }
 
   Future<void> _create() async {
-    final l10n = context.l10n;
     final messenger = ScaffoldMessenger.of(context);
-    final title = TextEditingController();
-    final description = TextEditingController();
-    var color = colors.first;
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setLocal) => AlertDialog(
-          title: Text(l10n.newNotebook),
-          content: SizedBox(
-            width: 400,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  key: const Key('notebook-title'),
-                  controller: title,
-                  autofocus: true,
-                  maxLength: 120,
-                  decoration: InputDecoration(labelText: l10n.notebookTitleLabel),
-                ),
-                TextField(controller: description, maxLength: 500, decoration: InputDecoration(labelText: l10n.notebookDescriptionLabel)),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  children: [
-                    for (final c in colors)
-                      InkWell(
-                        onTap: () => setLocal(() => color = c),
-                        customBorder: const CircleBorder(),
-                        child: CircleAvatar(
-                          radius: 16,
-                          backgroundColor: parseHex(c),
-                          child: color == c ? const Icon(Icons.check, color: Colors.white, size: 18) : null,
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.cancel)),
-            FilledButton(key: const Key('notebook-create'), onPressed: () => Navigator.pop(context, true), child: Text(l10n.create)),
-          ],
-        ),
-      ),
-    );
-    final name = title.text.trim();
-    final desc = description.text;
-    title.dispose();
-    description.dispose();
-    if (ok != true || name.isEmpty) return;
+    final input = await showDialog<_NewNotebook>(context: context, builder: (context) => const _NewNotebookDialog());
+    if (input == null) return;
     try {
-      final nb = await _api.create(title: name, description: desc, color: color);
+      final nb = await _api.create(title: input.title, description: input.description, color: input.color);
       if (!mounted) return;
       setState(() => _items = [nb, ..._items]);
       context.push('/notebooks/${nb.id}');
@@ -224,6 +171,87 @@ class _NotebookCover extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+const notebookColors = ['#2E5B2A', '#2F6F7E', '#8A5A2B', '#7A3E65', '#B3261E', '#C9A646'];
+
+typedef _NewNotebook = ({String title, String description, String color});
+
+/// Diálogo de nuevo cuaderno. Es dueño de sus controladores, que se liberan
+/// cuando el diálogo termina de cerrarse (no antes, mientras aún se anima).
+class _NewNotebookDialog extends StatefulWidget {
+  const _NewNotebookDialog();
+
+  @override
+  State<_NewNotebookDialog> createState() => _NewNotebookDialogState();
+}
+
+class _NewNotebookDialogState extends State<_NewNotebookDialog> {
+  final _title = TextEditingController();
+  final _description = TextEditingController();
+  String _color = notebookColors.first;
+
+  @override
+  void dispose() {
+    _title.dispose();
+    _description.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final title = _title.text.trim();
+    if (title.isEmpty) return;
+    Navigator.pop(context, (title: title, description: _description.text.trim(), color: _color));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return AlertDialog(
+      title: Text(l10n.newNotebook),
+      content: SizedBox(
+        width: 400,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              key: const Key('notebook-title'),
+              controller: _title,
+              autofocus: true,
+              maxLength: 120,
+              decoration: InputDecoration(labelText: l10n.notebookTitleLabel),
+            ),
+            TextField(controller: _description, maxLength: 500, decoration: InputDecoration(labelText: l10n.notebookDescriptionLabel)),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: [
+                for (final c in notebookColors)
+                  Semantics(
+                    label: c,
+                    selected: _color == c,
+                    button: true,
+                    child: InkWell(
+                      onTap: () => setState(() => _color = c),
+                      customBorder: const CircleBorder(),
+                      child: CircleAvatar(
+                        radius: 16,
+                        backgroundColor: parseHex(c),
+                        child: _color == c ? const Icon(Icons.check, color: Colors.white, size: 18) : null,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
+        FilledButton(key: const Key('notebook-create'), onPressed: _submit, child: Text(l10n.create)),
+      ],
     );
   }
 }
