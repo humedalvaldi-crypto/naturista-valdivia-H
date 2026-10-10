@@ -1,4 +1,4 @@
-/// Modelos de la red social, tal como los devuelve la API `/api/v1`.
+// Modelos de la red social, tal como los devuelve la API `/api/v1`.
 
 DateTime _date(Object? v) => DateTime.tryParse(v as String? ?? '')?.toLocal() ?? DateTime.fromMillisecondsSinceEpoch(0);
 
