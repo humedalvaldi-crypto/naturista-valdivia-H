@@ -73,10 +73,28 @@ jobs:
           # Diagnóstico sin revelar la clave: forma del JSON y validez de la clave privada.
           printf '%s' "$SA" | python3 -c '
           import json, subprocess, sys, tempfile
+          import base64, os
+          raw = sys.stdin.read()
+          t = raw.strip().lstrip("\ufeff").strip()
+          if len(t) >= 2 and t[0] == t[-1] and t[0] in "\"'`":
+              t = t[1:-1].strip()  # comillas de más alrededor
+          if t and not t.startswith("{"):
+              try:  # quizás en base64
+                  dec = base64.b64decode(t, validate=False).decode("utf-8")
+                  if dec.strip().startswith("{"):
+                      t = dec.strip()
+              except Exception:
+                  pass
           try:
-              d = json.loads(sys.stdin.read())
-          except Exception:
-              print("::error::FIREBASE_SERVICE_ACCOUNT no es JSON válido: pega el contenido COMPLETO del archivo .json, sin cambios."); sys.exit(1)
+              d = json.loads(t)
+          except json.JSONDecodeError as e:
+              kind = lambda c: "llave {" if c == "{" else "llave }" if c == "}" else "comilla" if c in "\"'" else "letra" if c.isalpha() else "número" if c.isdigit() else "otro símbolo"
+              msg = (f"FIREBASE_SERVICE_ACCOUNT no es JSON válido. Largo: {len(t)} caracteres (un archivo correcto tiene unos 2300). "
+                     + (f"Empieza con: {kind(t[0])}. Termina con: {kind(t[-1])}. Se rompe al {round(100*e.pos/max(len(t),1))}% del contenido ({e.msg}). " if t else "Está vacío. ")
+                     + "Pega el archivo .json completo, desde la primera llave { hasta la última }.")
+              print("::error::" + msg); sys.exit(1)
+          with open(os.environ["GITHUB_ENV"], "a") as envf:
+              pass
           if d.get("type") != "service_account" or d.get("project_id") != sys.argv[1]:
               print("::error::La credencial no es una cuenta de servicio del proyecto " + sys.argv[1] + "."); sys.exit(1)
           key = d.get("private_key", "")
@@ -112,7 +130,13 @@ jobs:
           OUT="$RUNNER_TEMP/migracion"
           mkdir -p "$OUT"
           echo "OUT=$OUT" >> "$GITHUB_ENV"
-          printf '%s' "$SA" > "$RUNNER_TEMP/sa.json"
+          printf '%s' "$SA" | python3 -c '
+          import base64, json, sys
+          t = sys.stdin.read().strip().lstrip("\ufeff").strip()
+          if len(t) >= 2 and t[0] == t[-1] and t[0] in "\"\x27`": t = t[1:-1].strip()
+          if not t.startswith("{"): t = base64.b64decode(t).decode("utf-8").strip()
+          json.dump(json.loads(t), sys.stdout)
+          ' > "$RUNNER_TEMP/sa.json"
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/sa.json" >> "$GITHUB_ENV"
 
       - name: 1. Auditoría (solo lectura)
