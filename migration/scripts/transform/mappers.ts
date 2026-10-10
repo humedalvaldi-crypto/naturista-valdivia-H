@@ -39,6 +39,9 @@ export const PERSONAL_FIELDS = new Set([
 const speciesKey = (v: string) =>
   v.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 
+/** Sin espacios ni artículos: "cisne de cuello negro" → "cisnecuellonegro". */
+const compactKey = (k: string) => k.split(' ').filter((w) => !['de', 'del', 'la', 'el', 'los', 'las'].includes(w)).join('');
+
 const assetKey = (p: string) =>
   (p.split('?')[0]!.split('/').pop() ?? '').replace(/\.[a-z0-9]+$/i, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
@@ -74,9 +77,44 @@ export class Context {
     this.speciesByKey.set(speciesKey(s.id.replace(/^sp-/, '')), s);
   }
 
-  /** Especie del catálogo a partir de un identificador antiguo (p. ej. "chucao", "Lontra_provocax"). */
+  /**
+   * Especie del catálogo a partir de un identificador antiguo ("chucao",
+   * "Lontra_provocax", "sietecolores", "cisne-cuello-negro", "bombus").
+   * Se prueba en orden: igual, sin espacios ni artículos, por género (si es
+   * único) y quitando palabras finales ("copihue-rosado" → "copihue").
+   */
   speciesFromLegacyId(v: string): CatalogSpecies | null {
-    return this.speciesByKey.get(speciesKey(v)) ?? null;
+    const words = speciesKey(v).split(' ').filter(Boolean);
+    for (let n = words.length; n >= 1; n--) {
+      const key = words.slice(0, n).join(' ');
+      const found = this.speciesByKey.get(key) ?? this.byCompact().get(compactKey(key)) ?? (n === 1 ? this.byGenus().get(key) : undefined);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  private compactIndex?: Map<string, CatalogSpecies>;
+  private genusIndex?: Map<string, CatalogSpecies>;
+
+  private byCompact() {
+    if (!this.compactIndex) {
+      this.compactIndex = new Map();
+      for (const [k, s] of this.speciesByKey) this.compactIndex.set(compactKey(k), s);
+    }
+    return this.compactIndex;
+  }
+
+  /** Género → especie, solo si el catálogo tiene una única especie de ese género. */
+  private byGenus() {
+    if (!this.genusIndex) {
+      const counts = new Map<string, CatalogSpecies[]>();
+      for (const s of new Set(this.speciesByKey.values())) {
+        const genus = speciesKey(s.scientificName).split(' ')[0]!;
+        counts.set(genus, [...(counts.get(genus) ?? []), s]);
+      }
+      this.genusIndex = new Map([...counts].filter(([, l]) => l.length === 1).map(([g, l]) => [g, l[0]!]));
+    }
+    return this.genusIndex;
   }
 
   /** UID válido: existe en Auth y no es un marcador como 'anon' o 'guest'. */

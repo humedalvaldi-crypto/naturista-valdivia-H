@@ -1,1 +1,1 @@
-{ "mode": "migrar", "confirm": "MIGRAR", "nota": "Repetición autorizada: traer álbumes (user_collections) y notas de audio. Idempotente; Firebase no se modifica." }
+{ "mode": "migrar", "confirm": "MIGRAR", "nota": "Repetición autorizada: álbumes con nombres alternativos. Idempotente; Firebase no se modifica." }

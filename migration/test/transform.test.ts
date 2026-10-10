@@ -6,6 +6,8 @@ import { stableId } from '../scripts/transform/ids';
 import { storagePathFromUrl } from '../scripts/transform/media';
 import { cleanUsername, slugify } from '../scripts/transform/fields';
 import { lit } from '../scripts/transform/sql';
+import { Context } from '../scripts/transform/mappers';
+import { Plan } from '../scripts/transform/plan';
 import { seedCatalog, transform, type PlanReport } from '../scripts/transform/run';
 import { writeFixtureSnapshot } from './support/fixture';
 import { applyFiles, count, freshDb, WORKER_MIGRATIONS } from './support/sqlite';
@@ -200,6 +202,18 @@ describe('plan sobre una instantánea de prueba', () => {
       { body: 'Hola Beto', r: 1 },
       { body: 'Hola Ana', r: 0 },
     ]);
+  });
+
+  it('identificadores antiguos del álbum con otras formas de escribir', () => {
+    const ctx = new Context(new Plan(), seedCatalog(WORKER_MIGRATIONS));
+    const id = (v: string) => ctx.speciesFromLegacyId(v)?.id ?? null;
+    expect(id('sietecolores')).toBe('sp-tachuris-rubrigastra');
+    expect(id('cisne-cuello-negro')).toBe('sp-cygnus-melancoryphus');
+    expect(id('copihue-rosado')).toBe('sp-lapageria-rosea');
+    expect(id('bombus')).toBe('sp-bombus-dahlbomii');
+    expect(id('amanita')).toBe('sp-amanita-muscaria');
+    expect(id('Garza_Grande')).toBe('sp-ardea-alba');
+    expect(id('encino')).toBeNull(); // no está en el catálogo: no se inventa
   });
 
   it('álbum antiguo: especies desbloqueadas por nombre o id; las desconocidas se listan', () => {
