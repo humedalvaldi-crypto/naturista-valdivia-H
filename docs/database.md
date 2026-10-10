@@ -27,17 +27,28 @@ Pruebas: `worker/test/api.test.ts` aplica esta migración sobre un D1 local y ve
 | `media_assets` | Metadatos de cada archivo en R2: dueño, uso, clave del objeto (única), tipo real, tamaño, SHA-256, visibilidad, estado de borrado y de purga, y trazabilidad de Firebase Storage (`legacy_storage_path`, `legacy_asset_id`). |
 | `profiles.photo_asset_id`, `profiles.banner_asset_id` | Foto y portada del perfil apuntan a archivos propios (`ON DELETE SET NULL`). |
 
-## Esquema previsto (fases 5–7)
+## Migración `0003_social.sql` (Fase 5)
+
+| Tabla | Propósito | Origen Firestore |
+|---|---|---|
+| `follows` | Quién sigue a quién (PK compuesta, sin seguirse a sí mismo) | `follows` |
+| `blocks` | Bloqueos entre personas | — |
+| `posts` | Publicaciones (texto ≤ 2000, imagen opcional, comunidad opcional, visibilidad, contadores, borrado lógico) | `posts` |
+| `comments` | Comentarios (≤ 1000, borrado lógico) | — |
+| `reactions` | "Me gusta" (uno por persona y publicación) | `notebook_likes` (parcial) |
+| `bookmarks` | Publicaciones guardadas | — |
+| `communities`, `community_members` | Comunidades y sus miembros con rol | `groups`, `group_members` |
+| `conversations`, `messages` | Mensajes privados 1 a 1 (par único) | `chat_messages` (`chatId`) |
+| `notifications` | Avisos guardados en el servidor | `notifications`, `users/{uid}/notifications` |
+| `reports` | Denuncias (una por persona y objetivo) | `reports` |
+
+Todas las tablas que vienen de Firestore tienen `legacy_id` único para migrar sin duplicar.
+
+## Esquema previsto (fases 6–7)
 
 | Tabla | Origen Firestore | Fase |
 |---|---|---|
 | `profile_private` | `profiles` (rut, fechaNacimiento, telefono, whatsapp, genero, addressValdivia) | 4 — **pendiente de decisión**, ver `security.md` |
-| `posts`, `comments`, `reactions`, `bookmarks` | `posts`, `notebook_likes` | 5 |
-| `follows` | `follows` (ID `${follower}_${followed}`) | 5 |
-| `communities`, `community_members` | `groups`, `group_members` | 5 |
-| `conversations`, `messages` | `chat_messages` (`chatId`) | 5 |
-| `notifications` | `notifications` y `users/{uid}/notifications` | 5 |
-| `reports` | `reports` | 5 |
 | `notebooks`, `notebook_pages`, `notebook_elements` | `notebooks`, `notebook_pages` | 6 |
 | `observations`, `species` | `observations`, `species_catalog`, `species_album`, `user_collections` | 7 |
 | `map_layers`, puntos del mapa | `wetlands`, `places` | 7 |

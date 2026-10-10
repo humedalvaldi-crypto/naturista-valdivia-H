@@ -31,12 +31,25 @@
 | Token inválido en ruta pública → 401 (no se ignora) | `middleware/auth.ts` | Sí |
 | Despliegue solo manual, con aprobación y respaldo previo de D1 | `.github/workflows/deploy-api.yml` | — |
 
+## Implementado en la Fase 5
+
+| Control | Dónde | Probado |
+|---|---|---|
+| Regla de visibilidad única para publicaciones (perfil privado, solo seguidores, bloqueos) | `worker/src/repositories/social.ts` | Sí |
+| Solo el autor borra su publicación; un comentario lo borra su autor o el de la publicación | `repositories/posts.ts` | Sí |
+| No se comenta ni se da "me gusta" a lo que no se puede ver | `routes/posts.ts` | Sí |
+| Bloquear deshace el seguimiento, oculta perfil y publicaciones, impide seguir y escribir | `repositories/social.ts`, `routes/messages.ts` | Sí |
+| Conversaciones visibles solo para sus dos participantes (404 a terceros) | `repositories/messages.ts` | Sí |
+| Publicar en una comunidad exige ser miembro; quien la creó no puede abandonarla | `routes/communities.ts` | Sí |
+| Búsqueda de comunidades con comodines `%`/`_` escapados | `routes/communities.ts` | Sí |
+| Notificaciones: nunca a uno mismo; marcar leídas solo afecta a las propias | `repositories/notifications.ts` | Sí |
+| Denuncias idempotentes con motivos de una lista cerrada | `routes/notifications.ts` | Sí |
+
 ## Pendiente (con fase)
 
-- Perfiles visibles solo para seguidores (requiere la tabla `follows`, Fase 5).
 - Autorización por recurso y propietario en cada módulo, con pruebas cruzadas entre usuarios (Fases 5–7).
 - Ubicaciones sensibles: ocultar o degradar coordenadas de especies amenazadas (Fase 7).
-- Moderación y denuncias (Fase 5).
+- Panel de moderación para revisar denuncias (las denuncias ya se guardan).
 
 ## Hallazgos en la app antigua (requieren acción)
 
