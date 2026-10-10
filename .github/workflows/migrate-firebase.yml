@@ -87,7 +87,7 @@ jobs:
               ok = subprocess.run(["openssl", "pkey", "-in", f.name, "-noout"], capture_output=True).returncode == 0
           if not ok:
               print("::error::La clave privada del JSON está dañada. Crea una clave nueva y pega el archivo completo."); sys.exit(1)
-          print("Credencial con formato correcto: cuenta " + d.get("client_email", "?").split("@")[0] + ", clave " + d.get("private_key_id", "")[:6] + "…")
+          print("::notice::Credencial con formato correcto. Cuenta: " + d.get("client_email", "?").split("@")[0] + " · ID de clave empieza con: " + d.get("private_key_id", "")[:8])
           ' "$PROJECT"
           if [ "$MODE" = "migrar" ]; then
             [ "$CONFIRM" = "MIGRAR" ] || { echo "::error::Para migrar escribe MIGRAR en la confirmación."; exit 1; }
