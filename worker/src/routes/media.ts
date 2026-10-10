@@ -4,6 +4,7 @@ import { UsersRepository } from '../repositories/users';
 import { declaredMatches, isPurpose, MAX_UPLOAD_BYTES, PURPOSES, sniff, type MediaPurpose } from '../services/media-types';
 import { badRequest, HttpError, notFound } from '../services/http-error';
 import { decodeCursor, paginate, parseLimit } from '../services/pagination';
+import { MetadataError, stripLocationMetadata } from '../services/image-metadata';
 import { signMediaAccess, verifyMediaAccess } from '../services/signed-url';
 import type { AppBindings } from '../types/env';
 
@@ -70,15 +71,24 @@ export const mediaRoutes = new Hono<AppBindings>()
       throw new HttpError(413, 'file_too_large', `El archivo supera el máximo de ${Math.round(rule.maxBytes / 1024 / 1024)} MB.`);
     }
 
-    const bytes = await readLimited(c.req.raw.body, Math.min(rule.maxBytes, MAX_UPLOAD_BYTES));
-    if (bytes.byteLength === 0) throw badRequest('El archivo está vacío.');
+    const raw = await readLimited(c.req.raw.body, Math.min(rule.maxBytes, MAX_UPLOAD_BYTES));
+    if (raw.byteLength === 0) throw badRequest('El archivo está vacío.');
 
-    const type = sniff(bytes);
+    const type = sniff(raw);
     if (!type || !(rule.kinds as readonly string[]).includes(type.kind)) {
       throw new HttpError(415, 'unsupported_media_type', 'Tipo de archivo no admitido para este uso.');
     }
     if (!declaredMatches(c.req.header('Content-Type'), type)) {
       throw new HttpError(415, 'content_type_mismatch', 'El tipo declarado no coincide con el contenido del archivo.');
+    }
+
+    // Sin coordenadas GPS ni otros metadatos de ubicación dentro del archivo.
+    let bytes: Uint8Array;
+    try {
+      bytes = stripLocationMetadata(raw, type.mime);
+    } catch (err) {
+      if (err instanceof MetadataError) throw new HttpError(415, 'invalid_image', 'La imagen está dañada o no se pudo procesar.');
+      throw err;
     }
 
     const user = c.get('user');

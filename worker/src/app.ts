@@ -11,6 +11,7 @@ import { mediaDownloadRoutes, mediaRoutes } from './routes/media';
 import { messagesRoutes } from './routes/messages';
 import { notificationsRoutes, reportsRoutes } from './routes/notifications';
 import { notebooksRoutes, pagesRoutes } from './routes/notebooks';
+import { observationsRoutes, placesRoutes, speciesRoutes } from './routes/observations';
 import { myConnectionsRoutes, peopleRoutes } from './routes/people';
 import { commentsRoutes, postsRoutes } from './routes/posts';
 import { myProfileRoutes, publicProfileRoutes } from './routes/profiles';
@@ -75,7 +76,7 @@ export function createApp(options: AppOptions = {}) {
   v1.route('/me', meRoutes);
 
   // Red social (Fase 5).
-  for (const base of ['/posts', '/users', '/communities', '/notebooks', '/pages']) {
+  for (const base of ['/posts', '/users', '/communities', '/notebooks', '/pages', '/observations']) {
     v1.use(base, readOpenWriteAuth);
     v1.use(`${base}/*`, readOpenWriteAuth);
   }
@@ -84,6 +85,15 @@ export function createApp(options: AppOptions = {}) {
   v1.route('/communities', communitiesRoutes);
   v1.route('/notebooks', notebooksRoutes);
   v1.route('/pages', pagesRoutes);
+  v1.route('/observations', observationsRoutes);
+
+  // Catálogo y lugares del mapa: solo lectura pública.
+  for (const base of ['/species', '/places']) {
+    v1.use(base, maybeAuth, publicLimit);
+    v1.use(`${base}/*`, maybeAuth, publicLimit);
+  }
+  v1.route('/species', speciesRoutes);
+  v1.route('/places', placesRoutes);
   for (const base of ['/comments', '/conversations', '/reports']) {
     v1.use(base, auth, writeLimit);
     v1.use(`${base}/*`, auth, writeLimit);
