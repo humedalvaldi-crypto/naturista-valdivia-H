@@ -12,14 +12,13 @@ const _eva = AuthUser(uid: 'u1', email: 'eva@example.test', displayName: 'Eva', 
 /// Biometría de prueba: devuelve los resultados programados, en orden.
 /// Solo existe en las pruebas; la app usa la del sistema operativo.
 class _ScriptedBiometrics implements BiometricAuth {
-  _ScriptedBiometrics(this.results, {this.availability_ = BiometricAvailability.available});
+  _ScriptedBiometrics(this.results);
 
   final List<BiometricResult> results;
-  final BiometricAvailability availability_;
   int prompts = 0;
 
   @override
-  Future<BiometricAvailability> availability() async => availability_;
+  Future<BiometricAvailability> availability() async => BiometricAvailability.available;
 
   @override
   Future<BiometricResult> authenticate(String reason) async {
