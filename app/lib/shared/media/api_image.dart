@@ -15,6 +15,15 @@ class ApiImage extends StatefulWidget {
 
   /// Caché en memoria por ruta (las fotos de una página se repintan a menudo).
   static final Map<String, Future<Uint8List>> _cache = {};
+
+  /// Imágenes guardadas en memoria ahora mismo.
+  static int get cachedCount => _cache.length;
+
+  /// Libera la memoria de imágenes; se vuelven a descargar al verlas.
+  static void clearCache() {
+    _cache.clear();
+    PaintingBinding.instance.imageCache.clear();
+  }
   static const _maxCached = 60;
 
   static Future<Uint8List> _load(ApiClient api, String path) {

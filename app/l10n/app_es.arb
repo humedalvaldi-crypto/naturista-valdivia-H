@@ -721,15 +721,15 @@
   "faqNotebookQ": "¿Se guardan solos mis cuadernos?",
   "faqNotebookA": "Sí. Cada página se guarda unos segundos después de cada cambio; arriba verás \"Guardado\". Si la misma página cambió en otro dispositivo, la app te avisa en vez de sobrescribirla.",
   "faqTrashQ": "Borré un cuaderno, ¿lo puedo recuperar?",
-  "faqTrashA": "Sí, durante 30 días: Configuración → Papelera → Restaurar. Vuelve con todas sus páginas.",
+  "faqTrashA": "Sí, durante 30 días: Configuración → Cuaderno de campo → Papelera → Restaurar. Vuelve con todas sus páginas.",
   "faqOldAppQ": "¿Qué pasó con lo que tenía en la app anterior?",
   "faqOldAppA": "Se copió a esta app: perfil, cuadernos con sus páginas, fotos, seguidores, mensajes y álbum. Entras con la misma cuenta de Google o correo. Lo que crees en la app anterior después de la copia no aparece aquí automáticamente.",
   "faqOfflineQ": "¿Funciona sin internet?",
   "faqOfflineA": "Todavía no. Los mapas, cuadernos y observaciones necesitan conexión. Preferimos no mostrar un botón de \"descargar mapa\" hasta que funcione de verdad.",
   "faqMissingQ": "¿Por qué faltan opciones de la app anterior?",
-  "faqMissingA": "Solo incluimos opciones que funcionan. Aún no están: verificación en dos pasos por SMS, mapas satelitales o sin conexión, intercambio de stickers y cartas, notificaciones al teléfono o por correo, e idiomas distintos de español e inglés. Tampoco pedimos RUT, fecha de nacimiento, género ni dirección: no hacen falta.",
+  "faqMissingA": "Solo incluimos opciones que funcionan. Aún no están: verificación en dos pasos por SMS, cerrar sesión en todos los dispositivos, mapas satelitales o sin conexión, intercambio de stickers y cartas entre personas, avisos al teléfono o por correo, e idiomas distintos de español e inglés. Tampoco pedimos RUT, fecha de nacimiento, género ni dirección: no hacen falta.",
   "faqContactQ": "¿Cómo reporto un problema?",
-  "faqContactA": "Para contenido inapropiado, usa \"Reportar\" en la publicación o el perfil. Para fallas de la app, avisa a quien administra el proyecto indicando qué pantalla usabas y qué pasó.",
+  "faqContactA": "Para contenido inapropiado, usa \"Reportar\" en la publicación o el perfil. Para fallas o ideas: Configuración → Contacto.",
   "legalDraftNotice": "Versión preliminar en lenguaje simple. Describe cómo funciona la app hoy.",
   "legalDataTitle": "Qué datos guardamos",
   "legalDataBody": "Tu correo y forma de entrar; lo que escribes en tu perfil; tus publicaciones, comentarios, mensajes, observaciones (con su ubicación), cuadernos, fotos y audios; y tus preferencias. No pedimos RUT, fecha de nacimiento, género ni dirección.",
@@ -751,5 +751,165 @@
         "type": "int"
       }
     }
-  }
+  },
+  "secProfile": "Mi perfil",
+  "secProfileHint": "Nombre, usuario, presentación, foto y portada",
+  "secAccount": "Cuenta",
+  "secAccountHint": "Correo, forma de entrar, fecha de alta e identificador",
+  "secSecurity": "Seguridad",
+  "secSecurityHint": "Contraseña, último acceso, cerrar sesión y eliminar la cuenta",
+  "secPrivacy": "Privacidad y visibilidad",
+  "secPrivacyHint": "Quién ve tu perfil, quién te escribe, ubicación y bloqueos",
+  "secMap": "Mapa",
+  "secMapHint": "Mapa base y capas al abrir",
+  "secNotebook": "Cuaderno de campo",
+  "secNotebookHint": "Color y visibilidad de los cuadernos nuevos, papelera",
+  "secStickers": "Stickers y cartas",
+  "secStickersHint": "Tamaño, stickers favoritos y cartas de especies",
+  "secNotifications": "Notificaciones",
+  "secNotificationsHint": "Qué avisos quieres recibir",
+  "secAppearance": "Apariencia",
+  "secAppearanceHint": "Tema claro, oscuro o del sistema",
+  "secLanguage": "Idioma y región",
+  "secLanguageHint": "Español o inglés, formato de hora",
+  "secSync": "Sincronización y almacenamiento",
+  "secSyncHint": "Estado del servidor, espacio usado, copias y papelera",
+  "secAccessibility": "Accesibilidad",
+  "secAccessibilityHint": "Tamaño del texto, alto contraste y movimiento",
+  "secStats": "Estadísticas y logros",
+  "secStatsHint": "Tus números, álbum y exportación",
+  "secContact": "Contacto",
+  "secContactHint": "Escribe al equipo del proyecto",
+  "secHelp": "Ayuda y soporte",
+  "secHelpHint": "Preguntas frecuentes",
+  "secLegal": "Política legal",
+  "secLegalHint": "Privacidad y condiciones de uso",
+  "secAbout": "Información",
+  "secAboutHint": "Versión, servidor y licencias",
+  "settingsNeedsAccount": "Necesita iniciar sesión",
+  "accountMemberSince": "Miembro desde",
+  "accountId": "Identificador de la cuenta",
+  "accountIdHint": "Si pides ayuda, este identificador permite encontrar tu cuenta sin compartir tu correo ni tu contraseña.",
+  "copy": "Copiar",
+  "copied": "Copiado",
+  "securityLastSignIn": "Último inicio de sesión",
+  "securityGoogleManaged": "Entras con Google: la contraseña y la verificación en dos pasos se administran en tu cuenta de Google.",
+  "securitySignOutHere": "Cerrar sesión en este dispositivo",
+  "securityNotAvailable": "Aún no disponible: verificación en dos pasos por SMS y cerrar sesión en todos los dispositivos a la vez. Necesitan servicios de pago de Firebase; preferimos no mostrar opciones que no funcionan.",
+  "securityDangerZone": "Zona de peligro",
+  "privacyMessagesFrom": "Quién puede escribirme mensajes",
+  "privacyEveryone": "Todos",
+  "privacyFollowing": "A quien sigo",
+  "privacyNobody": "Nadie",
+  "privacyFollowingHint": "Solo personas que tú sigues",
+  "privacyObservations": "Observaciones",
+  "privacyHideLocation": "Ocultar ubicación por defecto",
+  "privacyHideLocationHint": "Las observaciones nuevas muestran a otras personas solo una zona de unos 10 km.",
+  "privacyBlockedTitle": "Personas bloqueadas",
+  "privacyBlockedHint": "No pueden ver tu perfil ni escribirte",
+  "privacyBlockedEmpty": "No has bloqueado a nadie.",
+  "privacyUnblock": "Desbloquear",
+  "privacyUnblocked": "Desbloqueaste a {name}.",
+  "@privacyUnblocked": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mapDefaultBase": "Mapa base al abrir",
+  "mapDefaultLayers": "Capas visibles al abrir",
+  "mapOfflineNote": "Mapas sin conexión y satelitales: aún no. La política de uso de OpenStreetMap prohíbe la descarga masiva de teselas para guardarlas, y un proveedor satelital requiere una cuenta de pago.",
+  "mapOpen": "Abrir el mapa",
+  "notebookDefaultColor": "Color de los cuadernos nuevos",
+  "notebookPublicDefault": "Cuadernos nuevos públicos",
+  "notebookPublicDefaultHint": "Si está apagado, se crean privados (solo tú los ves).",
+  "notebookAutosaveNote": "Las páginas se guardan solas unos segundos después de cada cambio.",
+  "stickerSize": "Tamaño al pegar un sticker",
+  "sizeSmall": "Pequeño",
+  "sizeMedium": "Mediano",
+  "sizeLarge": "Grande",
+  "stickerFavorites": "Stickers favoritos",
+  "stickerFavoritesHint": "Toca un sticker para marcarlo con estrella: los favoritos aparecen primero en el editor de páginas.",
+  "stickerAddFavorite": "Marcar como favorito",
+  "stickerRemoveFavorite": "Quitar de favoritos",
+  "cardsTitle": "Cartas de especies",
+  "cardsAlbum": "Mi álbum de especies",
+  "cardsAlbumHint": "Cada especie que observas desbloquea su carta.",
+  "notifPrefIntro": "Elige qué avisos aparecen en la campana. Se guarda en tu cuenta y vale en todos tus dispositivos.",
+  "notifPrefFollow": "Alguien empieza a seguirme",
+  "notifPrefComment": "Comentarios en mis publicaciones",
+  "notifPrefReaction": "Me gusta en mis publicaciones",
+  "notifPrefMessage": "Mensajes nuevos",
+  "notifPushNote": "Avisos al teléfono o por correo: aún no. Requieren configurar Firebase Cloud Messaging y un servicio de correo; los avisos se ven dentro de la app.",
+  "appearanceMoreInAccessibility": "Tamaño del texto y contraste",
+  "regionTitle": "Región",
+  "region24h": "Reloj de 24 horas",
+  "regionExample": "Ejemplo: {date} · {time}",
+  "@regionExample": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "regionNote": "Las fechas siguen el idioma elegido y las horas, la zona horaria de tu dispositivo. Las medidas usan el sistema métrico.",
+  "syncWhatWhere": "Tus cuadernos, observaciones, perfil, mensajes y preferencias de avisos se guardan en el servidor y se ven igual en todos tus dispositivos. Tema, tamaño de texto, mapa y stickers favoritos se guardan solo en este dispositivo.",
+  "syncStorage": "Almacenamiento",
+  "syncFiles": "{count} archivos · {size}",
+  "@syncFiles": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "syncStorageHint": "Fotos y audios que subiste",
+  "syncClearCache": "Liberar memoria de imágenes",
+  "syncClearCacheHint": "Las imágenes se vuelven a descargar al verlas.",
+  "syncCacheCleared": "Memoria liberada ({count} imágenes).",
+  "@syncCacheCleared": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "accessibilityScreenReader": "Todos los botones tienen nombre para lectores de pantalla (TalkBack y lectores del navegador).",
+  "statObservations": "Observaciones",
+  "statSpeciesObserved": "Especies observadas",
+  "statSpeciesUnlocked": "Especies en el álbum",
+  "statNotebooks": "Cuadernos",
+  "statPages": "Páginas",
+  "statPosts": "Publicaciones",
+  "statFollowers": "Seguidores",
+  "statFollowing": "Siguiendo",
+  "statFirstObservation": "Primera observación: {date}",
+  "@statFirstObservation": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "statAchievements": "Álbum y logros",
+  "contactIntro": "Escribe al equipo de Naturista Valdivia: fallas, ideas o preguntas. Lo lee quien administra el proyecto; no es público.",
+  "contactBug": "Falla",
+  "contactIdea": "Idea",
+  "contactQuestion": "Pregunta",
+  "contactMessage": "Mensaje",
+  "contactSend": "Enviar",
+  "contactSent": "Mensaje enviado. ¡Gracias!",
+  "contactReportNote": "Para contenido inapropiado de otra persona, usa \"Reportar\" en la publicación o el perfil.",
+  "aboutVersion": "Versión",
+  "aboutServer": "Servidor",
+  "aboutServerConnected": "Conectado",
+  "aboutTech": "Hecha con Flutter, Cloudflare Workers y D1, y Firebase Authentication.",
+  "aboutLicenses": "Licencias de código abierto"
 }

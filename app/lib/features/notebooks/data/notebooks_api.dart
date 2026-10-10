@@ -35,8 +35,10 @@ class NotebooksApi implements PageStore {
 
   Future<List<Notebook>> mine() async => _list(await _api.get('/notebooks')).map(Notebook.fromJson).toList();
 
-  Future<Notebook> create({required String title, String? description, String? color}) async => Notebook.fromJson(
+  Future<Notebook> create({required String title, String? description, String? color, String? visibility}) async =>
+      Notebook.fromJson(
         (await _api.post('/notebooks', {
+          'visibility': ?visibility,
           'title': title,
           if (description != null && description.trim().isNotEmpty) 'description': description.trim(),
           'color': ?color,

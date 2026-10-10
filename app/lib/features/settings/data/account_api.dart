@@ -40,6 +40,49 @@ class MyProfile {
   final String visibility;
 }
 
+/// Preferencias guardadas en el servidor (afectan a otras personas o a avisos).
+class ServerSettings {
+  const ServerSettings({required this.notifications, required this.messagesFrom});
+
+  factory ServerSettings.fromJson(Map<String, dynamic> j) => ServerSettings(
+        notifications: {
+          for (final k in notificationKinds) k: ((j['notifications'] as Map?)?[k] as bool?) ?? true,
+        },
+        messagesFrom: ((j['privacy'] as Map?)?['messages'] as String?) ?? 'everyone',
+      );
+
+  static const notificationKinds = ['follow', 'comment', 'reaction', 'message'];
+
+  /// Tipo de aviso → activado.
+  final Map<String, bool> notifications;
+
+  /// `everyone`, `following` o `nobody`.
+  final String messagesFrom;
+}
+
+/// Números propios (`/me/stats`).
+class MyStats {
+  const MyStats(this.raw);
+
+  final Map<String, dynamic> raw;
+
+  int operator [](String key) => (raw[key] as num?)?.toInt() ?? 0;
+
+  DateTime? get firstObservationAt => DateTime.tryParse(raw['firstObservationAt'] as String? ?? '')?.toLocal();
+}
+
+/// Persona bloqueada.
+class BlockedPerson {
+  const BlockedPerson({required this.id, required this.name, this.username});
+
+  factory BlockedPerson.fromJson(Map<String, dynamic> j) =>
+      BlockedPerson(id: j['id'] as String, name: j['name'] as String? ?? '', username: j['username'] as String?);
+
+  final String id;
+  final String name;
+  final String? username;
+}
+
 /// Acciones sobre la cuenta propia: perfil, copia de los datos y eliminación.
 class AccountApi {
   AccountApi(this._api);
@@ -59,6 +102,28 @@ class AccountApi {
     final res = await _api.upload('/media?purpose=$purpose', bytes, contentType);
     return (res['data'] as Map<String, dynamic>)['id'] as String;
   }
+
+  Future<ServerSettings> serverSettings() async =>
+      ServerSettings.fromJson((await _api.get('/me/settings'))['data'] as Map<String, dynamic>);
+
+  Future<ServerSettings> updateServerSettings(Map<String, Object?> fields) async =>
+      ServerSettings.fromJson((await _api.patch('/me/settings', fields))['data'] as Map<String, dynamic>);
+
+  Future<MyStats> stats() async => MyStats((await _api.get('/me/stats'))['data'] as Map<String, dynamic>);
+
+  Future<List<BlockedPerson>> blocked() async => [
+        for (final j in ((await _api.get('/me/blocked'))['data'] as List).cast<Map<String, dynamic>>()) BlockedPerson.fromJson(j),
+      ];
+
+  Future<void> unblock(String userId) => _api.delete('/users/$userId/block');
+
+  Future<void> sendFeedback({required String kind, required String message, String? appVersion, String? platform}) =>
+      _api.post('/me/feedback', {
+        'kind': kind,
+        'message': message,
+        'appVersion': ?appVersion,
+        'platform': ?platform,
+      });
 
   /// Copia completa de los datos propios (JSON).
   Future<Uint8List> exportAll() => _api.getBytes('/me/export');

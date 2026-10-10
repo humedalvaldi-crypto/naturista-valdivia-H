@@ -34,9 +34,9 @@ class _BiodiversityMapPageState extends State<BiodiversityMapPage> {
   int _seq = 0;
 
   late BaseMap _base = SettingsScope.settingsOf(context).mapBase == MapBasePreference.topo ? BaseMap.topo : BaseMap.streets;
-  bool _showObservations = true;
+  late bool _showObservations = SettingsScope.settingsOf(context).mapShowObservations;
   bool _onlyMine = false;
-  bool _showPlaces = true;
+  late bool _showPlaces = SettingsScope.settingsOf(context).mapShowPlaces;
   String? _group;
 
   List<Observation> _observations = const [];

@@ -43,6 +43,20 @@ class FakeApiServer {
     'photo': null, 'banner': null, 'visibility': 'public',
   };
   bool accountDeleted = false;
+
+  /// Preferencias del servidor (`/me/settings`).
+  Map<String, dynamic> serverSettings = {
+    'language': 'es',
+    'theme': 'system',
+    'notifications': {'follow': true, 'comment': true, 'reaction': true, 'message': true},
+    'privacy': {'messages': 'everyone'},
+  };
+  Map<String, dynamic> stats = {
+    'observations': 3, 'speciesObserved': 2, 'speciesUnlocked': 5, 'notebooks': 1, 'pages': 4, 'posts': 0,
+    'followers': 7, 'following': 2, 'files': 3, 'storageBytes': 1572864, 'firstObservationAt': '2025-04-02T10:00:00Z',
+  };
+  final blocked = <Map<String, dynamic>>[];
+  final feedback = <Map<String, dynamic>>[];
   final pages = <String, Map<String, dynamic>>{};
   bool failNext = false;
 
@@ -309,6 +323,24 @@ class FakeApiServer {
 
           if (req.method == 'GET' && path == '/me') return _json({'data': {}});
           if (path == '/me/profile' && req.method == 'GET') return _json({'data': myProfile});
+          if (path == '/me/settings' && req.method == 'GET') return _json({'data': serverSettings});
+          if (path == '/me/settings' && req.method == 'PATCH') {
+            for (final e in body.entries) {
+              final current = serverSettings[e.key];
+              serverSettings[e.key] = current is Map && e.value is Map ? {...current, ...(e.value as Map)} : e.value;
+            }
+            return _json({'data': serverSettings});
+          }
+          if (path == '/me/stats') return _json({'data': stats});
+          if (path == '/me/blocked') return _json({'data': blocked});
+          if (path == '/me/feedback' && req.method == 'POST') {
+            feedback.add(body);
+            return _json({'data': {'id': 'fb-${_seq++}'}}, 201);
+          }
+          if (seg.length == 3 && seg.first == 'users' && seg[2] == 'block' && req.method == 'DELETE') {
+            blocked.removeWhere((p) => p['id'] == seg[1]);
+            return http.Response('', 204);
+          }
           if (path == '/me/profile' && req.method == 'PATCH') {
             for (final e in body.entries) {
               switch (e.key) {

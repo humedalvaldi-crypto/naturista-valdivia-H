@@ -34,21 +34,35 @@ void main() {
   testWidgets('sin sesión: invita a entrar y las preferencias del dispositivo funcionan', (tester) async {
     await pumpTestApp(tester, at: '/settings');
     expect(find.byKey(const Key('settings-sign-in')), findsOneWidget);
-    expect(find.byKey(const Key('settings-delete-account')), findsNothing);
+    // Las 17 secciones de la app anterior.
+    for (final id in ['profile', 'account', 'security', 'privacy', 'map', 'notebook', 'stickers', 'notifications',
+        'appearance', 'language', 'sync', 'accessibility', 'stats', 'contact', 'help', 'legal', 'about']) {
+      await _scrollTo(tester, find.byKey(Key('settings-section-$id')));
+    }
 
+    await _scrollTo(tester, find.byKey(const Key('settings-section-map')));
+    await tester.tap(find.byKey(const Key('settings-section-map')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('map-base-topo')));
     await tester.pumpAndSettle();
-    await _scrollTo(tester, find.byKey(const Key('settings-high-contrast')));
+    await tester.tap(find.byKey(const Key('map-show-places')));
+    await tester.pumpAndSettle();
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    await _scrollTo(tester, find.byKey(const Key('settings-section-accessibility')));
+    await tester.tap(find.byKey(const Key('settings-section-accessibility')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('settings-high-contrast')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('settings-reduce-motion')));
     await tester.pumpAndSettle();
-    await _scrollTo(tester, find.byKey(const Key('text-size')));
     await tester.tap(find.byTooltip('Grande'));
     await tester.pumpAndSettle();
 
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString(LocalSettingsRepository.mapBaseKey), 'topo');
+    expect(prefs.getBool(LocalSettingsRepository.mapShowPlacesKey), isFalse);
     expect(prefs.getBool(LocalSettingsRepository.highContrastKey), isTrue);
     expect(prefs.getBool(LocalSettingsRepository.reduceMotionKey), isTrue);
     expect(prefs.getDouble(LocalSettingsRepository.textScaleKey), 1.15);
@@ -64,7 +78,7 @@ void main() {
     PhotoPicker.pick = () async => PickedPhoto(bytes: _png, contentType: 'image/png', name: 'yo.png');
     await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/settings', api: server.client);
 
-    await tester.tap(find.byKey(const Key('settings-edit-profile')));
+    await tester.tap(find.byKey(const Key('settings-section-profile')));
     await tester.pumpAndSettle();
     expect(find.widgetWithText(TextFormField, 'eva'), findsOneWidget);
 
@@ -111,8 +125,7 @@ void main() {
 
   testWidgets('visibilidad del perfil se guarda en el servidor', (tester) async {
     final server = FakeApiServer();
-    await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/settings', api: server.client);
-    await _scrollTo(tester, find.byKey(const Key('profile-visibility')));
+    await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/settings/privacy', api: server.client);
     await tester.tap(find.text('Seguidores'));
     await tester.pumpAndSettle();
     expect(server.requestBodies['PATCH /me/profile'], {'visibility': 'followers'});
@@ -137,7 +150,8 @@ void main() {
     final server = FakeApiServer();
     server.addObservation(speciesId: 'sp-chucao', ownerId: 'u1', ownerName: 'Eva', locationName: 'Isla Teja');
     server.addObservation(speciesId: 'sp-huillin'); // de otra persona: no va
-    await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/settings', api: server.client);
+    await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/settings/sync', api: server.client);
+    expect(find.text('3 archivos · 1.5 MB'), findsOneWidget);
 
     await _scrollTo(tester, find.byKey(const Key('settings-export-all')));
     await tester.tap(find.byKey(const Key('settings-export-all')));
@@ -145,6 +159,7 @@ void main() {
     expect(saved.single.$1, 'naturista-valdivia-mis-datos.json');
     expect(jsonDecode(utf8.decode(saved.single.$3))['format'], 'naturista-valdivia/export/v1');
 
+    await _scrollTo(tester, find.byKey(const Key('settings-export-csv')));
     await tester.tap(find.byKey(const Key('settings-export-csv')));
     await tester.pumpAndSettle();
     final csv = utf8.decode(saved.last.$3.sublist(3));
@@ -157,7 +172,7 @@ void main() {
 
   testWidgets('eliminar la cuenta exige escribir ELIMINAR y cierra la sesión', (tester) async {
     final server = FakeApiServer();
-    final h = await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/settings', api: server.client);
+    final h = await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/settings/security', api: server.client);
     await _scrollTo(tester, find.byKey(const Key('settings-delete-account')));
     await tester.tap(find.byKey(const Key('settings-delete-account')));
     await tester.pumpAndSettle();
@@ -173,11 +188,99 @@ void main() {
     expect(h.auth.user, isNull);
   });
 
+  testWidgets('privacidad: quién puede escribirme y desbloquear', (tester) async {
+    final server = FakeApiServer();
+    server.blocked.add({'id': 'u9', 'name': 'Spam', 'username': 'spam', 'photo': null});
+    await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/settings/privacy', api: server.client);
+    await tester.tap(find.text('Nadie'));
+    await tester.pumpAndSettle();
+    expect(server.requestBodies['PATCH /me/settings'], {'privacy': {'messages': 'nobody'}});
+
+    await tester.tap(find.byKey(const Key('settings-hide-location')));
+    await tester.pumpAndSettle();
+    expect((await SharedPreferences.getInstance()).getBool(LocalSettingsRepository.hideLocationKey), isTrue);
+
+    await _scrollTo(tester, find.byKey(const Key('settings-blocked')));
+    await tester.tap(find.byKey(const Key('settings-blocked')));
+    await tester.pumpAndSettle();
+    expect(find.text('Spam'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('unblock-u9')));
+    await tester.pumpAndSettle();
+    expect(server.requests, contains('DELETE /users/u9/block'));
+    expect(find.text('No has bloqueado a nadie.'), findsOneWidget);
+  });
+
+  testWidgets('notificaciones: apagar un tipo de aviso se guarda en el servidor', (tester) async {
+    final server = FakeApiServer();
+    await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/settings/notifications', api: server.client);
+    await tester.tap(find.byKey(const Key('notif-reaction')));
+    await tester.pumpAndSettle();
+    expect(server.requestBodies['PATCH /me/settings'], {'notifications': {'reaction': false}});
+    expect(tester.widget<SwitchListTile>(find.byKey(const Key('notif-reaction'))).value, isFalse);
+  });
+
+  testWidgets('estadísticas y contacto', (tester) async {
+    final server = FakeApiServer();
+    await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/settings/stats', api: server.client);
+    expect(find.text('Especies en el álbum'), findsOneWidget);
+    expect(find.text('7'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await _scrollTo(tester, find.byKey(const Key('settings-section-contact')));
+    await tester.tap(find.byKey(const Key('settings-section-contact')));
+    await tester.pumpAndSettle();
+    expect(tester.widget<FilledButton>(find.byKey(const Key('contact-send'))).onPressed, isNull);
+    await tester.tap(find.text('Idea'));
+    await tester.enterText(find.byKey(const Key('contact-message')), 'Agregar más humedales');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('contact-send')));
+    await tester.pumpAndSettle();
+    expect(server.feedback.single, containsPair('kind', 'idea'));
+    expect(server.feedback.single, containsPair('message', 'Agregar más humedales'));
+    expect(find.text('Mensaje enviado. ¡Gracias!'), findsOneWidget);
+  });
+
+  testWidgets('cuaderno, stickers e idioma: preferencias del dispositivo', (tester) async {
+    await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/settings/notebook');
+    await tester.tap(find.byKey(const Key('notebook-color-#7A3E65')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('notebook-public-default')));
+    await tester.pumpAndSettle();
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString(LocalSettingsRepository.notebookColorKey), '#7A3E65');
+    expect(prefs.getBool(LocalSettingsRepository.notebookPublicKey), isTrue);
+  });
+
+  testWidgets('stickers: tamaño y favoritos', (tester) async {
+    await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/settings/stickers');
+    await tester.tap(find.text('Grande'));
+    await tester.pumpAndSettle();
+    final first = find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key! as ValueKey<String>).value.startsWith('fav-sticker-')).at(3);
+    final asset = (tester.widget(first).key! as ValueKey<String>).value.substring('fav-sticker-'.length);
+    await tester.tap(first);
+    await tester.pumpAndSettle();
+    final p2 = await SharedPreferences.getInstance();
+    expect(p2.getDouble(LocalSettingsRepository.stickerSizeKey), 360);
+    expect(p2.getStringList(LocalSettingsRepository.favoriteStickersKey), [asset]);
+    // El favorito pasa al primer lugar.
+    final firstNow = find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key! as ValueKey<String>).value.startsWith('fav-sticker-')).first;
+    expect((tester.widget(firstNow).key! as ValueKey<String>).value, 'fav-sticker-$asset');
+  });
+
+  testWidgets('idioma y región: reloj de 12 horas', (tester) async {
+    await pumpTestApp(tester, at: '/settings/language');
+    await tester.tap(find.byKey(const Key('settings-24h')));
+    await tester.pumpAndSettle();
+    expect((await SharedPreferences.getInstance()).getBool(LocalSettingsRepository.use24hKey), isFalse);
+    expect(MediaQuery.of(tester.element(find.byKey(const Key('settings-24h')))).alwaysUse24HourFormat, isFalse);
+  });
+
   testWidgets('ayuda: las preguntas se despliegan', (tester) async {
     await pumpTestApp(tester, at: '/settings/help');
     await tester.tap(find.text('Borré un cuaderno, ¿lo puedo recuperar?'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Configuración → Papelera'), findsOneWidget);
+    expect(find.textContaining('Papelera → Restaurar'), findsOneWidget);
   });
 
   test('CSV: comillas, acentos y sin fórmulas', () {

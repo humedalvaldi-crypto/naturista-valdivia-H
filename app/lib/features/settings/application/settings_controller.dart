@@ -53,6 +53,15 @@ class SettingsController extends ChangeNotifier {
 
   Future<bool> setObservationsPrivate(bool value) => _update(_settings.copyWith(observationsPrivate: value));
 
+  /// Cambia varias preferencias a la vez (las que no tienen setter propio).
+  Future<bool> update(AppSettings Function(AppSettings current) change) => _update(change(_settings));
+
+  Future<bool> toggleFavoriteSticker(String asset) {
+    final favs = [..._settings.favoriteStickers];
+    favs.contains(asset) ? favs.remove(asset) : favs.add(asset);
+    return _update(_settings.copyWith(favoriteStickers: favs));
+  }
+
   Future<bool> completeOnboarding() => _update(_settings.copyWith(onboardingDone: true));
 
   Future<bool> _update(AppSettings next) async {

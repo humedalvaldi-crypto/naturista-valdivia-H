@@ -94,6 +94,12 @@ desde Configuración (`DELETE /api/v1/me` con `X-Confirm-Delete: ELIMINAR`).
 Sirve para que una nueva copia desde Firebase no la reviva: la etapa
 `890-respect-deletions` del migrador borra esas cuentas dentro de D1.
 
+## Migraciones `0010` y `0011`
+
+- `0010_notebook_likes_and_legacy_notifications.sql`: `notebook_likes` y, en
+  `notifications`, `body` (texto original de avisos antiguos) y `notebook_id`.
+- `0011_feedback.sql`: mensajes de Configuración → Contacto.
+
 ## Políticas de borrado
 
 - Borrar un usuario: `ON DELETE CASCADE` en sus preferencias y perfil. El contenido social se decidirá en la Fase 5 (anonimizar vs. borrar) y quedará documentado aquí.

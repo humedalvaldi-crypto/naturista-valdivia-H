@@ -27,7 +27,14 @@ export class NotificationsRepository {
   async create(n: { userId: string; actorId: string; type: NotificationType; postId?: string; conversationId?: string }) {
     if (n.userId === n.actorId) return;
     await this.db
-      .prepare(`INSERT INTO notifications (id, user_id, actor_id, type, post_id, conversation_id) VALUES (?1, ?2, ?3, ?4, ?5, ?6)`)
+      // Solo si la persona no desactivó ese tipo de aviso en Configuración.
+      .prepare(
+        `INSERT INTO notifications (id, user_id, actor_id, type, post_id, conversation_id)
+         SELECT ?1, ?2, ?3, ?4, ?5, ?6
+         WHERE NOT EXISTS (
+           SELECT 1 FROM user_settings WHERE user_id = ?2 AND json_extract(extra_json, '$.notifications.' || ?4) = 0
+         )`,
+      )
       .bind(crypto.randomUUID(), n.userId, n.actorId, n.type, n.postId ?? null, n.conversationId ?? null)
       .run();
   }

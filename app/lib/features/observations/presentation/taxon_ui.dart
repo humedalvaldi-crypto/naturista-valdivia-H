@@ -98,7 +98,7 @@ class GroupDot extends StatelessWidget {
 
 String formatObservedAt(BuildContext context, DateTime when) {
   final m = MaterialLocalizations.of(context);
-  return '${m.formatMediumDate(when)} · ${m.formatTimeOfDay(TimeOfDay.fromDateTime(when))}';
+  return '${m.formatMediumDate(when)} · ${m.formatTimeOfDay(TimeOfDay.fromDateTime(when), alwaysUse24HourFormat: MediaQuery.alwaysUse24HourFormatOf(context))}';
 }
 
 String locationProblemText(AppLocalizations l, Object error) => switch (error) {

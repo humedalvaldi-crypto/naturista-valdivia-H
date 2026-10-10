@@ -18,6 +18,7 @@ export interface SettingsRow {
   user_id: string;
   language: 'es' | 'en';
   theme: 'system' | 'light' | 'dark';
+  extra_json?: string;
   updated_at: string;
 }
 
@@ -60,7 +61,7 @@ export class UsersRepository {
 
   getSettings(userId: string): Promise<SettingsRow | null> {
     return this.db
-      .prepare(`SELECT user_id, language, theme, updated_at FROM user_settings WHERE user_id = ?1`)
+      .prepare(`SELECT user_id, language, theme, extra_json, updated_at FROM user_settings WHERE user_id = ?1`)
       .bind(userId)
       .first<SettingsRow>();
   }
@@ -69,14 +70,24 @@ export class UsersRepository {
     const now = new Date().toISOString();
     await this.db
       .prepare(
-        `INSERT INTO user_settings (user_id, language, theme, updated_at)
-         VALUES (?1, COALESCE(?2, 'es'), COALESCE(?3, 'system'), ?4)
+        `INSERT INTO user_settings (user_id, language, theme, extra_json, updated_at)
+         VALUES (?1, COALESCE(?2, 'es'), COALESCE(?3, 'system'), json_patch('{}', ?5), ?4)
          ON CONFLICT (user_id) DO UPDATE SET
            language   = COALESCE(?2, user_settings.language),
            theme      = COALESCE(?3, user_settings.theme),
+           extra_json = json_patch(user_settings.extra_json, ?5),
            updated_at = ?4`,
       )
-      .bind(userId, input.language ?? null, input.theme ?? null, now)
+      .bind(
+        userId,
+        input.language ?? null,
+        input.theme ?? null,
+        now,
+        JSON.stringify({
+          ...(input.notifications ? { notifications: input.notifications } : {}),
+          ...(input.privacy ? { privacy: input.privacy } : {}),
+        }),
+      )
       .run();
     const row = await this.getSettings(userId);
     if (!row) throw new Error('settings_update_failed');

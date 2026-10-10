@@ -9,7 +9,13 @@ class AuthUser {
     this.photoUrl,
     this.emailVerified = false,
     this.providers = const [],
+    this.createdAt,
+    this.lastSignInAt,
   });
+
+  /// Fechas de Firebase: creación de la cuenta y último inicio de sesión.
+  final DateTime? createdAt;
+  final DateTime? lastSignInAt;
 
   final String uid;
   final String? email;

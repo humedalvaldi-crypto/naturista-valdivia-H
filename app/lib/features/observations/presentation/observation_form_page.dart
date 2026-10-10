@@ -52,7 +52,7 @@ class _ObservationFormPageState extends State<ObservationFormPage> {
   double? _accuracy;
   String _source = 'manual';
   bool _locating = false;
-  bool _hideLocation = false;
+  late bool _hideLocation = SettingsScope.settingsOf(context).hideLocationByDefault;
   late bool _private = SettingsScope.settingsOf(context).observationsPrivate;
   PickedPhoto? _photo;
   String? _existingPhotoPath;

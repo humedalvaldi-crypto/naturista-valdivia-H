@@ -96,6 +96,7 @@ class _NaturistaAppState extends State<NaturistaApp> {
                       textScaler: TextScaler.linear((systemScale * prefs.textScale).clamp(0.8, 2.0)),
                       disableAnimations: media.disableAnimations || prefs.reduceMotion,
                       highContrast: media.highContrast || prefs.highContrast,
+                      alwaysUse24HourFormat: prefs.use24h,
                     ),
                     child: child ?? const SizedBox.shrink(),
                   );

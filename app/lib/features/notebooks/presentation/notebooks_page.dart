@@ -8,6 +8,8 @@ import '../../../shared/widgets/state_views.dart';
 import '../../drawing_editor/presentation/painters.dart';
 import '../data/notebooks_api.dart';
 import '../domain/notebook_models.dart';
+import '../../settings/application/settings_controller.dart';
+import '../../settings/data/settings_repository.dart';
 
 /// Mis cuadernos de campo (lámina, pantalla 71 "Cuadernos").
 class NotebooksPage extends StatefulWidget {
@@ -65,7 +67,12 @@ class _NotebooksPageState extends State<NotebooksPage> {
     final input = await showDialog<_NewNotebook>(context: context, builder: (context) => const _NewNotebookDialog());
     if (input == null) return;
     try {
-      final nb = await _api.create(title: input.title, description: input.description, color: input.color);
+      final nb = await _api.create(
+        title: input.title,
+        description: input.description,
+        color: input.color,
+        visibility: SettingsScope.settingsOf(context).notebookPublic ? 'public' : 'private',
+      );
       if (!mounted) return;
       setState(() => _items = [nb, ..._items]);
       context.push('/notebooks/${nb.id}');
@@ -175,7 +182,7 @@ class _NotebookCover extends StatelessWidget {
   }
 }
 
-const notebookColors = ['#2E5B2A', '#2F6F7E', '#8A5A2B', '#7A3E65', '#B3261E', '#C9A646'];
+const notebookColors = notebookColorOptions;
 
 typedef _NewNotebook = ({String title, String description, String color});
 
@@ -191,7 +198,7 @@ class _NewNotebookDialog extends StatefulWidget {
 class _NewNotebookDialogState extends State<_NewNotebookDialog> {
   final _title = TextEditingController();
   final _description = TextEditingController();
-  String _color = notebookColors.first;
+  late String _color = SettingsScope.settingsOf(context).notebookColor;
 
   @override
   void dispose() {

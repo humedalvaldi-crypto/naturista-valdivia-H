@@ -31,6 +31,12 @@ export class MessagesRepository {
   constructor(private readonly db: D1Database) {}
 
   /** Devuelve la conversación existente entre ambos o la crea. */
+  async findBetween(me: string, other: string): Promise<string | null> {
+    const [a, b] = pair(me, other);
+    const row = await this.db.prepare(`SELECT id FROM conversations WHERE user_a = ?1 AND user_b = ?2`).bind(a, b).first<{ id: string }>();
+    return row?.id ?? null;
+  }
+
   async openConversation(me: string, other: string): Promise<string> {
     const [a, b] = pair(me, other);
     await this.db

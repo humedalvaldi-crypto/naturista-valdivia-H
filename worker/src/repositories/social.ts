@@ -88,6 +88,36 @@ export class SocialRepository {
   }
 
   /** Lista seguidores o seguidos, con su perfil público, paginada por fecha. */
+  async listBlocked(userId: string) {
+    const rows = await this.db
+      .prepare(
+        `SELECT b.blocked_id AS id, b.created_at, pr.username, pr.full_name, pr.photo_asset_id, u.display_name
+         FROM blocks b
+         JOIN users u ON u.id = b.blocked_id
+         LEFT JOIN profiles pr ON pr.user_id = b.blocked_id
+         WHERE b.blocker_id = ?1
+         ORDER BY b.created_at DESC LIMIT 200`,
+      )
+      .bind(userId)
+      .all<{ id: string; created_at: string; username: string | null; full_name: string | null; photo_asset_id: string | null; display_name: string | null }>();
+    return rows.results;
+  }
+
+  /** Respeta "quién puede escribirme" de quien recibe. */
+  async canMessage(sender: string, recipient: string): Promise<boolean> {
+    const row = await this.db
+      .prepare(
+        `SELECT COALESCE(json_extract(s.extra_json, '$.privacy.messages'), 'everyone') AS policy,
+                EXISTS (SELECT 1 FROM follows f WHERE f.follower_id = ?2 AND f.followed_id = ?1) AS follows_sender
+         FROM (SELECT 1) LEFT JOIN user_settings s ON s.user_id = ?2`,
+      )
+      .bind(sender, recipient)
+      .first<{ policy: string; follows_sender: number }>();
+    if (!row || row.policy === 'everyone') return true;
+    if (row.policy === 'following') return row.follows_sender === 1;
+    return false;
+  }
+
   async listConnections(userId: string, direction: 'followers' | 'following', limit: number, before: string | null) {
     const [me, other] = direction === 'followers' ? ['followed_id', 'follower_id'] : ['follower_id', 'followed_id'];
     const rows = await this.db

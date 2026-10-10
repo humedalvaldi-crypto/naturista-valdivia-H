@@ -1,9 +1,12 @@
 import { Hono } from 'hono';
 import { AccountRepository } from '../repositories/account';
+import { SocialRepository } from '../repositories/social';
 import { UsersRepository, type SettingsRow, type UserRow } from '../repositories/users';
+import { parseBody, personDto } from '../services/dto';
 import { badRequest } from '../services/http-error';
 import type { AppBindings } from '../types/env';
-import { updateSettingsSchema } from '../validators/settings';
+import { feedbackSchema, NOTIFICATION_KINDS, updateSettingsSchema } from '../validators/settings';
+
 
 const toUserDto = (u: UserRow) => ({
   id: u.id,
@@ -15,7 +18,26 @@ const toUserDto = (u: UserRow) => ({
   createdAt: u.created_at,
 });
 
-const toSettingsDto = (s: SettingsRow) => ({ language: s.language, theme: s.theme, updatedAt: s.updated_at });
+function extra(s: SettingsRow): { notifications?: Record<string, boolean>; privacy?: { messages?: string } } {
+  try {
+    return JSON.parse(s.extra_json ?? '{}');
+  } catch {
+    return {};
+  }
+}
+
+const toSettingsDto = (s: SettingsRow) => {
+  const e = extra(s);
+  return {
+    language: s.language,
+    theme: s.theme,
+    notifications: Object.fromEntries(NOTIFICATION_KINDS.map((k) => [k, e.notifications?.[k] !== false])),
+    privacy: { messages: e.privacy?.messages ?? 'everyone' },
+    updatedAt: s.updated_at,
+  };
+};
+
+const defaultSettings = { language: 'es', theme: 'system', notifications: { follow: true, comment: true, reaction: true, message: true }, privacy: { messages: 'everyone' }, updatedAt: null };
 
 /**
  * Rutas del usuario autenticado. La identidad sale SIEMPRE del token
@@ -28,6 +50,63 @@ export const meRoutes = new Hono<AppBindings>()
     const user = await repo.upsertFromAuth(c.get('user'));
     const settings = await repo.getSettings(user.id);
     return c.json({ data: { user: toUserDto(user), settings: settings ? toSettingsDto(settings) : null } });
+  })
+  // GET /api/v1/me/settings — preferencias guardadas en el servidor (avisos y privacidad).
+  .get('/settings', async (c) => {
+    const settings = await new UsersRepository(c.env.DB).getSettings(c.get('user').uid);
+    return c.json({ data: settings ? toSettingsDto(settings) : defaultSettings });
+  })
+  // GET /api/v1/me/stats — números propios y espacio usado.
+  .get('/stats', async (c) => {
+    const uid = c.get('user').uid;
+    const q = (sql: string) => c.env.DB.prepare(sql).bind(uid);
+    const rows = await c.env.DB.batch<{ n: number }>([
+      q('SELECT count(*) AS n FROM observations WHERE owner_id = ?1 AND deleted_at IS NULL'),
+      q('SELECT count(DISTINCT species_id) AS n FROM observations WHERE owner_id = ?1 AND deleted_at IS NULL AND species_id IS NOT NULL'),
+      q('SELECT count(*) AS n FROM species_unlocks WHERE user_id = ?1'),
+      q('SELECT count(*) AS n FROM notebooks WHERE owner_id = ?1 AND deleted_at IS NULL'),
+      q('SELECT count(*) AS n FROM notebook_pages p JOIN notebooks n ON n.id = p.notebook_id WHERE n.owner_id = ?1 AND n.deleted_at IS NULL'),
+      q('SELECT count(*) AS n FROM posts WHERE author_id = ?1 AND deleted_at IS NULL'),
+      q('SELECT count(*) AS n FROM follows WHERE followed_id = ?1'),
+      q('SELECT count(*) AS n FROM follows WHERE follower_id = ?1'),
+      q("SELECT count(*) AS n FROM media_assets WHERE owner_id = ?1 AND status = 'active'"),
+      q("SELECT COALESCE(sum(size_bytes), 0) AS n FROM media_assets WHERE owner_id = ?1 AND status = 'active'"),
+      q('SELECT min(observed_at) AS n FROM observations WHERE owner_id = ?1 AND deleted_at IS NULL'),
+    ]);
+    const v = (i: number) => (rows[i]?.results[0]?.n ?? 0) as number;
+    return c.json({
+      data: {
+        observations: v(0),
+        speciesObserved: v(1),
+        speciesUnlocked: v(2),
+        notebooks: v(3),
+        pages: v(4),
+        posts: v(5),
+        followers: v(6),
+        following: v(7),
+        files: v(8),
+        storageBytes: v(9),
+        firstObservationAt: (rows[10]?.results[0]?.n as unknown as string | null) ?? null,
+      },
+    });
+  })
+  // GET /api/v1/me/blocked — personas bloqueadas (se desbloquean con DELETE /users/:id/block).
+  .get('/blocked', async (c) => {
+    const rows = await new SocialRepository(c.env.DB).listBlocked(c.get('user').uid);
+    return c.json({ data: rows.map((r) => ({ ...personDto(r), since: r.created_at })) });
+  })
+  // POST /api/v1/me/feedback — mensaje al equipo del proyecto.
+  .post('/feedback', async (c) => {
+    const input = await parseBody(c, feedbackSchema);
+    const user = c.get('user');
+    await new UsersRepository(c.env.DB).upsertFromAuth(user);
+    const id = crypto.randomUUID();
+    await c.env.DB.prepare(
+      `INSERT INTO feedback (id, user_id, kind, message, app_version, platform) VALUES (?1, ?2, ?3, ?4, ?5, ?6)`,
+    )
+      .bind(id, user.uid, input.kind, input.message, input.appVersion ?? null, input.platform ?? null)
+      .run();
+    return c.json({ data: { id } }, 201);
   })
   // GET /api/v1/me/export — copia de todos los datos propios (JSON descargable).
   .get('/export', async (c) => {

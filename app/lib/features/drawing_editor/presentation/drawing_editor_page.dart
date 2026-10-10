@@ -20,8 +20,18 @@ import 'page_canvas.dart';
 import 'page_renderer.dart';
 import 'painters.dart';
 import 'record_audio_sheet.dart';
+import '../../settings/application/settings_controller.dart';
 
 /// Ilustraciones del proyecto disponibles como pegatinas.
+/// Todos los stickers disponibles: las ranas de la marca y las ilustraciones.
+List<String> get allStickers => [for (final f in FrogSticker.values) f.asset, ...stickerAssets];
+
+/// Favoritos primero (en el orden en que se marcaron), luego el resto.
+List<String> orderStickers(List<String> favorites) {
+  final all = allStickers;
+  return [...favorites.where(all.contains), ...all.where((a) => !favorites.contains(a))];
+}
+
 const stickerAssets = [
     'assets/illustrations/aves/chucao.jpg',
     'assets/illustrations/aves/chuncho.jpg',
@@ -124,7 +134,7 @@ class _DrawingEditorPageState extends State<DrawingEditorPage> {
                   mainAxisSpacing: 8,
                   crossAxisSpacing: 8,
                   children: [
-                    for (final a in [for (final f in FrogSticker.values) f.asset, ...stickerAssets])
+                    for (final a in orderStickers(SettingsScope.settingsOf(context).favoriteStickers))
                       InkWell(
                         key: Key('sticker-$a'),
                         onTap: () => Navigator.pop(context, a),
@@ -143,7 +153,8 @@ class _DrawingEditorPageState extends State<DrawingEditorPage> {
       ),
     );
     if (asset == null) return;
-    _controller!.add(ElementType.sticker, width: 260, height: 260, data: {'asset': asset});
+    final size = SettingsScope.settingsOf(context).stickerSize;
+    _controller!.add(ElementType.sticker, width: size, height: size, data: {'asset': asset});
   }
 
   Future<void> _addPhoto() async {

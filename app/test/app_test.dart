@@ -22,20 +22,20 @@ void main() {
   });
 
   testWidgets('cambia a inglés sin reiniciar y lo guarda', (tester) async {
-    await pumpTestApp(tester, at: '/settings');
+    await pumpTestApp(tester, at: '/settings/language');
 
-    expect(find.text('Configuración'), findsWidgets);
+    expect(find.text('Idioma y región'), findsWidgets);
     await tester.scrollUntilVisible(find.byKey(const Key('language-en')), 200, scrollable: find.byType(Scrollable).first);
     await tester.tap(find.byKey(const Key('language-en')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Settings'), findsWidgets);
+    expect(find.text('Language and region'), findsWidgets);
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString(LocalSettingsRepository.languageKey), 'en');
   });
 
   testWidgets('cambia el tema a oscuro', (tester) async {
-    await pumpTestApp(tester, at: '/settings');
+    await pumpTestApp(tester, at: '/settings/appearance');
 
     await tester.scrollUntilVisible(find.byKey(const Key('theme-dark')), 200, scrollable: find.byType(Scrollable).first);
     await tester.tap(find.byKey(const Key('theme-dark')));

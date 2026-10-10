@@ -53,8 +53,13 @@ export const messagesRoutes = new Hono<AppBindings>()
     if (!(await social.userExists(userId)) || (await social.blockedEitherWay(me.uid, userId))) {
       throw notFound('Persona no encontrada.');
     }
+    const repo = new MessagesRepository(c.env.DB);
+    const existing = await repo.findBetween(me.uid, userId);
+    if (!existing && !(await social.canMessage(me.uid, userId))) {
+      throw new HttpError(403, 'messages_restricted', 'Esta persona no recibe mensajes nuevos.');
+    }
     await new UsersRepository(c.env.DB).upsertFromAuth(me);
-    const id = await new MessagesRepository(c.env.DB).openConversation(me.uid, userId);
+    const id = existing ?? (await repo.openConversation(me.uid, userId));
     return c.json({ data: { id } }, 201);
   })
   .get('/:id/messages', async (c) => {
@@ -74,8 +79,12 @@ export const messagesRoutes = new Hono<AppBindings>()
     const conv = await repo.getForMember(c.req.param('id'), me);
     if (!conv) throw notFound('Conversación no encontrada.');
     const other = conv.user_a === me ? conv.user_b : conv.user_a;
-    if (await new SocialRepository(c.env.DB).blockedEitherWay(me, other)) {
+    const social = new SocialRepository(c.env.DB);
+    if (await social.blockedEitherWay(me, other)) {
       throw new HttpError(403, 'blocked', 'No puedes enviar mensajes en esta conversación.');
+    }
+    if (!(await social.canMessage(me, other))) {
+      throw new HttpError(403, 'messages_restricted', 'Esta persona no recibe mensajes en este momento.');
     }
     const msg = await repo.send({ id: crypto.randomUUID(), conversationId: conv.id, senderId: me, body });
     await new NotificationsRepository(c.env.DB).create({ userId: other, actorId: me, type: 'message', conversationId: conv.id });

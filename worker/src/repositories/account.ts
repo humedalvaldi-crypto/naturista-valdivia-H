@@ -58,6 +58,8 @@ export class AccountRepository {
           }),
         ),
       ),
+      feedback: await this.all('SELECT id, kind, message, status, created_at FROM feedback WHERE user_id = ?1 ORDER BY created_at', uid),
+      notebookLikes: await this.all('SELECT notebook_id, created_at FROM notebook_likes WHERE user_id = ?1', uid),
       speciesUnlocks: await this.all('SELECT species_id, source, unlocked_at FROM species_unlocks WHERE user_id = ?1', uid),
       files: (await this.all('SELECT id, purpose, content_type, size_bytes, sha256, visibility, status, created_at FROM media_assets WHERE owner_id = ?1', uid)).map(
         (m) => ({ ...m, url: `/api/v1/media/${m['id']}` }),

@@ -93,6 +93,13 @@
 - Papelera de cuadernos: 30 días (`GET /notebooks/trash`, `POST /notebooks/:id/restore`);
   el cron diario los borra definitivamente después.
 - Perfil: no se piden RUT, fecha de nacimiento, género ni dirección (minimización).
+- Preferencias del servidor (`GET/PATCH /me/settings`, en `user_settings.extra_json`):
+  qué avisos se crean (se filtra al insertar en `notifications`) y quién puede
+  escribir mensajes (`everyone` / `following` / `nobody`, se aplica al abrir
+  conversación y al enviar).
+- `GET /me/blocked` (desbloquear con `DELETE /users/:id/block`), `GET /me/stats`.
+- Contacto: `POST /me/feedback` guarda el mensaje en la tabla `feedback` (no es
+  público; lo lee quien administra el proyecto consultando D1).
 - Exportación CSV: celdas que empiezan con `= + - @` se prefijan con `'` (sin fórmulas).
 
 ## Pendiente (con fase)

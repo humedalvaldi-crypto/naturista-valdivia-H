@@ -20,6 +20,8 @@ class FirebaseAuthRepository implements AuthRepository {
       photoUrl: u.photoURL,
       emailVerified: u.emailVerified,
       providers: [for (final p in u.providerData) p.providerId],
+      createdAt: u.metadata.creationTime,
+      lastSignInAt: u.metadata.lastSignInTime,
     );
   }
 
