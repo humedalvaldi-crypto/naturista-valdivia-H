@@ -14,6 +14,7 @@ export default defineConfig(async () => {
             APP_ENV: 'test',
             FIREBASE_PROJECT_ID: 'test-project',
             ALLOWED_ORIGINS: 'https://app.example.test,http://localhost:8080',
+            MEDIA_SIGNING_KEY: 'clave-de-prueba-solo-para-tests',
           },
         },
       }),

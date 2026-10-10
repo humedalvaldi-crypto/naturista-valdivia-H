@@ -20,12 +20,18 @@
 
 Pruebas: `worker/test/api.test.ts` aplica esta migración sobre un D1 local y verifica creación idempotente de usuarios y aislamiento de preferencias entre usuarios.
 
-## Esquema previsto (fases 4–7)
+## Migración `0002_media_and_profiles.sql` (Fase 4)
+
+| Tabla / columna | Propósito |
+|---|---|
+| `media_assets` | Metadatos de cada archivo en R2: dueño, uso, clave del objeto (única), tipo real, tamaño, SHA-256, visibilidad, estado de borrado y de purga, y trazabilidad de Firebase Storage (`legacy_storage_path`, `legacy_asset_id`). |
+| `profiles.photo_asset_id`, `profiles.banner_asset_id` | Foto y portada del perfil apuntan a archivos propios (`ON DELETE SET NULL`). |
+
+## Esquema previsto (fases 5–7)
 
 | Tabla | Origen Firestore | Fase |
 |---|---|---|
 | `profile_private` | `profiles` (rut, fechaNacimiento, telefono, whatsapp, genero, addressValdivia) | 4 — **pendiente de decisión**, ver `security.md` |
-| `media_assets` | `user_file_assets` + Firebase Storage | 4 |
 | `posts`, `comments`, `reactions`, `bookmarks` | `posts`, `notebook_likes` | 5 |
 | `follows` | `follows` (ID `${follower}_${followed}`) | 5 |
 | `communities`, `community_members` | `groups`, `group_members` | 5 |

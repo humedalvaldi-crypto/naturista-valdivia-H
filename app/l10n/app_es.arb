@@ -177,5 +177,8 @@
       }
     }
   },
-  "homeSignInPrompt": "Inicia sesión para guardar tus observaciones y cuadernos de campo."
+  "homeSignInPrompt": "Inicia sesión para guardar tus observaciones y cuadernos de campo.",
+  "serverSyncing": "Conectando con el servidor…",
+  "serverSynced": "Cuenta sincronizada con el servidor de Naturista Valdivia.",
+  "serverSyncError": "No se pudo sincronizar la cuenta."
 }

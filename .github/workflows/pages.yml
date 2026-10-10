@@ -35,7 +35,8 @@ jobs:
       - run: flutter pub get
       - run: flutter test
       - name: Compilar web
-        run: flutter build web --release --base-href "/${{ github.event.repository.name }}/"
+        # API_BASE_URL es una variable del repositorio (vacía hasta desplegar la API).
+        run: flutter build web --release --base-href "/${{ github.event.repository.name }}/" --dart-define=API_BASE_URL=${{ vars.API_BASE_URL }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: app/build/web

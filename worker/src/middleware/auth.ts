@@ -31,3 +31,18 @@ export function requireAuth(keyResolver: () => JWTVerifyGetKey) {
     await next();
   });
 }
+
+/**
+ * Autenticación opcional: sin cabecera continúa como anónimo; con una
+ * cabecera inválida responde 401 (no se ignora un token malo en silencio).
+ */
+export function optionalAuth(keyResolver: () => JWTVerifyGetKey) {
+  const strict = requireAuth(keyResolver);
+  return createMiddleware<AppBindings>(async (c, next) => {
+    if (!c.req.header('Authorization')) return next();
+    return strict(c, async () => {
+      c.set('maybeUser', c.get('user'));
+      await next();
+    });
+  });
+}

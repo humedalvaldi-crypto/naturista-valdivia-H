@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "echo 'Despliegue deshabilitado en Fase 1. Ver docs/architecture.md' && exit 1",
+    "deploy": "echo 'Despliega con el workflow manual \"Desplegar API\" de GitHub Actions (ver docs/deployment.md).' && exit 1",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "db:migrate:local": "wrangler d1 migrations apply naturista-valdivia-db --local",

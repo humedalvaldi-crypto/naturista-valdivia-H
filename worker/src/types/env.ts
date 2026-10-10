@@ -6,6 +6,12 @@ export interface Env {
   FIREBASE_PROJECT_ID: string;
   /** Lista separada por comas de orígenes permitidos para CORS. */
   ALLOWED_ORIGINS: string;
+  /** Clave HMAC para URLs firmadas de archivos (`wrangler secret put MEDIA_SIGNING_KEY`). */
+  MEDIA_SIGNING_KEY?: string;
+  /** Límites de frecuencia (Cloudflare Rate Limiting). Opcionales en local. */
+  RL_WRITE?: RateLimit;
+  RL_UPLOAD?: RateLimit;
+  RL_PUBLIC?: RateLimit;
 }
 
 /** Identidad verificada a partir de un Firebase ID token. */
@@ -21,6 +27,8 @@ export interface AuthUser {
 export interface AppVariables {
   requestId: string;
   user: AuthUser;
+  /** Presente solo en rutas con autenticación opcional cuando hay token válido. */
+  maybeUser?: AuthUser;
 }
 
 export type AppBindings = { Bindings: Env; Variables: AppVariables };

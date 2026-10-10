@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/config/app_config.dart';
 import '../../../core/l10n/l10n.dart';
 import '../../auth/application/auth_controller.dart';
 import '../../auth/domain/auth_user.dart';
+import 'server_status.dart';
 
 /// Perfil (pantalla 111 de la lámina, versión de la Fase 3): datos reales de
 /// la cuenta de Firebase y cierre de sesión. El perfil público llega en la Fase 5.
@@ -102,8 +102,7 @@ class ProfilePage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  if (AppConfig.apiBaseUrl.isEmpty)
-                    _InfoNote(icon: Icons.cloud_off_outlined, text: l10n.serverSyncPending),
+                  const ServerAccountStatus(),
                   _InfoNote(icon: Icons.lightbulb_outline, text: l10n.publicProfileSoon),
                   const SizedBox(height: 24),
                   OutlinedButton.icon(

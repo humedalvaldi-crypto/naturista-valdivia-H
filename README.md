@@ -15,7 +15,7 @@ biodiversidad y comunidad naturalista. App para **Android y web**.
 
 ## Estado
 
-**Fases 1 y 3 completadas.** App publicada: https://humedalvaldi-crypto.github.io/naturista-valdivia-H/
+**Fases 1, 3 y 4 completadas.** App publicada: https://humedalvaldi-crypto.github.io/naturista-valdivia-H/
 Qué funciona hoy y qué está planificado: ver la pantalla de inicio de la app o
 `app/lib/core/router/app_modules.dart`, y `docs/`.
 
@@ -24,7 +24,7 @@ Qué funciona hoy y qué está planificado: ver la pantalla de inicio de la app 
 | 1 | Auditoría del entorno y estructura | ✅ |
 | 2 | App Flutter: navegación, temas, idiomas | Base hecha en Fase 1 (navegación adaptable, tema claro/oscuro, es/en) |
 | 3 | Firebase Auth + Google Sign-In | ✅ Google y correo/contraseña, registro, verificación, recuperación, rutas protegidas |
-| 4 | Worker, D1, R2, seguridad | API base hecha (`/health`, `/me`, verificación de tokens) |
+| 4 | Worker, D1, R2, seguridad | ✅ Perfiles, archivos en R2, límites de frecuencia, despliegue manual (falta crear la cuenta de Cloudflare: `docs/deployment.md`) |
 | 5 | Perfiles, publicaciones, social | Pendiente |
 | 6 | Cuadernos de campo y editor de dibujo | Pendiente |
 | 7 | Mapa, observaciones, capas | Pendiente |
@@ -65,6 +65,7 @@ Ver `migration/README.md`. Solo lectura; requiere credenciales de Firebase de le
 - `docs/security.md` — controles implementados y **hallazgos de la app antigua**.
 - `docs/backup-and-recovery.md` — respaldos antes de migrar y reversión.
 - `docs/migration-plan.md` — plan de migración y **decisiones pendientes**.
+- `docs/deployment.md` — cómo desplegar la API en Cloudflare y conectarla a la app.
 
 ## Seguridad
 

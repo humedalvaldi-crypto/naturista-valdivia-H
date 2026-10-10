@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 
+import 'core/config/app_config.dart';
 import 'core/l10n/generated/app_localizations.dart';
+import 'core/network/api_client.dart';
+import 'core/network/api_scope.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/application/auth_controller.dart';
@@ -15,11 +18,15 @@ class NaturistaApp extends StatefulWidget {
     super.key,
     required this.settings,
     required this.auth,
+    this.api,
     this.initialLocation,
   });
 
   final SettingsController settings;
   final AuthController auth;
+
+  /// Cliente de la API. Por defecto usa `API_BASE_URL` (vacío = sin servidor).
+  final ApiClient? api;
 
   /// Solo para pruebas: ruta inicial distinta de la del navegador.
   final String? initialLocation;
@@ -35,8 +42,12 @@ class _NaturistaAppState extends State<NaturistaApp> {
     initialLocation: widget.initialLocation,
   );
 
+  late final ApiClient _api =
+      widget.api ?? ApiClient(baseUrl: AppConfig.apiBaseUrl, auth: widget.auth.repository);
+
   @override
   void dispose() {
+    if (widget.api == null) _api.close();
     _router.dispose();
     super.dispose();
   }
@@ -47,7 +58,9 @@ class _NaturistaAppState extends State<NaturistaApp> {
       controller: widget.settings,
       child: AuthScope(
         controller: widget.auth,
-        child: ListenableBuilder(
+        child: ApiScope(
+          client: _api,
+          child: ListenableBuilder(
           listenable: widget.settings,
           builder: (context, _) {
             return MaterialApp.router(
@@ -64,9 +77,10 @@ class _NaturistaAppState extends State<NaturistaApp> {
                 GlobalWidgetsLocalizations.delegate,
                 GlobalCupertinoLocalizations.delegate,
               ],
-              routerConfig: _router,
-            );
-          },
+                routerConfig: _router,
+              );
+            },
+          ),
         ),
       ),
     );

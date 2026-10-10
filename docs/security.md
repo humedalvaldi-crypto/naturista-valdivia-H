@@ -14,10 +14,26 @@
 | Auditoría de migración sin escrituras | `migration/test/read-only-guard.test.ts` | Sí |
 | Secretos fuera del repo (`.gitignore`, `.env.example`, `.dev.vars.example`) | raíz | Revisión manual |
 
+## Implementado en la Fase 4
+
+| Control | Dónde | Probado |
+|---|---|---|
+| Archivos: tipo comprobado por la firma del archivo (no solo por Content-Type), lista blanca por uso | `worker/src/services/media-types.ts` | Sí (HTML disfrazado de JPEG, PNG declarado como JPEG, audio como foto) |
+| Límite de tamaño por uso, cortando la lectura al superarlo | `worker/src/routes/media.ts` | Sí (413) |
+| Clave de objeto generada por el servidor (`u/{uid}/{uso}/{uuid}.{ext}`) | `routes/media.ts` | Sí |
+| Archivos privados por defecto; solo el dueño, archivo público (fotos de perfil) o URL firmada HMAC de 1 h | `routes/media.ts`, `services/signed-url.ts` | Sí (otra persona y anónimo reciben 404; firma alterada y caducidad alterada fallan) |
+| Borrado coordinado D1 + R2; barrido diario de borrados pendientes y huérfanos (> 24 h) | `services/maintenance.ts`, cron | Sí |
+| Respuestas de archivos con `nosniff`, `Content-Security-Policy: sandbox` | `routes/media.ts` | Sí |
+| Límites de frecuencia por usuario o IP (429 + `Retry-After`) | `middleware/rate-limit.ts`, `wrangler.toml` | Sí |
+| Paginación por cursor con tope de 50 por página | `services/pagination.ts` | Sí |
+| Perfil: nombre de usuario único, campos validados, imágenes solo propias y del tipo correcto | `routes/profiles.ts` | Sí |
+| Perfiles privados ocultos (404) a terceros | `routes/profiles.ts` | Sí |
+| Token inválido en ruta pública → 401 (no se ignora) | `middleware/auth.ts` | Sí |
+| Despliegue solo manual, con aprobación y respaldo previo de D1 | `.github/workflows/deploy-api.yml` | — |
+
 ## Pendiente (con fase)
 
-- Límites de frecuencia por usuario e IP (Fase 4, Cloudflare Rate Limiting binding).
-- Subidas a R2: tipos MIME por lista blanca, comprobación de firma de archivo, límites de tamaño, nombres de objeto generados por el servidor, URLs de acceso temporal (Fase 4).
+- Perfiles visibles solo para seguidores (requiere la tabla `follows`, Fase 5).
 - Autorización por recurso y propietario en cada módulo, con pruebas cruzadas entre usuarios (Fases 5–7).
 - Ubicaciones sensibles: ocultar o degradar coordenadas de especies amenazadas (Fase 7).
 - Moderación y denuncias (Fase 5).

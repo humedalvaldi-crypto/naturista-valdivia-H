@@ -133,5 +133,8 @@
   "publicProfileSoon": "Public profile, species album and achievements: Phase 5.",
   "signIn": "Sign in",
   "homeGreeting": "Hello, {name}",
-  "homeSignInPrompt": "Sign in to keep your observations and field notebooks."
+  "homeSignInPrompt": "Sign in to keep your observations and field notebooks.",
+  "serverSyncing": "Connecting to the server…",
+  "serverSynced": "Account synced with the Naturista Valdivia server.",
+  "serverSyncError": "Couldn't sync your account."
 }
