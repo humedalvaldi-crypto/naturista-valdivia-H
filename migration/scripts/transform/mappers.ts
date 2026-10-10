@@ -122,12 +122,13 @@ export function mapSettings(ctx: Context, d: SnapshotDoc) {
   const langRaw = r.str('language', 'idioma') ?? (r.obj('language')?.['code'] as string | undefined) ?? null;
   const language = langRaw && /^en/i.test(langRaw) ? 'en' : 'es';
   const dark = r.bool('darkMode');
-  const themeRaw = r.str('theme') ?? (r.obj('accessibility')?.['theme'] as string | undefined) ?? null;
+  const themeRaw =
+    r.str('theme') ?? (r.obj('appearance')?.['theme'] as string | undefined) ?? (r.obj('accessibility')?.['theme'] as string | undefined) ?? null;
   const theme = themeRaw === 'dark' || dark === true ? 'dark' : themeRaw === 'light' || dark === false ? 'light' : 'system';
   // `twoFactor` era una simulación sin efecto (docs/security.md): no se conserva.
   r.known('twoFactor');
   const extra: Doc = {};
-  for (const k of ['accessibility', 'notebook', 'map', 'stickers', 'privacy', 'notifications']) {
+  for (const k of ['appearance', 'accessibility', 'notebook', 'map', 'stickers', 'privacy', 'notifications']) {
     if (d.data[k] !== undefined) {
       extra[k] = d.data[k];
       r.known(k);
@@ -164,7 +165,7 @@ export function mapProfile(ctx: Context, d: SnapshotDoc) {
   const banner = ctx.plan.mediaFrom(r.str('bannerURL', 'bannerUrl', 'coverUrl'), {
     ownerId: uid, purpose: 'profile-banner', visibility: 'public', collection: c, docId: d.id, field: 'bannerURL',
   });
-  r.known('createdAt', 'updatedAt', 'uid', 'userId', 'followersCount', 'followingCount', 'postsCount');
+  r.known('createdAt', 'updatedAt', 'uid', 'userId', 'followersCount', 'followingCount', 'postsCount', 'profileCompleted', 'online', 'lastSeen', 'profileViews', 'bannerMimeType', 'photoAssetId', 'bannerAssetId');
   // Si el nombre de usuario ya lo tomó otra persona, se deja vacío (no se inventa otro).
   ctx.plan.add(
     '040-profiles',
@@ -398,7 +399,7 @@ export function mapNotebook(ctx: Context, d: SnapshotDoc) {
   const cover = ctx.plan.mediaFrom(r.str('coverImageUrl', 'coverUrl', 'imageUrl'), {
     ownerId: owner, purpose: 'notebook-photo', visibility: isPublic ? 'public' : 'private', collection: c, docId: d.id, field: 'coverImageUrl',
   });
-  r.known('pageCount', 'pagesCount', 'likes', 'likesCount');
+  r.known('pageCount', 'pagesCount', 'likes', 'likesCount', 'category', 'iconName');
   const created = r.date('createdAt', 'timestamp') ?? ctx.migratedAt;
   ctx.plan.add(
     '090-notebooks',
@@ -424,6 +425,13 @@ export function mapNotebook(ctx: Context, d: SnapshotDoc) {
 /** Las páginas se ordenan por su número, luego por fecha, para asignar posiciones 0..n-1. */
 export function mapNotebookPages(ctx: Context, docs: SnapshotDoc[]) {
   const c = 'notebook_pages';
+  // Escala de los elementos antiguos (píxeles) al lienzo nuevo de 1000 de ancho:
+  // se toma el ancho que realmente ocupan los elementos (mínimo 800 px).
+  let legacyWidth = 800;
+  for (const d of docs) {
+    for (const e of legacyElements(d.data)) legacyWidth = Math.max(legacyWidth, (num(e['x']) ?? 0) + (num(e['width']) ?? 0));
+  }
+  const scale = 1000 / legacyWidth;
   const byNotebook = new Map<string, { d: SnapshotDoc; order: number; created: string }[]>();
   for (const d of docs) {
     ctx.plan.collection(c).read++;
@@ -442,21 +450,31 @@ export function mapNotebookPages(ctx: Context, docs: SnapshotDoc[]) {
   for (const [nbLegacy, list] of byNotebook) {
     const nb = ctx.notebookOwner.get(nbLegacy)!;
     list.sort((a, b) => a.order - b.order || a.created.localeCompare(b.created) || a.d.id.localeCompare(b.d.id));
-    list.forEach(({ d }, position) => mapPage(ctx, d, nb, position));
+    list.forEach(({ d }, position) => mapPage(ctx, d, nb, position, scale));
   }
 }
 
-function mapPage(ctx: Context, d: SnapshotDoc, nb: { id: string; owner: string; isPublic: boolean }, position: number) {
+const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
+
+function legacyElements(data: Doc): Doc[] {
+  const v = data['elements'];
+  return Array.isArray(v) ? v.filter((e): e is Doc => !!e && typeof e === 'object' && !Array.isArray(e)) : [];
+}
+
+function mapPage(ctx: Context, d: SnapshotDoc, nb: { id: string; owner: string; isPublic: boolean }, position: number, scale: number) {
   const c = 'notebook_pages';
   const r = new FieldReader(d.data);
-  r.known('notebookId', 'pageNumber', 'order', 'index', 'position', 'numero');
+  r.known('notebookId', 'pageNumber', 'order', 'index', 'position', 'numero', 'category', 'elements');
   const author = r.str('userId', 'ownerId', 'uid');
   if (author && author !== nb.owner) ctx.plan.skip(c, 'autor distinto del dueño del cuaderno (se migra con el dueño)');
   const id = stableId(`notebook_pages/${d.id}`);
   const coords = r.coords(['latitude', 'lat'], ['longitude', 'lng', 'lon'], ['location', 'coords', 'geo']);
   const sourceRaw = r.str('locationSource');
-  const pageDate = r.date('date', 'fecha', 'pageDate', 'createdAt');
+  const dateStr = r.str('dateStr');
+  const pageDate = (dateStr && /^\d{4}-\d{2}-\d{2}/.test(dateStr) ? `${dateStr.slice(0, 10)}T00:00:00.000Z` : null) ?? r.date('date', 'fecha', 'pageDate', 'createdAt');
   const created = r.date('createdAt', 'timestamp') ?? ctx.migratedAt;
+  const species = r.str('speciesName', 'species', 'especie');
+  const scientific = r.str('scientificName', 'nombreCientifico');
   ctx.plan.add(
     '100-notebook-pages',
     c,
@@ -465,34 +483,83 @@ function mapPage(ctx: Context, d: SnapshotDoc, nb: { id: string; owner: string; 
       id,
       notebook_id: nb.id,
       position,
-      title: truncate(r.str('title', 'titulo'), 120),
+      title: truncate(r.str('title', 'titulo') ?? species, 120),
       page_date: pageDate ? pageDate.slice(0, 10) : null,
       location_name: truncate(r.str('locationName', 'place', 'lugar'), 120),
       latitude: coords?.lat ?? null,
       longitude: coords?.lng ?? null,
       location_source: coords && (sourceRaw === 'gps' || sourceRaw === 'manual') ? sourceRaw : null,
-      weather: truncate(r.str('weather', 'clima'), 80),
+      weather: truncate(r.str('weather', 'clima', 'weatherCondition'), 80),
       created_at: created,
       updated_at: r.date('updatedAt') ?? created,
       legacy_id: d.id,
     }),
   );
 
-  // Elementos: texto, dibujo (imagen incrustada) y foto.
   let z = 1;
   const visibility = nb.isPublic ? 'public' : 'private';
+  const elements = legacyElements(d.data);
+
+  // 1) Elementos colocados en la página antigua (texto e imágenes), escalados al lienzo nuevo.
+  elements.forEach((e, i) => {
+    const box = {
+      x: Math.round((num(e['x']) ?? 0) * scale),
+      y: Math.round((num(e['y']) ?? 0) * scale),
+      width: Math.max(20, Math.round((num(e['width']) ?? 300) * scale)),
+      height: Math.max(20, Math.round((num(e['height']) ?? 100) * scale)),
+      z: z++,
+      rotation: num(e['rotation']) ?? 0,
+    };
+    const localId = `antiguo-${i + 1}`;
+    const image = typeof e['imageUrl'] === 'string' ? (e['imageUrl'] as string) : null;
+    const content = typeof e['content'] === 'string' ? (e['content'] as string) : null;
+    if (image) {
+      const asset = ctx.plan.mediaFrom(image, { ownerId: nb.owner, purpose: 'notebook-photo', visibility, collection: c, docId: d.id, field: `elements[${i}]` });
+      if (asset) element(ctx, id, localId, 'photo', box, {}, asset);
+    } else if (content) {
+      const st = (e['style'] && typeof e['style'] === 'object' ? e['style'] : {}) as Doc;
+      const color = typeof st['color'] === 'string' && /^#[0-9a-fA-F]{6}$/.test(st['color']) ? st['color'] : '#22261F';
+      element(ctx, id, localId, 'text', box, {
+        text: truncate(content, 20_000),
+        size: Math.max(10, Math.round((num(st['fontSize']) ?? 18) * scale)),
+        color,
+        ...(num(st['fontWeight']) !== null && num(st['fontWeight'])! >= 600 ? { bold: true } : {}),
+        ...(st['italic'] === true ? { italic: true } : {}),
+        ...(st['align'] === 'center' || st['align'] === 'right' ? { align: st['align'] } : {}),
+      }, null);
+    } else {
+      ctx.plan.skip(c, 'elemento antiguo sin texto ni imagen');
+    }
+  });
+
+  // 2) Campos de la página (especie, descripción, dibujo, foto) bajo los elementos, si existen.
+  if (species || scientific) {
+    element(ctx, id, 'especie', 'species', { x: 60, y: elements.length ? 60 : 40, width: 880, height: 90, z: z++, rotation: 0 }, {
+      label: [species, scientific ? `(${scientific})` : null].filter(Boolean).join(' '),
+      ...(species ? { commonName: species } : {}),
+      ...(scientific ? { scientificName: scientific } : {}),
+    }, null);
+  }
   const drawing = r.str('drawing', 'drawingDataUrl', 'drawingUrl', 'canvasData', 'sketch', 'imageData');
   if (drawing) {
     const asset = ctx.plan.mediaFrom(drawing, { ownerId: nb.owner, purpose: 'notebook-photo', visibility, collection: c, docId: d.id, field: 'drawing' });
-    if (asset) element(ctx, id, 'dibujo', 'photo', { x: 0, y: 0, width: 1000, height: 1414, z: z++ }, { legacy: 'drawing' }, asset);
+    if (asset) element(ctx, id, 'dibujo', 'photo', { x: 0, y: 0, width: 1000, height: 1414, z: 0, rotation: 0 }, { legacy: 'drawing' }, asset);
   }
   const photo = r.str('imageUrl', 'photoUrl', 'photoURL', 'image');
   if (photo) {
     const asset = ctx.plan.mediaFrom(photo, { ownerId: nb.owner, purpose: 'notebook-photo', visibility, collection: c, docId: d.id, field: 'imageUrl' });
-    if (asset) element(ctx, id, 'foto', 'photo', { x: 100, y: 760, width: 800, height: 560, z: z++ }, {}, asset);
+    if (asset) element(ctx, id, 'foto', 'photo', elements.length ? { x: 100, y: 1060, width: 480, height: 340, z: z++, rotation: 0 } : { x: 100, y: 760, width: 800, height: 560, z: z++, rotation: 0 }, {}, asset);
   }
-  const text = r.str('content', 'text', 'notes', 'body', 'texto', 'notas');
-  if (text) element(ctx, id, 'texto', 'text', { x: 60, y: 140, width: 880, height: 600, z: z++ }, { text: truncate(text, 20_000), size: 28, color: '#22261F' }, null);
+  const texts = [r.str('content', 'text', 'notes', 'body', 'texto', 'notas'), r.str('description', 'descripcion'), r.str('datoPersonalizado')].filter(
+    (t): t is string => !!t,
+  );
+  if (texts.length) {
+    element(ctx, id, 'texto', 'text', elements.length ? { x: 600, y: 1060, width: 360, height: 340, z: z++, rotation: 0 } : { x: 60, y: 140, width: 880, height: 600, z: z++, rotation: 0 }, {
+      text: truncate(texts.join('\n\n'), 20_000),
+      size: 28,
+      color: '#22261F',
+    }, null);
+  }
   if (r.str('audioNoteUrl', 'audioUrl')) ctx.plan.skip(c, 'nota de audio: el editor nuevo aún no tiene audio (no se migra)');
   const sticker = r.str('sticker', 'stickerId');
   if (sticker) ctx.plan.skip(c, 'pegatina antigua sin equivalente (no se migra)');
@@ -503,8 +570,8 @@ function element(
   ctx: Context,
   pageId: string,
   localId: string,
-  type: 'text' | 'photo',
-  box: { x: number; y: number; width: number; height: number; z: number },
+  type: 'text' | 'photo' | 'species',
+  box: { x: number; y: number; width: number; height: number; z: number; rotation?: number },
   data: Doc,
   mediaId: string | null,
 ) {
@@ -520,7 +587,7 @@ function element(
       y: box.y,
       width: box.width,
       height: box.height,
-      rotation: 0,
+      rotation: Math.max(-360, Math.min(360, box.rotation ?? 0)),
       z: box.z,
       data_json: JSON.stringify(data),
       media_asset_id: ref(ctx, 'notebook_elements', { page_id: pageId, id: localId }, 'media_asset_id', mediaId),
@@ -639,6 +706,8 @@ export function mapChatMessages(ctx: Context, docs: SnapshotDoc[]) {
   }
   for (const { d, r, convId, sender, body, created } of rows) {
     const read = r.bool('read', 'isRead', 'seen');
+    r.known('senderName', 'chatId');
+    if (r.str('imageUrl')) ctx.plan.skip(c, 'imagen adjunta en un mensaje: los mensajes nuevos aún no tienen imágenes (se copia solo el texto)');
     ctx.plan.add(
       '140-messages',
       c,

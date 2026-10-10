@@ -33,10 +33,13 @@ export function writeFixtureSnapshot(): string {
         photoURL: url('user-files/uidAna/avatar/a.jpg'), campoRaro: 1,
       },
     },
-    { id: 'uidBeto', data: { nombre: 'Beto', username: 'ana.rojas', isPrivate: true } }, // nombre de usuario repetido
+    { id: 'uidBeto', data: { nombre: 'Beto', username: 'ana.rojas', isPrivate: true, photoURL: 'https://lh3.googleusercontent.com/a/foto-beto=s96-c' } }, // nombre de usuario repetido
     { id: 'anon', data: { nombre: 'Anónimo' } },
   ]);
-  fs('settings', [{ id: 'uidAna', data: { language: 'en', darkMode: true, twoFactor: { enabled: true }, map: { layer: 'sat' } } }]);
+  fs('settings', [
+    { id: 'uidAna', data: { language: 'en', darkMode: true, twoFactor: { enabled: true }, map: { layer: 'sat' } } },
+    { id: 'uidBeto', data: { appearance: { theme: 'light', fontSize: 'large' } } },
+  ]);
   fs('species_catalog', [
     { id: 'sc1', data: { scientificName: 'Lontra provocax', nombreComun: 'Huillín', categoria: 'Mamíferos', estadoConservacion: 'En peligro' } },
     { id: 'sc2', data: { scientificName: 'Phalacrocorax brasilianus', nombreComun: 'Yeco', categoria: 'Aves', estadoConservacion: 'LC' } },
@@ -67,6 +70,18 @@ export function writeFixtureSnapshot(): string {
     { id: 'pg-b', data: { notebookId: 'nb1', userId: 'uidAna', pageNumber: 2, content: 'Segunda página', drawing: 'data:image/png;base64,' + PNG_1x1 } },
     { id: 'pg-a', data: { notebookId: 'nb1', userId: 'uidAna', pageNumber: 1, content: 'Canto de chucao', latitude: -39.86, longitude: -73.23, locationSource: 'gps', audioNoteUrl: url('user-files/uidAna/audio/n.m4a') } },
     { id: 'pg-x', data: { notebookId: 'nb2', content: 'perdida' } },
+    {
+      id: 'pg-c',
+      data: {
+        notebookId: 'nb1', userId: 'uidAna', pageNumber: 3, speciesName: 'Chucao', scientificName: 'Scelorchilus rubecula',
+        description: 'Cantaba en el sotobosque', datoPersonalizado: 'Día nublado, 8 °C', weatherCondition: 'Nublado', dateStr: '2025-09-14', category: 'aves',
+        elements: [
+          { id: 'e1', type: 'text', x: 40, y: 80, width: 400, height: 60, rotation: -5, content: 'Título de campo', style: { align: 'center', color: '#2E5B2A', fontSize: 32, fontWeight: 700, italic: true } },
+          { id: 'e2', type: 'image', x: 100, y: 200, width: 600, height: 400, rotation: 0, imageUrl: 'data:image/png;base64,' + PNG_1x1 },
+          { id: 'e3', type: 'image', x: 0, y: 0, width: 10, height: 10, rotation: 0, imageUrl: 'blob:https://app/xyz' },
+        ],
+      },
+    },
   ]);
   fs('observations', [
     { id: 'o1', data: { userId: 'uidAna', species: 'Huillín', location: { $geo: [-39.8612, -73.2345] }, date: ts('2025-07-01T09:00:00Z'), imageUrl: url('user-files/uidAna/observations/o1.jpg') } },

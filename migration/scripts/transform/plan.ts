@@ -1,5 +1,5 @@
 import { MAX_STATEMENT_BYTES } from './sql';
-import { assetIdForInline, assetIdForStorage, parseDataUrl, storagePathFromUrl, type MediaEntry, type MediaPurpose } from './media';
+import { allowedExternalImage, assetIdForInline, assetIdForStorage, assetIdForUrl, parseDataUrl, storagePathFromUrl, type MediaEntry, type MediaPurpose } from './media';
 
 /** Etapas en orden de aplicación (respetan las claves foráneas). */
 export const STAGES = [
@@ -126,10 +126,24 @@ export class Plan {
       return assetId;
     }
     const path = storagePathFromUrl(value);
+    if (!path && allowedExternalImage(value)) {
+      const assetId = assetIdForUrl(value);
+      const prev = this.media.get(assetId);
+      if (prev) {
+        if (o.visibility === 'public') prev.visibility = 'public';
+      } else {
+        this.media.set(assetId, {
+          assetId, ownerId: o.ownerId, purpose: o.purpose, visibility: o.visibility,
+          source: { kind: 'url', url: value }, legacyStoragePath: null, legacyAssetId: null,
+        });
+      }
+      return assetId;
+    }
     if (!path) {
       let host = 'desconocido';
       try {
-        host = new URL(value).hostname;
+        const u = new URL(value);
+        host = u.hostname || `${u.protocol} (enlace temporal del navegador)`;
       } catch {
         /* no es URL */
       }

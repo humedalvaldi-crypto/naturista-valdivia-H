@@ -23,7 +23,7 @@ import { AwsClient } from 'aws4fetch';
 import { applicationDefault, initializeApp } from 'firebase-admin/app';
 import { BucketUnavailable, resolveBucket } from './lib/bucket';
 import { redact } from './lib/redact';
-import type { MediaEntry } from './transform/media';
+import { allowedExternalImage, type MediaEntry } from './transform/media';
 import { mediaChunkSql, mediaInsertSql, prepareMedia, type CopiedMedia } from './transform/media-copy';
 
 const { values } = parseArgs({
@@ -88,8 +88,21 @@ if (confirm && store === 'r2') {
   r2 = { client: new AwsClient({ accessKeyId: key, secretAccessKey: secret, service: 's3', region: 'auto' }), base: `https://${account}.r2.cloudflarestorage.com/${bucket}` };
 }
 
+/** Imagen de un servidor permitido (fotos de perfil de Google, Unsplash), con tope de tamaño y tiempo. */
+async function download(url: string): Promise<Uint8Array> {
+  if (!allowedExternalImage(url)) throw new Error('servidor externo no permitido');
+  const res = await fetch(url, { redirect: 'follow', signal: AbortSignal.timeout(20_000) });
+  if (!res.ok) throw new Error(`servidor externo respondió ${res.status}`);
+  const len = Number(res.headers.get('content-length') ?? 0);
+  if (len > 10 * 1024 * 1024) throw new Error('imagen externa demasiado grande');
+  const buf = new Uint8Array(await res.arrayBuffer());
+  if (buf.byteLength > 10 * 1024 * 1024) throw new Error('imagen externa demasiado grande');
+  return buf;
+}
+
 async function readSource(e: MediaEntry): Promise<Uint8Array> {
   if (e.source.kind === 'inline') return new Uint8Array(readFileSync(join(planDir, 'inline', e.source.file)));
+  if (e.source.kind === 'url') return download(e.source.url);
   if (!storageBucket) throw new Error('Firebase Storage no accesible');
   const [buf] = await storageBucket.file(e.source.path).download(); // solo lectura
   return new Uint8Array(buf);

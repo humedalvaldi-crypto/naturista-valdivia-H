@@ -10,7 +10,22 @@ export type MediaPurpose =
   | 'post-photo'
   | 'map-place-photo';
 
-export type MediaSource = { kind: 'storage'; path: string } | { kind: 'inline'; file: string; contentType: string };
+export type MediaSource =
+  | { kind: 'storage'; path: string }
+  | { kind: 'inline'; file: string; contentType: string }
+  | { kind: 'url'; url: string };
+
+/** Servidores externos desde los que se copian imágenes (fotos de perfil de Google, Unsplash). */
+export const ALLOWED_IMAGE_HOSTS = [/(^|\.)googleusercontent\.com$/, /(^|\.)unsplash\.com$/];
+
+export function allowedExternalImage(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return u.protocol === 'https:' && ALLOWED_IMAGE_HOSTS.some((re) => re.test(u.hostname));
+  } catch {
+    return false;
+  }
+}
 
 export interface MediaEntry {
   assetId: string;
@@ -51,4 +66,5 @@ export function parseDataUrl(v: string): { contentType: string; bytes: Buffer } 
 }
 
 export const assetIdForStorage = (path: string) => stableId(`storage/${path}`);
+export const assetIdForUrl = (url: string) => stableId(`url/${url}`);
 export const assetIdForInline = (collection: string, docId: string, field: string) => stableId(`inline/${collection}/${docId}/${field}`);

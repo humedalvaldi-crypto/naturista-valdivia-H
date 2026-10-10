@@ -200,17 +200,25 @@ class _ElementBox extends StatelessWidget {
     switch (e.type) {
       case ElementType.text:
         final size = ((e.data['size'] as num?)?.toDouble() ?? 32) * scale;
+        final align = switch (e.data['align']) {
+          'center' => (TextAlign.center, Alignment.topCenter),
+          'right' => (TextAlign.right, Alignment.topRight),
+          _ => (TextAlign.left, Alignment.topLeft),
+        };
         return Padding(
           padding: EdgeInsets.all(6 * scale),
           child: FittedBox(
             fit: BoxFit.scaleDown,
-            alignment: Alignment.topLeft,
+            alignment: align.$2,
             child: Text(
               e.data['text'] as String? ?? '',
+              textAlign: align.$1,
               style: TextStyle(
                 fontSize: size,
                 height: 1.25,
                 color: parseHex(e.data['color'] as String? ?? '#22261F'),
+                fontWeight: e.data['bold'] == true ? FontWeight.w700 : FontWeight.w400,
+                fontStyle: e.data['italic'] == true ? FontStyle.italic : FontStyle.normal,
               ),
             ),
           ),

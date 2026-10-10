@@ -141,17 +141,44 @@ describe('plan sobre una instantánea de prueba', () => {
     const db = freshDb();
     applyFiles(db, join(out, 'sql'), files);
     expect(db.prepare('SELECT title, visibility, color, page_count FROM notebooks').all()).toEqual([
-      { title: 'Salidas 2025', visibility: 'public', color: '#2F6F7E', page_count: 2 },
+      { title: 'Salidas 2025', visibility: 'public', color: '#2F6F7E', page_count: 3 },
     ]);
     const pages = db.prepare('SELECT legacy_id, position, latitude, location_source FROM notebook_pages ORDER BY position').all();
     expect(pages).toEqual([
       { legacy_id: 'pg-a', position: 0, latitude: -39.86, location_source: 'gps' },
       { legacy_id: 'pg-b', position: 1, latitude: null, location_source: null },
+      { legacy_id: 'pg-c', position: 2, latitude: null, location_source: null },
     ]);
-    const texts = db.prepare("SELECT data_json FROM notebook_elements WHERE type = 'text'").all() as { data_json: string }[];
+    const pageA = (id: string) => `(SELECT id FROM notebook_pages WHERE legacy_id = '${id}')`;
+    const texts = db.prepare(`SELECT data_json FROM notebook_elements WHERE type = 'text' AND page_id IN (${pageA('pg-a')}, ${pageA('pg-b')})`).all() as { data_json: string }[];
     expect(texts.map((t) => JSON.parse(t.data_json).text).sort()).toEqual(['Canto de chucao', 'Segunda página']);
-    expect(count(db, "SELECT count(*) n FROM notebook_elements WHERE type = 'photo'")).toBe(1); // dibujo incrustado
+    expect(count(db, `SELECT count(*) n FROM notebook_elements WHERE type = 'photo' AND page_id = ${pageA('pg-b')}`)).toBe(1); // dibujo incrustado
     expect(report.collections['notebook_pages']!.skipped).toMatchObject({ 'cuaderno no migrado': 1 });
+  });
+
+  it('páginas antiguas: elementos con posición, estilo e imagen; especie, descripción, clima y fecha', () => {
+    const db = freshDb();
+    applyFiles(db, join(out, 'sql'), files);
+    const page = db.prepare("SELECT id, title, page_date, weather FROM notebook_pages WHERE legacy_id = 'pg-c'").get() as Record<string, string>;
+    expect(page).toMatchObject({ title: 'Chucao', page_date: '2025-09-14', weather: 'Nublado' });
+    const els = db.prepare('SELECT id, type, x, y, width, rotation, data_json FROM notebook_elements WHERE page_id = ? ORDER BY z').all(page['id']!) as Record<string, unknown>[];
+    const byId = Object.fromEntries(els.map((e) => [e['id'], e]));
+    // Escala 1000/800: x 40 → 50, ancho 400 → 500.
+    expect(byId['antiguo-1']).toMatchObject({ type: 'text', x: 50, y: 100, width: 500, rotation: -5 });
+    expect(JSON.parse(byId['antiguo-1']!['data_json'] as string)).toEqual({ text: 'Título de campo', size: 40, color: '#2E5B2A', bold: true, italic: true, align: 'center' });
+    expect(byId['antiguo-2']).toMatchObject({ type: 'photo' });
+    expect(byId['antiguo-3']).toBeUndefined(); // blob: no se puede copiar
+    expect(JSON.parse(byId['especie']!['data_json'] as string).label).toBe('Chucao (Scelorchilus rubecula)');
+    expect(JSON.parse(byId['texto']!['data_json'] as string).text).toBe('Cantaba en el sotobosque\n\nDía nublado, 8 °C');
+    expect(report.collections['notebook_pages']!.unmappedFields).not.toHaveProperty('elements');
+  });
+
+  it('fotos de perfil de Google se copian; tema de "appearance"', () => {
+    const manifest = readFileSync(join(out, 'media-manifest.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+    expect(manifest.find((m) => m.source.kind === 'url')).toMatchObject({ ownerId: 'uidBeto', purpose: 'profile-photo', source: { url: 'https://lh3.googleusercontent.com/a/foto-beto=s96-c' } });
+    const db = freshDb();
+    applyFiles(db, join(out, 'sql'), files);
+    expect(db.prepare("SELECT theme FROM user_settings WHERE user_id = 'uidBeto'").get()).toEqual({ theme: 'light' });
   });
 
   it('publicaciones, comunidades, seguidores y mensajes', () => {
@@ -188,9 +215,9 @@ describe('plan sobre una instantánea de prueba', () => {
     expect(byPath('user-files/uidAna/observations/extra.jpg')).toMatchObject({ purpose: 'observation-photo', visibility: 'private', legacyAssetId: 'fa1' });
     expect(byPath('user-files/uidAna/notebooks/c.jpg')).toMatchObject({ visibility: 'public' }); // cuaderno público
     const inline = manifest.filter((m) => m.source.kind === 'inline');
-    expect(inline).toHaveLength(2); // foto del post p2 y dibujo de la página
+    expect(inline).toHaveLength(3); // foto del post p2, dibujo de la página y foto de un elemento antiguo
     for (const m of inline) expect(existsSync(join(out, 'inline', m.source.file))).toBe(true);
-    expect(report.media.externalHosts).toEqual({ 'i.imgur.com': 1 });
+    expect(report.media.externalHosts).toEqual({ 'i.imgur.com': 1, 'blob: (enlace temporal del navegador)': 1 });
   });
 
   it('informe: colecciones no migradas y no previstas', () => {
