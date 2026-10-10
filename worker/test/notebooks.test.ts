@@ -237,3 +237,35 @@ describe('páginas', () => {
     expect(rows!.n).toBeGreaterThan(100_000);
   });
 });
+
+describe('me gusta en cuadernos', () => {
+  it('dar y quitar me gusta en un cuaderno público; uno privado ajeno no existe', async () => {
+    const { makeApp, makeSigner } = await import('./helpers');
+    const signer = await makeSigner();
+    const call = makeApp(signer.jwks);
+    const as = async (uid: string) => {
+      const token = await signer.sign({ sub: uid });
+      return async (method: string, path: string, body?: unknown) => {
+        const res = await call(`/api/v1${path}`, {
+          method,
+          headers: { Authorization: `Bearer ${token}`, ...(body ? { 'Content-Type': 'application/json' } : {}) },
+          body: body ? JSON.stringify(body) : undefined,
+        });
+        return { status: res.status, body: (await res.json()) as any };
+      };
+    };
+    const ana = await as('like-ana');
+    const beto = await as('like-beto');
+    await ana('GET', '/me');
+    await beto('GET', '/me');
+    const pub = (await ana('POST', '/notebooks', { title: 'Público', visibility: 'public' })).body.data;
+    const priv = (await ana('POST', '/notebooks', { title: 'Privado' })).body.data;
+    if (pub.visibility !== 'public') await ana('PATCH', `/notebooks/${pub.id}`, { visibility: 'public' });
+
+    expect((await beto('PUT', `/notebooks/${pub.id}/like`)).body.data).toEqual({ likeCount: 1, likedByMe: true });
+    expect((await beto('PUT', `/notebooks/${pub.id}/like`)).body.data).toEqual({ likeCount: 1, likedByMe: true });
+    expect((await ana('GET', `/notebooks/${pub.id}`)).body.data).toMatchObject({ likeCount: 1, likedByMe: false });
+    expect((await beto('DELETE', `/notebooks/${pub.id}/like`)).body.data).toEqual({ likeCount: 0, likedByMe: false });
+    expect((await beto('PUT', `/notebooks/${priv.id}/like`)).status).toBe(404);
+  });
+});

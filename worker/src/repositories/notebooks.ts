@@ -93,6 +93,24 @@ export class NotebooksRepository {
   }
 
   /** Papelera: cuadernos propios borrados hace menos de [days] días. */
+  async likes(notebookId: string, viewer: string | null): Promise<{ likeCount: number; likedByMe: boolean }> {
+    const row = await this.db
+      .prepare(
+        `SELECT COUNT(*) AS n, COALESCE(SUM(user_id = ?2), 0) AS mine FROM notebook_likes WHERE notebook_id = ?1`,
+      )
+      .bind(notebookId, viewer ?? '')
+      .first<{ n: number; mine: number }>();
+    return { likeCount: row?.n ?? 0, likedByMe: (row?.mine ?? 0) > 0 };
+  }
+
+  async like(notebookId: string, userId: string): Promise<void> {
+    await this.db.prepare(`INSERT INTO notebook_likes (notebook_id, user_id) VALUES (?1, ?2) ON CONFLICT DO NOTHING`).bind(notebookId, userId).run();
+  }
+
+  async unlike(notebookId: string, userId: string): Promise<void> {
+    await this.db.prepare(`DELETE FROM notebook_likes WHERE notebook_id = ?1 AND user_id = ?2`).bind(notebookId, userId).run();
+  }
+
   async trash(ownerId: string, days: number): Promise<NotebookRow[]> {
     const since = new Date(Date.now() - days * 86_400_000).toISOString();
     return (

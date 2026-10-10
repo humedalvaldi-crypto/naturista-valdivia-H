@@ -9,6 +9,9 @@ export interface NotificationRow {
   type: NotificationType;
   post_id: string | null;
   conversation_id: string | null;
+  /** Solo en avisos copiados de la app antigua: su texto original. */
+  body: string | null;
+  notebook_id: string | null;
   created_at: string;
   read_at: string | null;
   actor_username: string | null;

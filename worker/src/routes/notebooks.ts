@@ -108,6 +108,7 @@ async function checkMedia(db: D1Database, ownerId: string, ids: string[], makePu
  * PUT    /:id/page-order        reordenar (dueña)
  * GET    /trash                 papelera: borrados hace menos de 30 días (dueña)
  * POST   /:id/restore           sacar de la papelera (dueña)
+ * PUT|DELETE /:id/like           me gusta / quitarlo (sesión; cuaderno visible)
  */
 export const TRASH_DAYS = 30;
 export const notebooksRoutes = new Hono<AppBindings>()
@@ -147,8 +148,25 @@ export const notebooksRoutes = new Hono<AppBindings>()
     return c.json({ data: notebookDto((await repo.get(c.req.param('id')))!) });
   })
   .get('/:id', async (c) => {
-    const n = await readable(new NotebooksRepository(c.env.DB), c.req.param('id'), viewerOf(c));
-    return c.json({ data: notebookDto(n) });
+    const repo = new NotebooksRepository(c.env.DB);
+    const viewer = viewerOf(c);
+    const n = await readable(repo, c.req.param('id'), viewer);
+    return c.json({ data: { ...notebookDto(n), ...(await repo.likes(n.id, viewer)) } });
+  })
+  .put('/:id/like', async (c) => {
+    const repo = new NotebooksRepository(c.env.DB);
+    const uid = c.get('user').uid;
+    const n = await readable(repo, c.req.param('id'), uid);
+    await new UsersRepository(c.env.DB).upsertFromAuth(c.get('user'));
+    await repo.like(n.id, uid);
+    return c.json({ data: await repo.likes(n.id, uid) });
+  })
+  .delete('/:id/like', async (c) => {
+    const repo = new NotebooksRepository(c.env.DB);
+    const uid = c.get('user').uid;
+    const n = await readable(repo, c.req.param('id'), uid);
+    await repo.unlike(n.id, uid);
+    return c.json({ data: await repo.likes(n.id, uid) });
   })
   .patch('/:id', async (c) => {
     const input = await parseBody(c, updateNotebookSchema);

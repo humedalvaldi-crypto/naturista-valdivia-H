@@ -21,6 +21,8 @@ const notificationDto = (n: NotificationRow) => ({
     : null,
   postId: n.post_id,
   conversationId: n.conversation_id,
+  notebookId: n.notebook_id,
+  body: n.body,
   createdAt: n.created_at,
   read: n.read_at !== null,
 });

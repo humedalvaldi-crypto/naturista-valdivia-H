@@ -23,7 +23,7 @@ abstract final class AppTheme {
     if (highContrast) theme = _highContrast(theme);
     if (reduceMotion) {
       theme = theme.copyWith(
-        pageTransitionsTheme: const PageTransitionsTheme(builders: {
+        pageTransitionsTheme: PageTransitionsTheme(builders: {
           for (final p in TargetPlatform.values) p: _NoTransitionsBuilder(),
         }),
       );
