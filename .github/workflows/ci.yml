@@ -81,9 +81,14 @@ jobs:
           lines = open('test.log', encoding='utf-8', errors='replace').read().splitlines()
           for i, line in enumerate(lines):
               if line.rstrip().endswith('[E]'):
-                  # La excepción se imprime ANTES de la línea [E]; se omiten las líneas de progreso.
-                  before = [l for l in lines[max(0, i - 80):i] if not l[:6].count(':') == 1 or not l[:2].isdigit()]
-                  detail = '%0A'.join(l.replace('::', ': ').replace('%', '%25') for l in before[-60:])
+                  # La excepción se imprime ANTES de la línea [E]: se toman las cabeceras
+                  # de cada excepción en las 300 líneas previas con sus 25 líneas siguientes.
+                  window = lines[max(0, i - 300):i]
+                  parts = []
+                  for j, l in enumerate(window):
+                      if 'EXCEPTION CAUGHT' in l:
+                          parts.extend(window[j:j + 25])
+                  detail = '%0A'.join(l.replace('::', ': ').replace('%', '%25') for l in parts[:120])
                   print(f"::error title={line.strip()[:200]}::{detail}")
           PY
             exit 1
