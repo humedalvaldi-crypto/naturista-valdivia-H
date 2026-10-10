@@ -503,5 +503,47 @@
   "viewDetails": "Ver detalle",
   "privateBadge": "Privada",
   "observationSaved": "Observación guardada",
-  "mapServerNotConnected": "Servidor aún no conectado: no se pueden ver ni registrar observaciones."
+  "mapServerNotConnected": "Servidor aún no conectado: no se pueden ver ni registrar observaciones.",
+  "paperPlain": "Liso",
+  "paperLined": "Rayado",
+  "paperGrid": "Cuadriculado",
+  "paperDots": "Punteado",
+  "exportImage": "Exportar imagen",
+  "exportPdf": "Exportar PDF",
+  "exportPreparing": "Preparando el archivo…",
+  "exportReady": "Archivo listo",
+  "exportError": "No se pudo exportar. Inténtalo de nuevo.",
+  "exportProgress": "Página {current} de {total}",
+  "@exportProgress": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "addAudioShort": "Audio",
+  "recordAudioTitle": "Nota de audio",
+  "recordStart": "Grabar",
+  "recordStop": "Detener",
+  "recordSave": "Agregar a la página",
+  "recordAgain": "Grabar de nuevo",
+  "recordingTime": "Grabando… {time}",
+  "@recordingTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "recordLimit": "Máximo 3 minutos.",
+  "micDenied": "No hay permiso para usar el micrófono.",
+  "recordError": "No se pudo grabar. Revisa el micrófono e inténtalo de nuevo.",
+  "audioPlay": "Escuchar",
+  "audioStop": "Detener",
+  "audioPlayError": "No se pudo reproducir el audio.",
+  "audioDefaultLabel": "Nota de audio",
+  "audioLabelHint": "Nombre de la nota (opcional)"
 }

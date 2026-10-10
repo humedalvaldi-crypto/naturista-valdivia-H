@@ -177,6 +177,25 @@ describe('páginas', () => {
     expect((await ana.json('PUT', `/pages/${page.id}`, { version: 1, elements: [photo] })).status).toBe(400);
   });
 
+  it('notas de audio: el elemento guarda su archivo de audio propio', async () => {
+    const ana = await person('pg-audio');
+    // WebM mínimo (firma EBML) como el que graba el navegador.
+    const webm = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 0x9f, 0x42, 0x86, 0x81, 0x01, 0x42, 0xf7, 0x81, 0x01, 0x42, 0xf2, 0x81]);
+    const up = await call('/api/v1/media?purpose=notebook-audio', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${ana.token}`, 'Content-Type': 'audio/webm' },
+      body: webm,
+    });
+    expect(up.status).toBe(201);
+    const audioId = ((await up.json()) as any).data.id;
+    const { page } = await notebookWithPage(ana);
+    const audio = { id: 'a1', type: 'audio', x: 60, y: 60, width: 420, height: 90, mediaAssetId: audioId, data: { label: 'Canto', durationMs: 4200 } };
+    expect((await ana.json('PUT', `/pages/${page.id}`, { version: 1, paper: 'grid', elements: [audio] })).status).toBe(200);
+    const read = (await ana.json('GET', `/pages/${page.id}`)).body.data;
+    expect(read.paper).toBe('grid');
+    expect(read.elements[0]).toMatchObject({ type: 'audio', mediaAssetId: audioId, mediaUrl: `/api/v1/media/${audioId}` });
+  });
+
   it('agregar, reordenar, duplicar y borrar páginas', async () => {
     const ana = await person('pg-order');
     const { nb, page: p1 } = await notebookWithPage(ana);

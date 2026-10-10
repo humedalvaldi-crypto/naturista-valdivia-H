@@ -15,12 +15,14 @@ class PageCanvasView extends StatelessWidget {
     required this.scale,
     required this.photoBuilder,
     required this.onEditText,
+    this.audioBuilder,
   });
 
   final PageEditorController controller;
   final double scale;
   final Widget Function(PageElement) photoBuilder;
   final void Function(PageElement) onEditText;
+  final Widget Function(PageElement)? audioBuilder;
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +60,7 @@ class PageCanvasView extends StatelessWidget {
                 interactive: editable && !drawing,
                 selected: c.selectedId == e.id && editable && !drawing,
                 photoBuilder: photoBuilder,
+                audioBuilder: audioBuilder,
                 onEditText: onEditText,
               ),
           Positioned.fill(
@@ -99,6 +102,7 @@ class _ElementBox extends StatelessWidget {
     required this.selected,
     required this.photoBuilder,
     required this.onEditText,
+    this.audioBuilder,
   });
 
   final PageElement element;
@@ -108,6 +112,7 @@ class _ElementBox extends StatelessWidget {
   final bool selected;
   final Widget Function(PageElement) photoBuilder;
   final void Function(PageElement) onEditText;
+  final Widget Function(PageElement)? audioBuilder;
 
   static const _minSize = 40.0;
 
@@ -243,6 +248,27 @@ class _ElementBox extends StatelessWidget {
             fit: BoxFit.scaleDown,
             alignment: Alignment.topLeft,
             child: Text(e.data['label'] as String? ?? ''),
+          ),
+        );
+      case ElementType.audio:
+        return Container(
+          padding: EdgeInsets.symmetric(horizontal: 10 * scale),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF2EEDF),
+            border: Border.all(color: const Color(0xFF8A7F5B)),
+            borderRadius: BorderRadius.circular(40 * scale),
+          ),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (audioBuilder != null) audioBuilder!(e) else const Icon(Icons.graphic_eq),
+                const SizedBox(width: 8),
+                Text(e.data['label'] as String? ?? '♪'),
+              ],
+            ),
           ),
         );
       case ElementType.drawing:

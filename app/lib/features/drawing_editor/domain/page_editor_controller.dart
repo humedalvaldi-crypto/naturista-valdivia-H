@@ -203,6 +203,14 @@ class PageEditorController extends ChangeNotifier {
     _markDirty();
   }
 
+  /// Cambia el papel de la página (liso, rayado, cuadriculado, punteado).
+  void setPaper(String paper) {
+    final doc = _doc;
+    if (doc == null || !doc.editable || doc.paper == paper || !paperKinds.contains(paper)) return;
+    _doc = doc.copyWith(paper: paper);
+    _markDirty();
+  }
+
   // ── Dibujo ──────────────────────────────────────────────────────────────
 
   void setMode(EditorMode m) {
@@ -272,21 +280,12 @@ class PageEditorController extends ChangeNotifier {
       final result = await _store.save(doc, snapshot);
       switch (result) {
         case Saved(:final version):
-          _doc = PageDocument(
-            id: doc.id,
-            notebookId: doc.notebookId,
-            version: version,
-            editable: doc.editable,
-            title: doc.title,
-            pageDate: doc.pageDate,
-            locationName: doc.locationName,
-            weather: doc.weather,
-            paper: doc.paper,
-            elements: snapshot,
-          );
+          // Se conserva el papel actual por si cambió mientras se guardaba.
+          final currentPaper = _doc?.paper ?? doc.paper;
+          _doc = doc.copyWith(version: version, elements: snapshot, paper: currentPaper);
           saveError = null;
           // Si hubo cambios mientras se guardaba, siguen pendientes.
-          status = identical(snapshot, _elements) && !_pendingWhileSaving ? SaveStatus.saved : SaveStatus.dirty;
+          status = identical(snapshot, _elements) && currentPaper == doc.paper && !_pendingWhileSaving ? SaveStatus.saved : SaveStatus.dirty;
         case Conflict():
           status = SaveStatus.conflict;
       }

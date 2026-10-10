@@ -82,6 +82,7 @@ export function writeFixtureSnapshot(): string {
           { id: 'e4', type: 'image', x: 0, y: 700, width: 200, height: 200, rotation: 0, imageUrl: '/illustrations/aves/chucao.jpg' },
         ],
         sticker: '🐸',
+        audioNoteUrl: 'data:audio/webm;codecs=opus;base64,' + Buffer.from([0x1a, 0x45, 0xdf, 0xa3, 0x9f, 0x42, 0x86, 0x81, 0x01, 0x42, 0xf7, 0x81, 0x01, 0x42, 0xf2, 0x81]).toString('base64'),
       },
     },
   ]);

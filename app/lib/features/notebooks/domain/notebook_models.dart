@@ -63,7 +63,7 @@ class PageInfo {
   final int elementCount;
 }
 
-enum ElementType { text, photo, drawing, sticker, species, coordinates }
+enum ElementType { text, photo, drawing, sticker, species, coordinates, audio }
 
 /// Un elemento colocado en la página. Inmutable: los cambios crean copias,
 /// lo que permite deshacer/rehacer guardando instantáneas.
@@ -190,7 +190,23 @@ class PageDocument {
   final String? weather;
   final String paper;
   final List<PageElement> elements;
+
+  PageDocument copyWith({int? version, String? paper, List<PageElement>? elements}) => PageDocument(
+        id: id,
+        notebookId: notebookId,
+        version: version ?? this.version,
+        editable: editable,
+        title: title,
+        pageDate: pageDate,
+        locationName: locationName,
+        weather: weather,
+        paper: paper ?? this.paper,
+        elements: elements ?? this.elements,
+      );
 }
+
+/// Tipos de papel (mismos códigos que la API).
+const paperKinds = ['plain', 'lined', 'grid', 'dots'];
 
 // ── Dibujo ────────────────────────────────────────────────────────────────
 

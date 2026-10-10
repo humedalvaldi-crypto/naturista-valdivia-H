@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
@@ -63,7 +64,7 @@ class ApiClient {
 
   /// Descarga un archivo de la API (p. ej. una foto privada) con la sesión.
   /// `path` puede ser absoluto o relativo a `baseUrl` (`/api/v1/media/...`).
-  Future<List<int>> getBytes(String path) async {
+  Future<Uint8List> getBytes(String path) async {
     final relative = path.startsWith(baseUrl) ? path.substring(baseUrl.length) : path;
     final apiPath = relative.startsWith('/api/v1') ? relative.substring('/api/v1'.length) : relative;
     final response = await _raw('GET', apiPath, authenticated: hasSession);

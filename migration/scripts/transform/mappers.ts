@@ -576,7 +576,11 @@ function mapPage(ctx: Context, d: SnapshotDoc, nb: { id: string; owner: string; 
       color: '#22261F',
     }, null);
   }
-  if (r.str('audioNoteUrl', 'audioUrl')) ctx.plan.skip(c, 'nota de audio: el editor nuevo aún no tiene audio (no se migra)');
+  const audio = r.str('audioNoteUrl', 'audioUrl');
+  if (audio) {
+    const asset = ctx.plan.mediaFrom(audio, { ownerId: nb.owner, purpose: 'notebook-audio', visibility, collection: c, docId: d.id, field: 'audioNoteUrl' });
+    if (asset) element(ctx, id, 'audio', 'audio', { x: 60, y: 1300, width: 460, height: 96, z: z++, rotation: 0 }, { label: 'Nota de audio' }, asset);
+  }
   const sticker = r.str('sticker', 'stickerId');
   const stickerBox = { x: 760, y: 40, width: 200, height: 200, z: z++, rotation: 0 };
   if (sticker) {
@@ -600,7 +604,7 @@ function element(
   ctx: Context,
   pageId: string,
   localId: string,
-  type: 'text' | 'photo' | 'species' | 'sticker',
+  type: 'text' | 'photo' | 'species' | 'sticker' | 'audio',
   box: { x: number; y: number; width: number; height: number; z: number; rotation?: number },
   data: Doc,
   mediaId: string | null,

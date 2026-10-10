@@ -171,6 +171,7 @@ describe('plan sobre una instantánea de prueba', () => {
     expect(byId['antiguo-4']).toMatchObject({ type: 'sticker' }); // ilustración de la app antigua → la misma de la nueva
     expect(JSON.parse(byId['antiguo-4']!['data_json'] as string)).toEqual({ asset: 'assets/illustrations/aves/chucao.jpg' });
     expect(JSON.parse(byId['pegatina']!['data_json'] as string)).toMatchObject({ text: '🐸', size: 96 });
+    expect(byId['audio']).toMatchObject({ type: 'audio' }); // nota de audio incrustada
     expect(JSON.parse(byId['especie']!['data_json'] as string).label).toBe('Chucao (Scelorchilus rubecula)');
     expect(JSON.parse(byId['texto']!['data_json'] as string).text).toBe('Cantaba en el sotobosque\n\nDía nublado, 8 °C');
     expect(report.collections['notebook_pages']!.unmappedFields).not.toHaveProperty('elements');
@@ -218,7 +219,7 @@ describe('plan sobre una instantánea de prueba', () => {
     expect(byPath('user-files/uidAna/observations/extra.jpg')).toMatchObject({ purpose: 'observation-photo', visibility: 'private', legacyAssetId: 'fa1' });
     expect(byPath('user-files/uidAna/notebooks/c.jpg')).toMatchObject({ visibility: 'public' }); // cuaderno público
     const inline = manifest.filter((m) => m.source.kind === 'inline');
-    expect(inline).toHaveLength(3); // foto del post p2, dibujo de la página y foto de un elemento antiguo
+    expect(inline).toHaveLength(4); // foto del post p2, dibujo, foto de un elemento antiguo y nota de audio
     for (const m of inline) expect(existsSync(join(out, 'inline', m.source.file))).toBe(true);
     expect(report.media.externalHosts).toEqual({ 'i.imgur.com': 1, 'blob: (enlace temporal del navegador)': 1 });
   });

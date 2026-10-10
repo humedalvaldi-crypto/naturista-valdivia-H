@@ -6,7 +6,10 @@ import '../../../core/l10n/l10n.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_scope.dart';
 import '../../../shared/branding/brand.dart';
+import '../../../shared/files/file_export.dart';
 import '../../../shared/media/api_image.dart';
+import '../../../shared/media/audio_capture.dart';
+import '../../../shared/media/audio_note_player.dart';
 import '../../../shared/media/photo_picker.dart';
 import '../../../shared/widgets/server_required.dart';
 import '../../../shared/widgets/state_views.dart';
@@ -14,7 +17,9 @@ import '../../notebooks/data/notebooks_api.dart';
 import '../../notebooks/domain/notebook_models.dart';
 import '../domain/page_editor_controller.dart';
 import 'page_canvas.dart';
+import 'page_renderer.dart';
 import 'painters.dart';
+import 'record_audio_sheet.dart';
 
 /// Ilustraciones del proyecto disponibles como pegatinas.
 const stickerAssets = [
@@ -159,6 +164,108 @@ class _DrawingEditorPageState extends State<DrawingEditorPage> {
     }
   }
 
+  Future<void> _choosePaper() async {
+    final c = _controller!;
+    final l10n = context.l10n;
+    final names = {'plain': l10n.paperPlain, 'lined': l10n.paperLined, 'grid': l10n.paperGrid, 'dots': l10n.paperDots};
+    final chosen = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              for (final p in paperKinds)
+                InkWell(
+                  key: Key('paper-$p'),
+                  onTap: () => Navigator.pop(context, p),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 72,
+                        height: 102,
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: c.doc?.paper == p ? Theme.of(context).colorScheme.primary : Colors.black26,
+                            width: c.doc?.paper == p ? 3 : 1,
+                          ),
+                        ),
+                        child: CustomPaint(painter: PaperPainter(p, PageRenderer.paperLines)),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(names[p]!),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (chosen != null) c.setPaper(chosen);
+  }
+
+  Future<void> _addAudio() async {
+    final l10n = context.l10n;
+    final messenger = ScaffoldMessenger.of(context);
+    final result = await showModalBottomSheet<(RecordedAudio, String)>(
+      context: context,
+      isDismissible: false,
+      enableDrag: false,
+      builder: (context) => const RecordAudioSheet(),
+    );
+    if (result == null || !mounted) return;
+    final (audio, label) = result;
+    setState(() => _uploading = true);
+    try {
+      final res = await _client.upload('/media?purpose=notebook-audio', audio.bytes, audio.contentType);
+      final id = (res['data'] as Map<String, dynamic>)['id'] as String;
+      _controller!.add(
+        ElementType.audio,
+        width: 460,
+        height: 96,
+        data: {'label': label.isEmpty ? l10n.audioDefaultLabel : label, 'durationMs': audio.duration.inMilliseconds},
+        mediaAssetId: id,
+        mediaUrl: '/api/v1/media/$id',
+      );
+    } catch (e) {
+      if (mounted) messenger.showSnackBar(SnackBar(content: Text(apiErrorText(context, e))));
+    } finally {
+      if (mounted) setState(() => _uploading = false);
+    }
+  }
+
+  /// Exporta la página como imagen PNG (alta resolución).
+  Future<void> _exportImage() async {
+    final c = _controller!;
+    final doc = c.doc;
+    if (doc == null) return;
+    final l10n = context.l10n;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(SnackBar(content: Text(l10n.exportPreparing)));
+    try {
+      final renderer = PageRenderer(loadPhoto: _client.getBytes);
+      final png = await renderer.png(doc.copyWith(elements: c.elements), width: 2000);
+      await FileExport.save(png, safeFileName(doc.title ?? l10n.notebooksTitle, 'png'), 'image/png');
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(SnackBar(content: Text(l10n.exportReady)));
+    } catch (_) {
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(SnackBar(content: Text(l10n.exportError)));
+    }
+  }
+
+  Widget _audio(PageElement e) {
+    final id = e.mediaAssetId;
+    if (id == null) return const Icon(Icons.graphic_eq);
+    return AudioNotePlayer(api: _client, mediaId: id);
+  }
+
   Future<void> _reload() async {
     final l10n = context.l10n;
     final ok = await showDialog<bool>(
@@ -201,7 +308,15 @@ class _DrawingEditorPageState extends State<DrawingEditorPage> {
             children: [
               if (_uploading) const LinearProgressIndicator(),
               Expanded(child: _canvasArea(c)),
-              if (c.editable) _Toolbar(controller: c, onText: _addText, onSticker: _addSticker, onPhoto: _uploading ? null : _addPhoto),
+              if (c.editable)
+                _Toolbar(
+                  controller: c,
+                  onText: _addText,
+                  onSticker: _addSticker,
+                  onPhoto: _uploading ? null : _addPhoto,
+                  onAudio: _uploading ? null : _addAudio,
+                  onPaper: _choosePaper,
+                ),
             ],
           );
         }
@@ -224,6 +339,7 @@ class _DrawingEditorPageState extends State<DrawingEditorPage> {
                   IconButton(key: const Key('redo'), tooltip: l10n.redo, icon: const Icon(Icons.redo), onPressed: c.canRedo ? c.redo : null),
                 ],
                 if (doc != null) ...[
+                  IconButton(key: const Key('export-image'), tooltip: l10n.exportImage, icon: const Icon(Icons.image_outlined), onPressed: _exportImage),
                   IconButton(tooltip: l10n.zoomOut, icon: const Icon(Icons.zoom_out), onPressed: _zoom > 0.5 ? () => setState(() => _zoom = math.max(0.5, _zoom - 0.25)) : null),
                   IconButton(tooltip: l10n.zoomIn, icon: const Icon(Icons.zoom_in), onPressed: _zoom < 3 ? () => setState(() => _zoom = math.min(3, _zoom + 0.25)) : null),
                 ],
@@ -260,6 +376,7 @@ class _DrawingEditorPageState extends State<DrawingEditorPage> {
                       controller: c,
                       scale: scale,
                       photoBuilder: _photo,
+                      audioBuilder: _audio,
                       onEditText: _editText,
                     ),
                   ),
@@ -316,12 +433,21 @@ class _SaveChip extends StatelessWidget {
 }
 
 class _Toolbar extends StatelessWidget {
-  const _Toolbar({required this.controller, required this.onText, required this.onSticker, required this.onPhoto});
+  const _Toolbar({
+    required this.controller,
+    required this.onText,
+    required this.onSticker,
+    required this.onPhoto,
+    required this.onAudio,
+    required this.onPaper,
+  });
 
   final PageEditorController controller;
   final VoidCallback onText;
   final VoidCallback onSticker;
   final VoidCallback? onPhoto;
+  final VoidCallback? onAudio;
+  final VoidCallback onPaper;
 
   @override
   Widget build(BuildContext context) {
@@ -359,6 +485,9 @@ class _Toolbar extends StatelessWidget {
                   _ToolButton(key: const Key('add-text'), icon: Icons.text_fields, label: l10n.addTextShort, onTap: onText),
                   _ToolButton(key: const Key('add-sticker'), icon: Icons.emoji_nature_outlined, label: l10n.addStickerShort, onTap: onSticker),
                   _ToolButton(key: const Key('add-photo'), icon: Icons.add_photo_alternate_outlined, label: l10n.addPhotoShort, onTap: onPhoto),
+                  _ToolButton(key: const Key('add-audio'), icon: Icons.mic_none_rounded, label: l10n.addAudioShort, onTap: onAudio),
+                  const SizedBox(height: 40, child: VerticalDivider()),
+                  _ToolButton(key: const Key('choose-paper'), icon: Icons.texture, label: l10n.paperLabel, onTap: onPaper),
                 ],
               ),
             ),

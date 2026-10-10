@@ -1,9 +1,12 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:naturista_valdivia/features/auth/domain/auth_user.dart';
 import 'package:naturista_valdivia/features/drawing_editor/domain/page_editor_controller.dart';
 import 'package:naturista_valdivia/features/notebooks/data/notebooks_api.dart';
 import 'package:naturista_valdivia/features/notebooks/domain/notebook_models.dart';
+import 'package:naturista_valdivia/shared/media/audio_capture.dart';
 
 import 'support/fake_api_server.dart';
 import 'support/fake_auth_repository.dart';
@@ -215,6 +218,65 @@ void main() {
       await tester.pumpAndSettle();
     });
 
+    testWidgets('elegir papel cuadriculado se guarda con la página', (tester) async {
+      final server = FakeApiServer();
+      final nb = server.addNotebook('Bitácora');
+      final pageId = server.pagesOf(nb['id'] as String).single['id'];
+      await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/notebook-pages/$pageId', api: server.client);
+
+      await tester.tap(find.byKey(const Key('choose-paper')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('paper-grid')));
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pumpAndSettle();
+      expect(server.requestBodies['PUT /pages/$pageId']!['paper'], 'grid');
+    });
+
+    testWidgets('grabar una nota de audio la sube y la agrega a la página', (tester) async {
+      AudioCapture.create = _FakeCapture.new;
+      addTearDown(() => AudioCapture.create = _FakeCapture.new);
+      final server = FakeApiServer();
+      final nb = server.addNotebook('Bitácora');
+      final pageId = server.pagesOf(nb['id'] as String).single['id'];
+      await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/notebook-pages/$pageId', api: server.client);
+
+      await tester.tap(find.byKey(const Key('add-audio')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('record-start')));
+      await tester.pump(const Duration(seconds: 2));
+      await tester.tap(find.byKey(const Key('record-stop')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('audio-label')), 'Canto del chucao');
+      await tester.tap(find.byKey(const Key('record-save')));
+      await tester.pumpAndSettle();
+
+      expect(server.requests, contains('POST /media'));
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pumpAndSettle();
+      final elements = (server.requestBodies['PUT /pages/$pageId']!['elements'] as List).cast<Map<String, dynamic>>();
+      final audio = elements.singleWhere((e) => e['type'] == 'audio');
+      expect(audio['mediaAssetId'], startsWith('m-'));
+      expect(audio['data']['label'], 'Canto del chucao');
+      expect(find.text('Canto del chucao'), findsOneWidget);
+    });
+
+    testWidgets('sin permiso de micrófono se explica', (tester) async {
+      AudioCapture.create = () => _FakeCapture(denied: true);
+      addTearDown(() => AudioCapture.create = _FakeCapture.new);
+      final server = FakeApiServer();
+      final nb = server.addNotebook('Bitácora');
+      final pageId = server.pagesOf(nb['id'] as String).single['id'];
+      await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/notebook-pages/$pageId', api: server.client);
+      await tester.tap(find.byKey(const Key('add-audio')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('record-start')));
+      await tester.pumpAndSettle();
+      expect(find.text('No hay permiso para usar el micrófono.'), findsOneWidget);
+      await tester.tap(find.text('Cancelar'));
+      await tester.pumpAndSettle();
+    });
+
     testWidgets('si otro dispositivo guardó antes, se avisa y no se sobrescribe', (tester) async {
       final server = FakeApiServer();
       final nb = server.addNotebook('Bitácora');
@@ -233,4 +295,29 @@ void main() {
       expect(server.pages[pageId]!['elements'], isEmpty);
     });
   });
+}
+
+/// Micrófono simulado: devuelve un WebM mínimo válido.
+class _FakeCapture implements AudioCapture {
+  _FakeCapture({this.denied = false});
+
+  final bool denied;
+
+  @override
+  Future<void> start() async {
+    if (denied) throw const MicrophoneDeniedException();
+  }
+
+  @override
+  Future<RecordedAudio?> stop() async => RecordedAudio(
+        bytes: Uint8List.fromList([0x1a, 0x45, 0xdf, 0xa3, 0x9f, 0x42, 0x86, 0x81, 0x01, 0x42, 0xf7, 0x81, 0x01]),
+        contentType: 'audio/webm',
+        duration: const Duration(seconds: 2),
+      );
+
+  @override
+  Future<void> cancel() async {}
+
+  @override
+  void dispose() {}
 }

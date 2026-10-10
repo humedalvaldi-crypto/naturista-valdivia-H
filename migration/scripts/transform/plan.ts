@@ -110,7 +110,7 @@ export class Plan {
       }
       const assetId = assetIdForInline(o.collection, o.docId, o.field);
       if (!this.media.has(assetId)) {
-        const ext = parsed.contentType.split('/')[1]!.replace('jpeg', 'jpg');
+        const ext = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'audio/webm': 'webm', 'audio/ogg': 'ogg', 'audio/mpeg': 'mp3', 'audio/mp4': 'm4a' }[parsed.contentType] ?? 'bin';
         const name = `${assetId}.${ext}`;
         this.inline.push({ name, bytes: parsed.bytes });
         this.media.set(assetId, {

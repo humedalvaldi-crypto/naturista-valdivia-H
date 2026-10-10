@@ -57,12 +57,14 @@ export function storagePathFromUrl(url: string): string | null {
   return null;
 }
 
-const DATA_URL = /^data:(image\/(?:png|jpeg|jpg|webp));base64,([A-Za-z0-9+/=\s]+)$/;
+const DATA_URL = /^data:(image\/(?:png|jpeg|jpg|webp)|audio\/(?:webm|ogg|mpeg|mp4|x-m4a|mp3)(?:;codecs=[\w.]+)?);base64,([A-Za-z0-9+/=\s]+)$/;
 
 export function parseDataUrl(v: string): { contentType: string; bytes: Buffer } | null {
   const m = v.match(DATA_URL);
   if (!m) return null;
-  return { contentType: m[1] === 'image/jpg' ? 'image/jpeg' : m[1]!, bytes: Buffer.from(m[2]!.replace(/\s/g, ''), 'base64') };
+  const declared = m[1]!.split(';')[0]!;
+  const contentType = declared === 'image/jpg' ? 'image/jpeg' : declared === 'audio/x-m4a' ? 'audio/mp4' : declared === 'audio/mp3' ? 'audio/mpeg' : declared;
+  return { contentType, bytes: Buffer.from(m[2]!.replace(/\s/g, ''), 'base64') };
 }
 
 export const assetIdForStorage = (path: string) => stableId(`storage/${path}`);

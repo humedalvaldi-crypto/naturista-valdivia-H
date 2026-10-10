@@ -27,6 +27,7 @@ class NotebooksApi implements PageStore {
   final ApiClient _api;
 
   bool get isConfigured => _api.isConfigured;
+  ApiClient get client => _api;
   String? url(String? path) => _api.absolute(path);
 
   List<Map<String, dynamic>> _list(Map<String, dynamic> body) =>
@@ -77,6 +78,7 @@ class NotebooksApi implements PageStore {
     try {
       final res = await _api.putJson('/pages/${doc.id}', {
         'version': doc.version,
+        'paper': doc.paper,
         'elements': [for (final e in elements) e.toJson()],
       });
       return Saved(((res['data'] as Map<String, dynamic>)['version'] as num).toInt());

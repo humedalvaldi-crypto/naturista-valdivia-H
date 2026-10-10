@@ -41,7 +41,7 @@ const coord = z.number().finite().min(-PAGE_WIDTH * 2).max(PAGE_HEIGHT * 3);
 
 export const elementSchema = z.strictObject({
   id: z.string().regex(/^[A-Za-z0-9_-]{1,64}$/),
-  type: z.enum(['text', 'photo', 'drawing', 'sticker', 'species', 'coordinates']),
+  type: z.enum(['text', 'photo', 'drawing', 'sticker', 'species', 'coordinates', 'audio']),
   x: coord,
   y: coord,
   width: z.number().finite().positive().max(PAGE_HEIGHT * 3),
