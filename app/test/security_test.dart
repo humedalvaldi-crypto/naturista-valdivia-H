@@ -161,11 +161,17 @@ void main() {
     expect(find.textContaining('Tengo 14 años o más'), findsOneWidget);
 
     final accept = find.byKey(const Key('consent-accept'));
+    await tester.scrollUntilVisible(accept, 200, scrollable: find.byType(Scrollable).first);
+    await tester.pumpAndSettle();
     expect(tester.widget<FilledButton>(accept).onPressed, isNull);
+    await tester.ensureVisible(find.byKey(const Key('consent-terms')));
     await tester.tap(find.byKey(const Key('consent-terms')));
     await tester.pumpAndSettle();
     expect(tester.widget<FilledButton>(accept).onPressed, isNull);
+    await tester.ensureVisible(find.byKey(const Key('consent-age')));
     await tester.tap(find.byKey(const Key('consent-age')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(accept);
     await tester.pumpAndSettle();
     await tester.tap(accept);
     await tester.pumpAndSettle();
@@ -178,6 +184,7 @@ void main() {
   testWidgets('los términos se pueden leer antes de aceptarlos', (tester) async {
     final server = FakeApiServer()..consent = {'requiredVersion': '2026-10', 'minAge': 14, 'upToDate': false};
     await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/', api: server.client);
+    await tester.ensureVisible(find.byKey(const Key('consent-read-terms')));
     await tester.tap(find.byKey(const Key('consent-read-terms')));
     await tester.pumpAndSettle();
     expect(find.text('Privacidad y condiciones'), findsWidgets);
