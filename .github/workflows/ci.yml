@@ -81,8 +81,10 @@ jobs:
             # Publica cada prueba fallida (nombre + detalle) como anotación.
             python3 - <<'PY'
           lines = open('test.log', encoding='utf-8', errors='replace').read().splitlines()
+          found = False
           for i, line in enumerate(lines):
-              if line.rstrip().endswith('[E]'):
+              if '[E]' in line:
+                  found = True
                   # La excepción se imprime ANTES de la línea [E]: se toman las cabeceras
                   # de cada excepción en las 300 líneas previas con sus 25 líneas siguientes.
                   window = lines[max(0, i - 300):i]
@@ -92,6 +94,9 @@ jobs:
                           parts.extend(window[j:j + 25])
                   detail = '%0A'.join(l.replace('::', ': ').replace('%', '%25') for l in parts[:120])
                   print(f"::error title={line.strip()[:200]}::{detail}")
+          if not found:
+              tail = '%0A'.join(l.replace('::', ': ').replace('%', '%25') for l in lines[-80:])
+              print(f"::error title=flutter test (final del registro)::{tail}")
           PY
             exit 1
           fi
