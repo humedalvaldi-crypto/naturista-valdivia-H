@@ -51,6 +51,13 @@ El Worker ya acepta peticiones de `https://humedalvaldi-crypto.github.io` (`ALLO
 
 Estas cifras son orientativas y pueden cambiar; no se garantiza ninguna capacidad sin pruebas de carga (Fase 9).
 
+## Mapas base
+
+La app usa las teselas públicas de OpenStreetMap y OpenTopoMap, con atribución
+visible. Sus servidores son para uso moderado (ver
+https://operations.osmfoundation.org/policies/tiles/). Si el uso crece, cambiar
+a un proveedor con cuenta propia en `app/lib/shared/map/map_tiles.dart`.
+
 ## Reversión
 
 - **Código**: vuelve a ejecutar el workflow desde un commit anterior, o en el panel *Workers → Deployments → Rollback*.

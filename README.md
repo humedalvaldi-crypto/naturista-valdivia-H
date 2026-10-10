@@ -15,7 +15,7 @@ biodiversidad y comunidad naturalista. App para **Android y web**.
 
 ## Estado
 
-**Fases 1, 3, 4, 5 y 6 completadas.** App publicada: https://humedalvaldi-crypto.github.io/naturista-valdivia-H/
+**Fases 1, 3, 4, 5, 6 y 7 completadas.** App publicada: https://humedalvaldi-crypto.github.io/naturista-valdivia-H/
 Qué funciona hoy y qué está planificado: ver la pantalla de inicio de la app o
 `app/lib/core/router/app_modules.dart`, y `docs/`.
 
@@ -27,7 +27,7 @@ Qué funciona hoy y qué está planificado: ver la pantalla de inicio de la app 
 | 4 | Worker, D1, R2, seguridad | ✅ Perfiles, archivos en R2, límites de frecuencia, despliegue manual (falta crear la cuenta de Cloudflare: `docs/deployment.md`) |
 | 5 | Perfiles, publicaciones, social | ✅ API completa (publicaciones, comentarios, me gusta, seguir, bloquear, comunidades, mensajes, notificaciones, denuncias); en la app: feed, publicar, comentarios, comunidades, notificaciones, mensajes, perfil de otras personas y fotos en publicaciones |
 | 6 | Cuadernos de campo y editor de dibujo | ✅ Cuadernos (crear, duplicar, privado/público, borrar), páginas (agregar, reordenar, duplicar, borrar), editor con lápiz/pincel/marcador/borrador y presión de lápiz óptico, texto, pegatinas, fotos, mover/rotar/escalar, deshacer/rehacer, guardado automático con control de conflictos. Exportar PNG/PDF pendiente |
-| 7 | Mapa, observaciones, capas | Pendiente |
+| 7 | Mapa, observaciones, capas | ✅ Mapa real (OpenStreetMap / OpenTopoMap) con observaciones de la zona visible, filtros por grupo, capas (mías, lugares), mi ubicación; registrar con GPS o tocando el mapa, catálogo de especies, foto, privacidad; ubicación protegida para especies amenazadas y fotos sin GPS |
 | 8 | Herramientas de migración y validación | Auditoría lista |
 | 9 | Pruebas integrales, rendimiento, publicación | Pendiente |
 

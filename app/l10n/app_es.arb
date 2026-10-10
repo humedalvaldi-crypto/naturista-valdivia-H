@@ -393,5 +393,115 @@
   "stickersTitle": "Pegatinas e ilustraciones",
   "editText": "Editar texto",
   "paperLabel": "Papel",
-  "pressureNote": "Con lápiz óptico, el grosor sigue la presión."
+  "pressureNote": "Con lápiz óptico, el grosor sigue la presión.",
+  "mapLayers": "Capas",
+  "mapBaseLayer": "Mapa base",
+  "mapBaseStreets": "Calles (OpenStreetMap)",
+  "mapBaseTopo": "Topográfico (OpenTopoMap)",
+  "mapLayerObservations": "Observaciones",
+  "mapLayerMine": "Solo mis observaciones",
+  "mapLayerPlaces": "Humedales y lugares",
+  "mapPlacesEmpty": "Aún no hay lugares cargados en el servidor.",
+  "mapAllGroups": "Todos",
+  "mapMyLocation": "Mi ubicación",
+  "mapZoneCount": "{count, plural, =0{Sin observaciones en esta zona} =1{1 observación en esta zona} other{{count} observaciones en esta zona}}",
+  "@mapZoneCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mapLimitReached": "Se muestran las {count} más recientes; acerca el mapa para ver más.",
+  "@mapLimitReached": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mapLongPressHint": "Mantén presionado el mapa para registrar una observación en ese punto.",
+  "obscuredLocation": "Ubicación aproximada (protegida)",
+  "obscuredExplain": "Para proteger a la especie o a quien observó, solo se muestra un área de unos 10 km.",
+  "groupAves": "Aves",
+  "groupMamiferos": "Mamíferos",
+  "groupAnfibios": "Anfibios",
+  "groupReptiles": "Reptiles",
+  "groupPeces": "Peces",
+  "groupInsectos": "Insectos",
+  "groupFlora": "Flora",
+  "groupFunga": "Hongos",
+  "groupOtros": "Otros",
+  "observationsTitle": "Observaciones",
+  "observationsRecent": "Recientes",
+  "observationsMine": "Mías",
+  "observationsEmpty": "Todavía no hay observaciones.",
+  "newObservation": "Nueva observación",
+  "editObservation": "Editar observación",
+  "speciesLabel": "Especie",
+  "speciesHint": "Busca por nombre común o científico",
+  "speciesFreeText": "Usar «{name}» (no está en el catálogo)",
+  "@speciesFreeText": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "speciesRequired": "Indica qué observaste.",
+  "countLabel": "Cantidad de individuos (opcional)",
+  "observedAtLabel": "Fecha y hora",
+  "locationLabel": "Ubicación",
+  "useMyLocation": "Usar mi ubicación",
+  "locationFromGps": "Desde el GPS · precisión ±{meters} m",
+  "@locationFromGps": {
+    "placeholders": {
+      "meters": {
+        "type": "int"
+      }
+    }
+  },
+  "locationManual": "Elegida en el mapa",
+  "locationRequired": "Indica la ubicación: usa el GPS o toca el mapa.",
+  "locationTapHint": "Toca el mapa para ajustar el punto.",
+  "locationNameLabel": "Lugar (opcional)",
+  "hideExactLocation": "Ocultar la ubicación exacta",
+  "hideExactLocationBody": "Otras personas verán solo un área de unos 10 km.",
+  "sensitiveSpeciesForced": "Especie amenazada: su ubicación exacta siempre se oculta a otras personas.",
+  "observationPrivate": "Solo para mí (privada)",
+  "notesLabel": "Notas (opcional)",
+  "saveObservation": "Guardar observación",
+  "deleteObservationConfirm": "¿Eliminar esta observación?",
+  "locationErrorDisabled": "La ubicación del dispositivo está desactivada.",
+  "locationErrorDenied": "No diste permiso para usar tu ubicación.",
+  "locationErrorDeniedForever": "El permiso de ubicación está bloqueado. Actívalo en los ajustes del dispositivo.",
+  "locationErrorUnavailable": "No se pudo obtener tu ubicación. Inténtalo de nuevo o elige el punto en el mapa.",
+  "observedBy": "Observado por {name}",
+  "@observedBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "conservationStatusLabel": "Estado de conservación (UICN)",
+  "statusLC": "Preocupación menor",
+  "statusNT": "Casi amenazada",
+  "statusVU": "Vulnerable",
+  "statusEN": "En peligro",
+  "statusCR": "En peligro crítico",
+  "statusDD": "Datos insuficientes",
+  "statusNE": "No evaluada",
+  "individualsCount": "{count, plural, =1{1 individuo} other{{count} individuos}}",
+  "@individualsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "viewDetails": "Ver detalle",
+  "privateBadge": "Privada",
+  "observationSaved": "Observación guardada",
+  "mapServerNotConnected": "Servidor aún no conectado: no se pueden ver ni registrar observaciones."
 }

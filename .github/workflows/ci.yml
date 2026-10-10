@@ -65,6 +65,8 @@ jobs:
           fi
       - name: Aplicar marca web (logo, nombre y colores)
         run: bash branding_web/apply.sh
+      - name: Permisos de Android (internet y ubicación)
+        run: bash platform_patches/android_permissions.sh
       - run: flutter pub get
       - run: flutter gen-l10n
       - name: flutter analyze

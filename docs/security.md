@@ -57,10 +57,21 @@
 | Fotos privadas en la app: se descargan con la sesión (no con enlaces públicos) | `app/lib/shared/media/api_image.dart` | — |
 | La app no sobrescribe cambios hechos en otro dispositivo: muestra el conflicto y ofrece recargar | `app/lib/features/drawing_editor/domain/page_editor_controller.dart` | Sí |
 
+## Implementado en la Fase 7
+
+| Control | Dónde | Probado |
+|---|---|---|
+| Especies amenazadas (y observaciones que su autora decide ocultar): terceros ven solo el centro de una celda de 0,1° (≈ 10 km), sin lugar, precisión ni origen | `worker/src/routes/observations.ts`, `services/geoprivacy.ts` | Sí |
+| Las búsquedas por área de terceros usan la ubicación pública: un recuadro diminuto no revela el punto real | `repositories/observations.ts` | Sí |
+| Toda imagen subida pierde el GPS del EXIF (se conserva la orientación), XMP e IPTC; en PNG/WebP, textos y EXIF | `services/image-metadata.ts`, `routes/media.ts` | Sí |
+| Observaciones privadas, perfiles privados y bloqueos se respetan igual que en las publicaciones | `repositories/observations.ts` | Sí |
+| Solo la autora edita o borra; la foto debe ser suya y sigue la visibilidad de la observación | `routes/observations.ts` | Sí |
+| Fechas futuras, coordenadas fuera de rango, especies inexistentes y campos desconocidos se rechazan | `validators/observations.ts` | Sí |
+| Mapas base con atribución visible y User-Agent propio (política de uso de OpenStreetMap) | `app/lib/shared/map/map_tiles.dart` | — |
+
 ## Pendiente (con fase)
 
 - Autorización por recurso y propietario en cada módulo, con pruebas cruzadas entre usuarios (Fases 5–7).
-- Ubicaciones sensibles: ocultar o degradar coordenadas de especies amenazadas (Fase 7).
 - Panel de moderación para revisar denuncias (las denuncias ya se guardan).
 
 ## Hallazgos en la app antigua (requieren acción)

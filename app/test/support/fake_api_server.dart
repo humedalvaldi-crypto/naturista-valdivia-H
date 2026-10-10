@@ -16,6 +16,11 @@ class FakeApiServer {
   final people = <String, Map<String, dynamic>>{};
   final conversations = <Map<String, dynamic>>[];
   final messages = <String, List<Map<String, dynamic>>>{};
+  final species = <Map<String, dynamic>>[
+    {'id': 'sp-chucao', 'scientificName': 'Scelorchilus rubecula', 'commonNameEs': 'Chucao', 'commonNameEn': 'Chucao tapaculo', 'group': 'aves', 'conservationStatus': 'LC', 'sensitive': false, 'illustration': null},
+    {'id': 'sp-huillin', 'scientificName': 'Lontra provocax', 'commonNameEs': 'Huillín', 'commonNameEn': 'Southern river otter', 'group': 'mamiferos', 'conservationStatus': 'EN', 'sensitive': true, 'illustration': null},
+  ];
+  final observations = <Map<String, dynamic>>[];
   final notebooks = <Map<String, dynamic>>[];
   final pages = <String, Map<String, dynamic>>{};
   bool failNext = false;
@@ -101,6 +106,93 @@ class FakeApiServer {
 
   Map<String, dynamic> _pageInfo(Map<String, dynamic> p) => {...p}..remove('elements');
 
+  Map<String, dynamic> addObservation({
+    String? speciesId,
+    String? taxonName,
+    double lat = -39.86,
+    double lng = -73.23,
+    String ownerId = 'u-otra',
+    String ownerName = 'Otra Persona',
+    bool obscured = false,
+    String? locationName,
+  }) {
+    final sp = speciesId == null ? null : species.firstWhere((s) => s['id'] == speciesId);
+    final o = {
+      'id': 'o${_seq++}',
+      'owner': person(ownerId, ownerName),
+      'species': sp,
+      'taxonName': taxonName,
+      'count': null,
+      'observedAt': DateTime.utc(2026, 10, 1, 11).toIso8601String(),
+      'latitude': lat,
+      'longitude': lng,
+      'accuracyM': obscured ? null : 10,
+      'locationSource': obscured ? null : 'gps',
+      'locationName': obscured ? null : locationName,
+      'obscured': obscured,
+      'notes': null,
+      'photo': null,
+      'visibility': 'public',
+      'isMine': ownerId == 'u1',
+      'createdAt': DateTime.utc(2026, 10, 1, 12, _seq).toIso8601String(),
+    };
+    observations.insert(0, o);
+    return o;
+  }
+
+  http.Response? _observationsRoute(String method, List<String> seg, Map<String, dynamic> body, Map<String, String> query) {
+    if (seg.first == 'species') {
+      final q = (query['q'] ?? '').toLowerCase();
+      return _json({
+        'data': species.where((s) => q.isEmpty || '${s['commonNameEs']} ${s['scientificName']}'.toLowerCase().contains(q)).toList(),
+      });
+    }
+    if (seg.first == 'places') return _json({'data': <Object>[]});
+    if (seg.first != 'observations') return null;
+    if (seg.length == 1 && method == 'GET') {
+      final user = query['user'];
+      final group = query['group'];
+      final list = observations
+          .where((o) => user == null || (o['owner'] as Map)['id'] == user)
+          .where((o) => group == null || ((o['species'] as Map?)?['group'] ?? 'otros') == group)
+          .toList();
+      return _json({'data': list, 'nextCursor': null});
+    }
+    if (seg.length == 1 && method == 'POST') {
+      final sp = body['speciesId'] == null ? null : species.firstWhere((s) => s['id'] == body['speciesId']);
+      final o = addObservation(
+        speciesId: sp?['id'] as String?,
+        taxonName: body['taxonName'] as String?,
+        lat: (body['latitude'] as num).toDouble(),
+        lng: (body['longitude'] as num).toDouble(),
+        ownerId: 'u1',
+        ownerName: 'Eva',
+        locationName: body['locationName'] as String?,
+      );
+      o['obscured'] = body['geoprivacy'] == 'obscured' || (sp?['sensitive'] as bool? ?? false);
+      o['geoprivacy'] = body['geoprivacy'];
+      o['locationSource'] = body['locationSource'];
+      o['accuracyM'] = body['accuracyM'];
+      o['visibility'] = body['visibility'];
+      o['count'] = body['count'];
+      o['notes'] = body['notes'];
+      if (body['photoAssetId'] != null) o['photo'] = '/api/v1/media/${body['photoAssetId']}';
+      return _json({'data': o}, 201);
+    }
+    final o = observations.where((x) => x['id'] == seg[1]).firstOrNull;
+    if (o == null) return _json({'error': {'code': 'not_found', 'message': 'Observación no encontrada.'}}, 404);
+    if (method == 'GET') return _json({'data': o});
+    if (method == 'PATCH') {
+      if (body.containsKey('notes')) o['notes'] = body['notes'];
+      return _json({'data': o});
+    }
+    if (method == 'DELETE') {
+      observations.remove(o);
+      return http.Response('', 204);
+    }
+    return null;
+  }
+
   http.Response? _notebooksRoute(String method, List<String> seg, Map<String, dynamic> body) {
     if (seg.first == 'notebooks') {
       if (seg.length == 1 && method == 'GET') return _json({'data': notebooks});
@@ -184,6 +276,8 @@ class FakeApiServer {
           if (req.method == 'GET' && seg.first == 'media') {
             return http.Response.bytes(const [0xff, 0xd8, 0xff, 0xd9], 200, headers: {'content-type': 'image/jpeg'});
           }
+          final observationResponse = _observationsRoute(req.method, seg, body, req.url.queryParameters);
+          if (observationResponse != null) return observationResponse;
           final notebookResponse = _notebooksRoute(req.method, seg, body);
           if (notebookResponse != null) return notebookResponse;
           if (seg.first == 'posts') {

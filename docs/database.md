@@ -57,15 +57,17 @@ Todas las tablas que vienen de Firestore tienen `legacy_id` único para migrar s
 - Guardar una página reemplaza todos sus elementos en un solo lote atómico, solo si la `version` enviada es la actual; si no, responde 409 sin tocar nada.
 - Límites: 200 elementos por página, 400 000 caracteres por elemento, 2 MB por guardado.
 
-## Esquema previsto (Fase 7)
+## Migración `0005_observations.sql` (Fase 7)
 
-| Tabla | Origen Firestore | Fase |
+| Tabla | Propósito | Origen Firestore |
 |---|---|---|
-| `profile_private` | `profiles` (rut, fechaNacimiento, telefono, whatsapp, genero, addressValdivia) | 4 — **pendiente de decisión**, ver `security.md` |
-| `observations`, `species` | `observations`, `species_catalog`, `species_album`, `user_collections` | 7 |
-| `map_layers`, puntos del mapa | `wetlands`, `places` | 7 |
+| `species` | Catálogo: nombre científico (único), nombres comunes es/en, grupo, estado UICN, origen, `sensitive`, ilustración | `species_catalog` |
+| `observations` | Observación: especie del catálogo o nombre libre, cantidad, fecha, ubicación **exacta** (`latitude`, `longitude`, precisión, origen GPS/manual, lugar) y **pública** (`public_latitude`, `public_longitude`), `obscured`, `geoprivacy`, notas, foto, visibilidad, borrado lógico | `observations` |
+| `places` | Humedales, senderos y miradores con contorno GeoJSON opcional | `places`, `wetlands` |
 
-El mapeo definitivo se fija con el informe real de la auditoría (`migration/`), no solo con el código antiguo.
+- La ubicación pública se calcula al guardar: igual a la exacta, o el centro de una celda de 0,1° si la especie es sensible o quien observa lo pide. Si cambia la sensibilidad de una especie, hay que recalcular sus observaciones (pendiente: script de mantenimiento).
+- El catálogo inicial trae 17 especies de los humedales de Valdivia con su estado UICN **global**; el equipo debe validarlo con la clasificación nacional (RCE) y ampliarlo al migrar `species_catalog`.
+- `places` empieza vacía: se llena solo con datos reales en la migración.
 
 ## Políticas de borrado
 

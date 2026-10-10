@@ -43,11 +43,11 @@ void main() {
     expect(app.themeMode, ThemeMode.dark);
   });
 
-  testWidgets('los módulos no construidos se identifican como planificados', (tester) async {
+  testWidgets('sin servidor, el mapa se muestra igual y lo indica', (tester) async {
     await pumpTestApp(tester, at: '/map');
 
-    expect(find.text('Este módulo aún no está disponible'), findsOneWidget);
-    expect(find.text('En desarrollo · Fase 7'), findsOneWidget);
+    expect(find.text('Mapa de biodiversidad'), findsWidgets);
+    expect(find.text('Servidor aún no conectado: no se pueden ver ni registrar observaciones.'), findsOneWidget);
   });
 
   testWidgets('ruta desconocida muestra página no encontrada', (tester) async {

@@ -27,8 +27,13 @@ void main() {
     expect(go('/welcome'), '/');
   });
 
+  test('ver observaciones no exige sesión', () {
+    expect(go('/observations'), isNull);
+    expect(go('/observations/o1'), isNull);
+  });
+
   test('rutas privadas exigen sesión', () {
-    for (final r in ['/profile', '/notebooks', '/messages', '/notifications', '/drawing', '/observations', '/notebook-pages/pg1', '/notebooks/nb1', '/verify-email']) {
+    for (final r in ['/profile', '/notebooks', '/messages', '/notifications', '/drawing', '/observations/new', '/observations/o1/edit', '/notebook-pages/pg1', '/notebooks/nb1', '/verify-email']) {
       expect(go(r), startsWith('/login?from='), reason: r);
       expect(go(r, status: AuthStatus.signedIn), isNull, reason: r);
     }

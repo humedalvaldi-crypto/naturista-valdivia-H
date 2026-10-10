@@ -32,7 +32,6 @@ final List<AppModule> appModules = [
     icon: Icons.visibility_outlined,
     title: (l) => l.moduleObservations,
     description: (l) => l.moduleObservationsBody,
-    phase: 7,
   ),
   AppModule(
     id: 'map',
@@ -40,7 +39,6 @@ final List<AppModule> appModules = [
     icon: Icons.map_outlined,
     title: (l) => l.moduleMap,
     description: (l) => l.moduleMapBody,
-    phase: 7,
   ),
   AppModule(
     id: 'notebooks',

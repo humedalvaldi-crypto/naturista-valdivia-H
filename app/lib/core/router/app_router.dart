@@ -18,6 +18,8 @@ import '../../features/people/presentation/person_page.dart';
 import '../../features/notebooks/presentation/notebook_detail_page.dart';
 import '../../features/notebooks/presentation/notebooks_page.dart';
 import '../../features/notifications/presentation/notifications_page.dart';
+import '../../features/observations/presentation/observation_detail_page.dart';
+import '../../features/observations/presentation/observation_form_page.dart';
 import '../../features/observations/presentation/observations_page.dart';
 import '../../features/profile/presentation/profile_page.dart';
 import '../../features/settings/application/settings_controller.dart';
@@ -31,7 +33,7 @@ import '../../shared/widgets/state_views.dart';
 import '../l10n/l10n.dart';
 
 /// Rutas que exigen sesión iniciada.
-const privateRoutes = {'/profile', '/notebooks', '/drawing', '/observations', '/messages', '/notifications', '/community/new', '/notebook-pages'};
+const privateRoutes = {'/profile', '/notebooks', '/drawing', '/observations/new', '/messages', '/notifications', '/community/new', '/notebook-pages'};
 
 /// Pantallas de acceso: con sesión iniciada no tienen sentido.
 const authRoutes = {'/login', '/register', '/forgot-password'};
@@ -63,7 +65,7 @@ String? resolveRedirect({
   final signedIn = status == AuthStatus.signedIn;
 
   // 3. Rutas privadas sin sesión → login, recordando a dónde se quería ir.
-  if (!signedIn && (_matches(privateRoutes, path) || path == '/verify-email')) {
+  if (!signedIn && (_matches(privateRoutes, path) || _isEditRoute(path) || path == '/verify-email')) {
     return Uri(path: '/login', queryParameters: {'from': location.toString()}).toString();
   }
 
@@ -74,6 +76,9 @@ String? resolveRedirect({
   }
   return null;
 }
+
+/// Editar algo propio (p. ej. `/observations/<id>/edit`) exige sesión.
+bool _isEditRoute(String path) => path.startsWith('/observations/') && path.endsWith('/edit');
 
 /// Solo rutas internas: evita redirecciones abiertas a otros sitios.
 String? _safeFrom(String? from) {
@@ -161,7 +166,29 @@ GoRouter buildRouter({
         path: '/posts/:id',
         builder: (context, state) => PostDetailPage(postId: state.pathParameters['id']!),
       ),
-      GoRoute(path: '/observations', builder: (context, state) => const ObservationsPage()),
+      GoRoute(
+        path: '/observations',
+        builder: (context, state) => const ObservationsPage(),
+        routes: [
+          GoRoute(
+            path: 'new',
+            builder: (context, state) => ObservationFormPage(
+              initialLatitude: double.tryParse(state.uri.queryParameters['lat'] ?? ''),
+              initialLongitude: double.tryParse(state.uri.queryParameters['lng'] ?? ''),
+            ),
+          ),
+          GoRoute(
+            path: ':id',
+            builder: (context, state) => ObservationDetailPage(observationId: state.pathParameters['id']!),
+            routes: [
+              GoRoute(
+                path: 'edit',
+                builder: (context, state) => ObservationFormPage(observationId: state.pathParameters['id']),
+              ),
+            ],
+          ),
+        ],
+      ),
       // El editor de dibujo vive dentro de las páginas de cada cuaderno.
       GoRoute(path: '/drawing', redirect: (context, state) => '/notebooks'),
       GoRoute(
