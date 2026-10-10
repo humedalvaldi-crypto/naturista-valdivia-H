@@ -6,9 +6,15 @@ import { corsPolicy, errorHandler, notFoundHandler, requestId, securityHeaders }
 import { rateLimit } from './middleware/rate-limit';
 import { healthRoutes } from './routes/health';
 import { meRoutes } from './routes/me';
+import { communitiesRoutes } from './routes/communities';
 import { mediaDownloadRoutes, mediaRoutes } from './routes/media';
+import { messagesRoutes } from './routes/messages';
+import { notificationsRoutes, reportsRoutes } from './routes/notifications';
+import { myConnectionsRoutes, peopleRoutes } from './routes/people';
+import { commentsRoutes, postsRoutes } from './routes/posts';
 import { myProfileRoutes, publicProfileRoutes } from './routes/profiles';
 import { firebaseKeyResolver } from './services/firebase-auth';
+import { createMiddleware } from 'hono/factory';
 import { HttpError } from './services/http-error';
 import type { AppBindings } from './types/env';
 
@@ -43,11 +49,43 @@ export function createApp(options: AppOptions = {}) {
   const v1 = new Hono<AppBindings>();
   v1.route('/health', healthRoutes);
 
+  /** Lecturas con sesión opcional; escrituras con sesión obligatoria y límite. */
+  const writeLimit = rateLimit('RL_WRITE', { onlyWrites: true });
+  const publicLimit = rateLimit('RL_PUBLIC');
+  const readOpenWriteAuth = createMiddleware<AppBindings>(async (c, next) => {
+    if (c.req.method === 'GET' || c.req.method === 'HEAD') {
+      return maybeAuth(c, async () => {
+        await publicLimit(c, next);
+      });
+    }
+    return auth(c, async () => {
+      await writeLimit(c, next);
+    });
+  });
+
   // Cuenta propia.
   v1.use('/me', auth);
-  v1.use('/me/*', auth, rateLimit('RL_WRITE', { onlyWrites: true }));
+  v1.use('/me/*', auth, writeLimit);
   v1.route('/me/profile', myProfileRoutes);
+  v1.route('/me/notifications', notificationsRoutes);
+  v1.route('/me', myConnectionsRoutes);
   v1.route('/me', meRoutes);
+
+  // Red social (Fase 5).
+  for (const base of ['/posts', '/users', '/communities']) {
+    v1.use(base, readOpenWriteAuth);
+    v1.use(`${base}/*`, readOpenWriteAuth);
+  }
+  v1.route('/posts', postsRoutes);
+  v1.route('/users', peopleRoutes);
+  v1.route('/communities', communitiesRoutes);
+  for (const base of ['/comments', '/conversations', '/reports']) {
+    v1.use(base, auth, writeLimit);
+    v1.use(`${base}/*`, auth, writeLimit);
+  }
+  v1.route('/comments', commentsRoutes);
+  v1.route('/conversations', messagesRoutes);
+  v1.route('/reports', reportsRoutes);
 
   // Perfiles públicos.
   v1.use('/profiles/*', maybeAuth, rateLimit('RL_PUBLIC'));

@@ -77,6 +77,10 @@ export class MediaRepository {
       .first<MediaRow>();
   }
 
+  async setVisibility(id: string, visibility: 'private' | 'public'): Promise<void> {
+    await this.db.prepare(`UPDATE media_assets SET visibility = ?2 WHERE id = ?1`).bind(id, visibility).run();
+  }
+
   async markPurged(id: string): Promise<void> {
     await this.db.prepare(`UPDATE media_assets SET purged_at = ?2 WHERE id = ?1`).bind(id, new Date().toISOString()).run();
   }
