@@ -20,7 +20,7 @@ import { parseArgs } from 'node:util';
 import { applicationDefault, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { FieldPath, getFirestore } from 'firebase-admin/firestore';
-import { getStorage } from 'firebase-admin/storage';
+import { resolveBucket } from './lib/bucket';
 import { encodeValue } from './lib/encode';
 import { LEGACY_SUBCOLLECTIONS } from './lib/legacy-inventory';
 
@@ -43,7 +43,7 @@ const stamp = new Date().toISOString().replace(/[:.]/g, '-');
 const dir = resolve(values.out ?? 'output', `snapshot-${stamp}`);
 mkdirSync(join(dir, 'firestore'), { recursive: true });
 
-initializeApp({ credential: applicationDefault(), projectId, storageBucket: values.bucket ?? `${projectId}.firebasestorage.app` });
+initializeApp({ credential: applicationDefault(), projectId });
 const db = getFirestore();
 
 function line(stream: WriteStream, value: unknown) {
@@ -124,7 +124,8 @@ async function exportFirestore(): Promise<Record<string, number>> {
 
 async function exportStorage(): Promise<number> {
   const out = createWriteStream(join(dir, 'storage.jsonl'));
-  const [files] = await getStorage().bucket().getFiles({ prefix: 'user-files/', autoPaginate: true });
+  const bucket = await resolveBucket(projectId!, values.bucket);
+  const [files] = await bucket.getFiles({ prefix: 'user-files/', autoPaginate: true });
   for (const f of files) {
     await line(out, {
       path: f.name,

@@ -50,3 +50,53 @@ si algún dato importante de la app antigua quedó fuera del mapeo.
 ## 5. Cómo ejecutar las herramientas
 
 Ver `migration/README.md` (pasos, garantías y credenciales). El resultado de la auditoría (`migration/output/audit-*.md|json`) no contiene valores de documentos, solo nombres de campos, tipos y conteos, y está ignorado por git.
+
+## 6. Cómo migrar desde GitHub (sin instalar nada)
+
+La copia se hace con el flujo **"Migrar datos desde Firebase (copia)"**.
+Firebase no se toca: la app antigua sigue funcionando. Se puede repetir más
+adelante para traer lo nuevo, sin duplicar nada. Así, mientras la gente siga
+usando la app antigua, basta con volver a ejecutarlo.
+
+### Paso 1 — Cuenta de servicio de solo lectura (lo haces tú)
+
+1. Abre https://console.cloud.google.com/iam-admin/serviceaccounts?project=humedalvaldivia-c7d08
+   con la cuenta dueña del proyecto de Firebase.
+2. **Crear cuenta de servicio** → nombre `migracion-lectura` → *Crear y continuar*.
+3. Funciones (roles), las tres de **solo lectura**:
+   - **Cloud Datastore Viewer** (lector de Firestore)
+   - **Firebase Authentication Viewer**
+   - **Storage Object Viewer**
+4. *Listo*. Entra a la cuenta creada → **Claves → Agregar clave → Crear clave nueva → JSON**.
+   Se descarga un archivo `.json`.
+5. En GitHub: **Settings → Secrets and variables → Actions → New repository secret**,
+   nombre `FIREBASE_SERVICE_ACCOUNT`, y pega **todo el contenido** del archivo.
+   Después borra el archivo descargado. No lo compartas ni lo pegues en el chat.
+
+### Paso 2 — Ensayo (no escribe nada)
+
+**Actions → "Migrar datos desde Firebase (copia)" → Run workflow** con modo
+`ensayo`. Al terminar, el resumen muestra cuántos usuarios, publicaciones,
+observaciones, cuadernos y fotos se copiarían, qué no se copia y por qué.
+
+### Paso 3 — Migrar
+
+El mismo flujo con modo `migrar` y la confirmación `MIGRAR`. Antes de escribir
+anota un punto de restauración de D1 (Time Travel); al final valida conteos,
+referencias, ubicaciones protegidas y fotos.
+
+### Paso 4 — Al terminar
+
+Cuando ya no haga falta repetirla, borra la clave en Google Cloud
+(cuenta de servicio → Claves → eliminar) y el secreto en GitHub.
+
+### Qué ven las personas
+
+Cada persona entra a la app nueva con la **misma cuenta** (Google o correo):
+su UID es el mismo, así que encuentra su perfil, publicaciones, cuadernos,
+observaciones, seguidores y mensajes. Quien ya había entrado a la app nueva
+conserva lo que hizo ahí y además recibe lo de la app antigua.
+
+Por decisión pendiente (D2, D3) no se copian datos personales sensibles
+(RUT, teléfono, fecha de nacimiento, dirección) ni contenido sin dueño
+(`anon`, `guest`).

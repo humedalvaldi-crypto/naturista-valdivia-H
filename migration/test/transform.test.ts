@@ -67,6 +67,18 @@ describe('plan sobre una instantánea de prueba', () => {
     expect(count(db, "SELECT count(*) n FROM users WHERE status = 'suspended'")).toBe(1);
   });
 
+  it('quien ya usa la app nueva conserva sus datos y queda marcado como migrado', () => {
+    const db = freshDb();
+    db.exec("INSERT INTO users (id, email, display_name) VALUES ('uidAna', 'ana@nueva.test', 'Ana Nueva')");
+    db.exec("INSERT INTO profiles (user_id, full_name, bio) VALUES ('uidAna', 'Ana Nueva', 'Bio nueva')");
+    applyFiles(db, join(out, 'sql'), files);
+    expect(db.prepare("SELECT email, display_name, legacy_source FROM users WHERE id = 'uidAna'").get()).toEqual({
+      email: 'ana@nueva.test', display_name: 'Ana Nueva', legacy_source: 'firestore',
+    });
+    expect(db.prepare("SELECT bio FROM profiles WHERE user_id = 'uidAna'").get()).toEqual({ bio: 'Bio nueva' });
+    expect(count(db, "SELECT count(*) n FROM posts WHERE author_id = 'uidAna'")).toBe(2); // su contenido antiguo sí llega
+  });
+
   it('es idempotente: aplicarlo dos veces no duplica nada', () => {
     const db = freshDb();
     applyFiles(db, join(out, 'sql'), files);

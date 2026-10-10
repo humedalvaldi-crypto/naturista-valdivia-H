@@ -21,7 +21,7 @@ import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { AwsClient } from 'aws4fetch';
 import { applicationDefault, initializeApp } from 'firebase-admin/app';
-import { getStorage } from 'firebase-admin/storage';
+import { resolveBucket } from './lib/bucket';
 import type { MediaEntry } from './transform/media';
 import { mediaChunkSql, mediaInsertSql, prepareMedia, type CopiedMedia } from './transform/media-copy';
 
@@ -62,7 +62,8 @@ if (needsStorage && !values.project) {
   console.error('Falta --project <id> para leer Firebase Storage.');
   process.exit(2);
 }
-const storageBucket = values.project ? getStorageBucket(values.project, values.bucket) : null;
+if (values.project) initializeApp({ credential: applicationDefault(), projectId: values.project });
+const storageBucket = values.project && needsStorage ? await resolveBucket(values.project, values.bucket) : null;
 
 const confirm = values.confirm === true;
 let r2: { client: AwsClient; base: string } | null = null;
@@ -76,11 +77,6 @@ if (confirm && store === 'r2') {
     process.exit(2);
   }
   r2 = { client: new AwsClient({ accessKeyId: key, secretAccessKey: secret, service: 's3', region: 'auto' }), base: `https://${account}.r2.cloudflarestorage.com/${bucket}` };
-}
-
-function getStorageBucket(projectId: string, bucket?: string) {
-  initializeApp({ credential: applicationDefault(), projectId, storageBucket: bucket ?? `${projectId}.firebasestorage.app` });
-  return getStorage().bucket();
 }
 
 async function readSource(e: MediaEntry): Promise<Uint8Array> {

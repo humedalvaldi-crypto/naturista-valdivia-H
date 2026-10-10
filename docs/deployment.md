@@ -45,7 +45,8 @@ Tarda unos 3 minutos y hace todo:
 1. Pruebas y comprobación de tipos.
 2. Crea la base D1 `naturista-valdivia-db` si no existe.
 3. Usa R2 si tu cuenta lo tiene; si no, guarda los archivos en D1.
-4. Respaldo de la base (artefacto de 30 días) y migraciones.
+4. Anota un punto de restauración (Time Travel de D1) y aplica migraciones.
+   No se suben respaldos como artefactos: el repositorio es público.
 5. Despliega el Worker y crea su clave de enlaces firmados (una sola vez).
 6. Comprueba que `…/api/v1/health` responde.
 7. Guarda la URL en `deploy/api-url.txt` y **vuelve a publicar la app web**
@@ -99,5 +100,5 @@ a un proveedor con cuenta propia en `app/lib/shared/map/map_tiles.dart`.
 
 - **Código**: en el panel *Workers → naturista-valdivia-api → Deployments → Rollback*,
   o vuelve a ejecutar el workflow desde un commit anterior.
-- **Datos**: D1 Time Travel (`npx wrangler d1 time-travel restore …`) o el
-  respaldo `.sql` del artefacto. Ver `backup-and-recovery.md`.
+- **Datos**: D1 Time Travel (`npx wrangler d1 time-travel restore naturista-valdivia-db --bookmark <marcador>`),
+  con el marcador que anotan los flujos antes de cada cambio. Ver `backup-and-recovery.md`.

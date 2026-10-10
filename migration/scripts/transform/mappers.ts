@@ -91,7 +91,9 @@ export function mapAuthUser(ctx: Context, u: AuthUser) {
     '010-users',
     c,
     'users',
-    insert('users', {
+    insert(
+      'users',
+      {
       id: u.uid,
       email: u.email,
       email_verified: u.emailVerified,
@@ -101,7 +103,10 @@ export function mapAuthUser(ctx: Context, u: AuthUser) {
       created_at: u.createdAt ?? ctx.migratedAt,
       legacy_source: 'firestore',
       migrated_at: ctx.migratedAt,
-    }),
+      },
+      // Quien ya entró a la app nueva conserva sus datos; solo se marca como migrado.
+      `(id) DO UPDATE SET legacy_source = 'firestore', migrated_at = COALESCE(users.migrated_at, excluded.migrated_at)`,
+    ),
   );
 }
 
@@ -129,7 +134,7 @@ export function mapSettings(ctx: Context, d: SnapshotDoc) {
   let extraJson = JSON.stringify(extra);
   if (extraJson.length > 16_000) {
     extraJson = '{}';
-    ctx.plan.collection(c).notes.push(`settings/${d.id}: secciones extra demasiado grandes, se omiten`);
+    ctx.plan.skip(c, 'secciones extra de ajustes demasiado grandes (se omiten esas secciones)');
   }
   ctx.plan.add('020-user-settings', c, 'user_settings', insert('user_settings', { user_id: uid, language, theme, extra_json: extraJson }));
   finish(ctx, c, r);

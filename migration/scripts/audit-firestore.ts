@@ -23,7 +23,7 @@ import { parseArgs } from 'node:util';
 import { applicationDefault, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
-import { getStorage } from 'firebase-admin/storage';
+import { resolveBucket } from './lib/bucket';
 import { LEGACY_COLLECTIONS, LEGACY_SUBCOLLECTIONS } from './lib/legacy-inventory';
 import { addToReport, compositeIdMatches, emptyReferenceReport, type ReferenceReport } from './lib/reference-check';
 import { inferSchema, mixedTypeFields, optionalFields } from './lib/schema-inference';
@@ -46,9 +46,8 @@ if (!projectId) {
 }
 const sampleSize = Math.min(Math.max(Number.parseInt(values.sample ?? '500', 10) || 500, 1), 5000);
 const outDir = resolve(values.out ?? 'output');
-const bucketName = values.bucket ?? `${projectId}.firebasestorage.app`;
 
-initializeApp({ credential: applicationDefault(), projectId, storageBucket: bucketName });
+initializeApp({ credential: applicationDefault(), projectId });
 const db = getFirestore();
 const auth = getAuth();
 
@@ -136,7 +135,7 @@ async function auditSubcollections(): Promise<AuditReport['subcollections']> {
 
 async function auditStorage(): Promise<AuditReport['storage']> {
   try {
-    const bucket = getStorage().bucket();
+    const bucket = await resolveBucket(projectId!, values.bucket);
     const [files] = await bucket.getFiles({ prefix: 'user-files/', autoPaginate: true });
     let bytes = 0;
     const byPurpose: Record<string, number> = {};
