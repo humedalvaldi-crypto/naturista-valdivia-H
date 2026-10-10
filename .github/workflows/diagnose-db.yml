@@ -1,0 +1,50 @@
+name: Diagnóstico de la base (solo conteos)
+
+# Solo lectura y solo números: nunca muestra contenido ni datos personales
+# (el repositorio es público). Se pide con deploy/diagnose-request.json o a mano.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["deploy/diagnose-request.json"]
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: worker
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      DB_NAME: naturista-valdivia-db
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Conteos
+        run: |
+          ID=$(npx wrangler d1 list --json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const l=JSON.parse(s.slice(s.indexOf("[")));const d=l.find(x=>x.name===process.argv[1]);process.stdout.write(d?(d.uuid||d.id||""):"")})' "$DB_NAME")
+          sed -i "s/00000000-0000-0000-0000-000000000000/$ID/" wrangler.toml
+          SQL="SELECT
+            (SELECT count(*) FROM users) AS usuarios,
+            (SELECT count(*) FROM users WHERE legacy_source = 'firestore') AS usuarios_migrados,
+            (SELECT count(*) FROM notebooks) AS cuadernos,
+            (SELECT count(*) FROM notebooks WHERE deleted_at IS NOT NULL) AS cuadernos_borrados,
+            (SELECT count(*) FROM notebooks WHERE legacy_id IS NOT NULL) AS cuadernos_migrados,
+            (SELECT count(*) FROM notebooks WHERE legacy_id IS NOT NULL AND deleted_at IS NOT NULL) AS cuadernos_migrados_borrados,
+            (SELECT count(DISTINCT owner_id) FROM notebooks WHERE deleted_at IS NULL) AS duenos_con_cuadernos,
+            (SELECT count(*) FROM notebook_pages) AS paginas,
+            (SELECT count(*) FROM notebook_elements) AS elementos,
+            (SELECT count(*) FROM species_unlocks) AS desbloqueos,
+            (SELECT count(*) FROM observations) AS observaciones,
+            (SELECT count(*) FROM posts) AS publicaciones,
+            (SELECT count(*) FROM media_assets) AS archivos"
+          npx wrangler d1 execute "$DB_NAME" --remote --json --command "$SQL" > out.json
+          node -e 'const r=JSON.parse(require("fs").readFileSync("out.json","utf8"));const row=r[0].results[0];console.log("::notice title=Conteos::"+Object.entries(row).map(([k,v])=>k+": "+v).join(" · "))'
