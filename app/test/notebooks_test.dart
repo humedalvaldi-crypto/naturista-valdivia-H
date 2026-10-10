@@ -326,4 +326,22 @@ class _FakeCapture implements AudioCapture {
 
   @override
   void dispose() {}
+
+  testWidgets('me gusta en un cuaderno público de otra persona', (tester) async {
+    final server = FakeApiServer();
+    final nb = server.addNotebook('Aves del humedal', ownerId: 'u2');
+    nb['visibility'] = 'public';
+    nb['likeCount'] = 2;
+    await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/notebooks/${nb['id']}', api: server.client);
+    expect(find.text('2'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('notebook-like')));
+    await tester.pumpAndSettle();
+    expect(server.requests, contains('PUT /notebooks/${nb['id']}/like'));
+    expect(find.text('3'), findsOneWidget);
+    expect(find.byIcon(Icons.favorite), findsOneWidget);
+    await tester.tap(find.byKey(const Key('notebook-like')));
+    await tester.pumpAndSettle();
+    expect(server.requests, contains('DELETE /notebooks/${nb['id']}/like'));
+    expect(find.text('2'), findsOneWidget);
+  });
 }

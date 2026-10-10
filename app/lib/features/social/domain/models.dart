@@ -141,6 +141,8 @@ class AppNotification {
     this.actor,
     this.postId,
     this.conversationId,
+    this.notebookId,
+    this.body,
   });
 
   factory AppNotification.fromJson(Map<String, dynamic> j) => AppNotification(
@@ -149,9 +151,15 @@ class AppNotification {
         actor: j['actor'] == null ? null : Person.fromJson(j['actor'] as Map<String, dynamic>),
         postId: j['postId'] as String?,
         conversationId: j['conversationId'] as String?,
+        notebookId: j['notebookId'] as String?,
+        body: j['body'] as String?,
         createdAt: _date(j['createdAt']),
         read: j['read'] as bool? ?? false,
       );
+
+  /// Solo en avisos de la app anterior: cuaderno relacionado y texto original.
+  final String? notebookId;
+  final String? body;
 
   final String id;
   final String type;

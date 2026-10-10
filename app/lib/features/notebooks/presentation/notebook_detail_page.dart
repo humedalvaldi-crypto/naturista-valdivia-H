@@ -219,6 +219,43 @@ class _NotebookDetailPageState extends State<NotebookDetailPage> {
     }
   }
 
+  bool _liking = false;
+
+  Future<void> _toggleLike(Notebook nb) async {
+    if (AuthScope.read(context).user == null) {
+      context.go('/login?from=${Uri.encodeComponent('/notebooks/${nb.id}')}');
+      return;
+    }
+    final messenger = ScaffoldMessenger.of(context);
+    final want = !nb.likedByMe;
+    setState(() {
+      _liking = true;
+      _notebook = nb.withLikes(nb.likeCount + (want ? 1 : -1), want);
+    });
+    try {
+      final (count, mine) = await _api.setLiked(nb.id, want);
+      if (mounted) setState(() => _notebook = _notebook?.withLikes(count, mine));
+    } catch (e) {
+      if (mounted) {
+        setState(() => _notebook = nb);
+        messenger.showSnackBar(SnackBar(content: Text(apiErrorText(context, e))));
+      }
+    } finally {
+      if (mounted) setState(() => _liking = false);
+    }
+  }
+
+  Widget _likeButton(Notebook nb) {
+    final l10n = context.l10n;
+    final color = nb.likedByMe ? Theme.of(context).colorScheme.error : null;
+    return TextButton.icon(
+      key: const Key('notebook-like'),
+      onPressed: _liking ? null : () => _toggleLike(nb),
+      icon: Icon(nb.likedByMe ? Icons.favorite : Icons.favorite_border, color: color),
+      label: Text('${nb.likeCount}', semanticsLabel: l10n.notebookLikes(nb.likeCount)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -271,6 +308,7 @@ class _NotebookDetailPageState extends State<NotebookDetailPage> {
       appBar: AppBar(
         title: Text(nb?.title ?? l10n.notebooksTitle),
         actions: [
+          if (nb != null && nb.visibility == 'public') _likeButton(nb),
           if (nb != null && !owner)
             IconButton(tooltip: l10n.exportPdf, icon: const Icon(Icons.picture_as_pdf_outlined), onPressed: _exportPdf),
           if (owner)

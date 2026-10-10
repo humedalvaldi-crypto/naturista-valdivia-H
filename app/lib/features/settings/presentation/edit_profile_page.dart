@@ -171,10 +171,10 @@ class _EditProfileBodyState extends State<_EditProfileBody> {
     }
 
     final bannerPreview = _newBanner != null
-        ? Image.memory(_newBanner!.bytes, fit: BoxFit.cover)
+        ? Image.memory(_newBanner!.bytes, fit: BoxFit.cover, errorBuilder: (_, _, _) => const Icon(Icons.broken_image_outlined))
         : (_removeBanner ? null : current(original.banner));
     final photoPreview = _newPhoto != null
-        ? Image.memory(_newPhoto!.bytes, fit: BoxFit.cover)
+        ? Image.memory(_newPhoto!.bytes, fit: BoxFit.cover, errorBuilder: (_, _, _) => const Icon(Icons.broken_image_outlined))
         : (_removePhoto ? null : current(original.photo));
     final scheme = Theme.of(context).colorScheme;
 

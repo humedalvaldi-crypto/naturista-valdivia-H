@@ -16,7 +16,7 @@ import 'support/fake_auth_repository.dart';
 import 'support/test_app.dart';
 
 const _eva = AuthUser(uid: 'u1', email: 'eva@example.test', displayName: 'Eva', providers: ['password'], emailVerified: true);
-final _jpeg = Uint8List.fromList([0xff, 0xd8, 0xff, 0xe0, 0, 0, 0xff, 0xd9]);
+final _png = base64Decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==');
 
 Future<void> _scrollTo(WidgetTester tester, Finder finder) async {
   await tester.scrollUntilVisible(finder, 200, scrollable: find.byType(Scrollable).first);
@@ -61,7 +61,7 @@ void main() {
 
   testWidgets('editar el perfil: nombre, usuario y foto', (tester) async {
     final server = FakeApiServer();
-    PhotoPicker.pick = () async => PickedPhoto(bytes: _jpeg, contentType: 'image/jpeg', name: 'yo.jpg');
+    PhotoPicker.pick = () async => PickedPhoto(bytes: _png, contentType: 'image/png', name: 'yo.png');
     await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/settings', api: server.client);
 
     await tester.tap(find.byKey(const Key('settings-edit-profile')));
@@ -69,16 +69,18 @@ void main() {
     expect(find.widgetWithText(TextFormField, 'eva'), findsOneWidget);
 
     await tester.enterText(find.byKey(const Key('profile-name')), 'Eva Pérez');
-    await tester.enterText(find.byKey(const Key('profile-username')), 'Mal Nombre');
-    await tester.tap(find.byKey(const Key('pick-photo')));
-    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('profile-username')), 'mal nombre');
     await tester.ensureVisible(find.byKey(const Key('profile-save')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('profile-save')));
     await tester.pumpAndSettle();
-    expect(find.textContaining('sin dos signos seguidos'), findsOneWidget);
     expect(server.requests, isNot(contains('PATCH /me/profile')));
+    expect(find.textContaining('signos seguidos'), findsWidgets);
 
     await tester.enterText(find.byKey(const Key('profile-username')), 'eva.perez');
+    await tester.ensureVisible(find.byKey(const Key('pick-photo')));
+    await tester.tap(find.byKey(const Key('pick-photo')));
+    await tester.pumpAndSettle();
     await tester.ensureVisible(find.byKey(const Key('profile-save')));
     await tester.tap(find.byKey(const Key('profile-save')));
     await tester.pumpAndSettle();

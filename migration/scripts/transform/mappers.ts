@@ -746,6 +746,84 @@ export function mapObservation(ctx: Context, d: SnapshotDoc) {
   finish(ctx, c, r);
 }
 
+// ── notebook_likes → notebook_likes ──────────────────────────────────────────
+export function mapNotebookLike(ctx: Context, d: SnapshotDoc) {
+  const c = 'notebook_likes';
+  ctx.plan.collection(c).read++;
+  const r = new FieldReader(d.data);
+  const [idUser, idNotebook] = d.id.includes('_') ? d.id.split('_', 2) : [null, null];
+  const user = ctx.owner(c, r.str('userId', 'uid', 'likerId') ?? idUser, 'quien dio me gusta');
+  if (!user) return finish(ctx, c, r);
+  const legacyNotebook = r.str('notebookId', 'notebook') ?? idNotebook;
+  const nb = legacyNotebook ? ctx.notebookOwner.get(legacyNotebook) : undefined;
+  if (!nb) {
+    finish(ctx, c, r);
+    return ctx.plan.skip(c, 'cuaderno no migrado o inexistente');
+  }
+  r.known('ownerId', 'notebookOwnerId', 'userName', 'userPhoto');
+  ctx.plan.add(
+    '155-notebook-likes',
+    c,
+    'notebook_likes',
+    insert('notebook_likes', { notebook_id: nb.id, user_id: user, created_at: r.date('createdAt', 'timestamp') ?? ctx.migratedAt }),
+  );
+  finish(ctx, c, r);
+}
+
+// ── notifications y users/{uid}/notifications → notifications ──────────────
+const NOTIF_TYPES: Record<string, 'follow' | 'comment' | 'reaction' | 'message'> = {
+  follow: 'follow', new_follower: 'follow', seguidor: 'follow', follower: 'follow',
+  comment: 'comment', comentario: 'comment', reply: 'comment',
+  like: 'reaction', reaction: 'reaction', megusta: 'reaction', like_post: 'reaction', post_like: 'reaction',
+  message: 'message', chat: 'message', mensaje: 'message', new_message: 'message',
+};
+
+export function mapNotification(ctx: Context, d: SnapshotDoc, collection: 'notifications' | 'users__notifications') {
+  const c = collection;
+  ctx.plan.collection(c).read++;
+  const r = new FieldReader(d.data);
+  const recipient = ctx.owner(c, r.str('userId', 'recipientId', 'toUserId', 'targetUserId', 'toUid', 'uid') ?? d.parent ?? null, 'destinatario');
+  if (!recipient) return finish(ctx, c, r);
+  const actorRaw = r.str('fromUserId', 'actorId', 'senderId', 'fromId', 'fromUid', 'followerId', 'likerId', 'byUserId');
+  // Quien originó el aviso es opcional: si no existe, el aviso se conserva sin autor.
+  const actor = actorRaw && actorRaw !== recipient && ctx.users.has(actorRaw) ? actorRaw : null;
+  if (actorRaw && !actor && actorRaw !== recipient) ctx.plan.skip(c, 'autor del aviso inexistente: se conserva sin autor (no se omite)');
+  const rawType = (r.str('type', 'kind', 'tipo') ?? '').toLowerCase().replace(/[\s-]+/g, '_');
+  const legacyPost = r.str('postId');
+  const postId = legacyPost ? ctx.postByLegacy.get(legacyPost) ?? null : null;
+  const legacyNotebook = r.str('notebookId');
+  const notebookId = legacyNotebook ? ctx.notebookOwner.get(legacyNotebook)?.id ?? null : null;
+  let type: string = NOTIF_TYPES[rawType] ?? 'system';
+  // Los tipos ligados a una publicación solo se conservan como tales si la publicación existe.
+  if ((type === 'comment' || type === 'reaction') && !postId) type = 'system';
+  if (type === 'follow' && !actor) type = 'system';
+  if (type === 'message') type = actor ? 'message' : 'system';
+  const body = truncate(r.str('message', 'text', 'body', 'title', 'content', 'mensaje', 'description'), 500);
+  const created = r.date('createdAt', 'timestamp', 'date', 'sentAt') ?? ctx.migratedAt;
+  const read = r.bool('read', 'isRead', 'seen', 'leida');
+  r.known('fromUserName', 'fromUserPhoto', 'actorName', 'actorPhoto', 'senderName', 'userName', 'link', 'url', 'icon');
+  const legacy = d.path ?? `${c}/${d.id}`;
+  ctx.plan.add(
+    '160-notifications',
+    c,
+    'notifications',
+    insert('notifications', {
+      id: stableId(`notifications/${legacy}`),
+      user_id: recipient,
+      actor_id: actor,
+      type,
+      post_id: postId,
+      conversation_id: null,
+      notebook_id: notebookId,
+      body,
+      created_at: created,
+      read_at: read ? created : null,
+      legacy_id: legacy,
+    }),
+  );
+  finish(ctx, c, r);
+}
+
 // ── chat_messages → conversations + messages ───────────────────────────────
 export function mapChatMessages(ctx: Context, docs: SnapshotDoc[]) {
   const c = 'chat_messages';

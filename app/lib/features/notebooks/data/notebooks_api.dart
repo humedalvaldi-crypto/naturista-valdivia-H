@@ -51,6 +51,13 @@ class NotebooksApi implements PageStore {
 
   Future<void> delete(String id) => _api.delete('/notebooks/$id');
 
+  /// Da o quita "me gusta". Devuelve (total, míoAhora).
+  Future<(int, bool)> setLiked(String id, bool liked) async {
+    final body = liked ? await _api.put('/notebooks/$id/like') : await _api.delete('/notebooks/$id/like');
+    final data = body['data'] as Map<String, dynamic>;
+    return ((data['likeCount'] as num).toInt(), data['likedByMe'] as bool);
+  }
+
   /// Cuadernos eliminados en los últimos 30 días.
   Future<List<Notebook>> trash() async => _list(await _api.get('/notebooks/trash')).map(Notebook.fromJson).toList();
 

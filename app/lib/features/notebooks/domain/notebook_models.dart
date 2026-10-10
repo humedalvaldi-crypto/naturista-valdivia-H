@@ -21,6 +21,8 @@ class Notebook {
     this.description,
     this.ownerId,
     this.deletedAt,
+    this.likeCount = 0,
+    this.likedByMe = false,
   });
 
   factory Notebook.fromJson(Map<String, dynamic> j) => Notebook(
@@ -33,6 +35,22 @@ class Notebook {
         updatedAt: _date(j['updatedAt']),
         ownerId: j['ownerId'] as String?,
         deletedAt: j['deletedAt'] == null ? null : _date(j['deletedAt']),
+        likeCount: (j['likeCount'] as num?)?.toInt() ?? 0,
+        likedByMe: j['likedByMe'] as bool? ?? false,
+      );
+
+  Notebook withLikes(int count, bool mine) => Notebook(
+        id: id,
+        title: title,
+        color: color,
+        visibility: visibility,
+        pageCount: pageCount,
+        updatedAt: updatedAt,
+        description: description,
+        ownerId: ownerId,
+        deletedAt: deletedAt,
+        likeCount: count,
+        likedByMe: mine,
       );
 
   final String id;
@@ -40,6 +58,10 @@ class Notebook {
 
   /// Solo en la papelera: cuándo se eliminó.
   final DateTime? deletedAt;
+
+  /// "Me gusta" (solo al pedir un cuaderno concreto).
+  final int likeCount;
+  final bool likedByMe;
   final String title;
   final String? description;
   final String color;

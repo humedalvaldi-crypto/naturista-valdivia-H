@@ -21,7 +21,7 @@ export function writeFixtureSnapshot(): string {
     { uid: 'uidBeto', email: 'beto@example.test', emailVerified: false, displayName: "Beto O'Higgins", providers: ['password'], disabled: false, createdAt: '2025-04-01T10:00:00.000Z' },
     { uid: 'uidCami', email: null, emailVerified: false, displayName: null, providers: [], disabled: true, createdAt: null },
   ]);
-  const fs = (name: string, docs: { id: string; data: unknown; parent?: string }[]) =>
+  const fs = (name: string, docs: { id: string; data: unknown; parent?: string; path?: string }[]) =>
     jsonl(`firestore/${name}.jsonl`, docs.map((d) => ({ path: `${name}/${d.id}`, ...d })));
 
   fs('profiles', [
@@ -104,6 +104,20 @@ export function writeFixtureSnapshot(): string {
     { id: 'uidAna', data: { unlockedIds: ['chucao', 'Lontra_provocax', 'garza-grande', 'dragon-azul', 'chucao'] } },
     { id: 'anon', data: { unlockedIds: ['chucao'] } },
   ]);
+  fs('notebook_likes', [
+    { id: 'uidBeto_nb1', data: { userId: 'uidBeto', notebookId: 'nb1', createdAt: ts('2025-09-01T10:00:00Z') } },
+    { id: 'uidBeto_nb2', data: { userId: 'uidBeto', notebookId: 'nb2' } }, // cuaderno huérfano
+    { id: 'anon_nb1', data: { userId: 'anon', notebookId: 'nb1' } },
+  ]);
+  fs('notifications', [
+    { id: 'n1', data: { userId: 'uidAna', fromUserId: 'uidBeto', type: 'follow', createdAt: ts('2025-09-02T10:00:00Z'), read: true } },
+    { id: 'n2', data: { userId: 'uidAna', fromUserId: 'uidBeto', type: 'notebook_like', notebookId: 'nb1', message: 'A Beto le gustó tu cuaderno' } },
+    { id: 'n3', data: { userId: 'uidAna', fromUserId: 'uidBeto', type: 'like', postId: 'p1' } },
+    { id: 'n4', data: { userId: 'uidFantasma', type: 'follow' } },
+  ]);
+  fs('users__notifications', [
+    { id: 'n1', parent: 'uidBeto', data: { title: 'Bienvenido a Naturista Valdivia', createdAt: ts('2025-04-01T10:00:00Z') } },
+  ].map((d) => ({ ...d, path: `users/${d.parent}/notifications/${d.id}` })));
   fs('reports', [{ id: 'r1', data: { userId: 'uidAna', userEmail: 'ana@example.test', message: 'Hola' } }]);
   fs('coleccion_nueva', [{ id: 'x1', data: { a: 1 } }]);
   return dir;

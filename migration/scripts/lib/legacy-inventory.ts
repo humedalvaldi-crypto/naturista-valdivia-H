@@ -40,7 +40,7 @@ export const LEGACY_COLLECTIONS: LegacyCollection[] = [
     target: 'notebook_pages + notebook_elements',
     notes: 'Campos de ubicación latitude/longitude/locationSource; audioNoteUrl; sticker.',
   },
-  { name: 'notebook_likes', docId: 'composite', uidFields: ['userId'], refFields: { notebookId: 'notebooks' }, target: 'reactions' },
+  { name: 'notebook_likes', docId: 'composite', uidFields: ['userId'], refFields: { notebookId: 'notebooks' }, target: 'notebook_likes' },
   { name: 'follows', docId: 'composite', uidFields: ['followerId', 'followedId'], target: 'follows', notes: 'ID = `${followerId}_${followedId}`.' },
   { name: 'groups', docId: 'auto', uidFields: ['createdBy'], target: 'communities' },
   { name: 'group_members', docId: 'composite', uidFields: ['userId'], refFields: { groupId: 'groups' }, target: 'community_members' },

@@ -108,4 +108,26 @@ void main() {
     await tester.pumpAndSettle();
     expect(server.requests, contains('POST /me/notifications/read'));
   });
+
+  testWidgets('avisos de la app anterior muestran su texto y abren el cuaderno', (tester) async {
+    final server = FakeApiServer();
+    final nb = server.addNotebook('Bitácora de Beto', ownerId: 'u2');
+    nb['visibility'] = 'public';
+    server.notifications.add({
+      'id': 'n-legacy',
+      'type': 'system',
+      'actor': null,
+      'postId': null,
+      'conversationId': null,
+      'notebookId': nb['id'],
+      'body': 'A Beto le gustó tu cuaderno',
+      'createdAt': DateTime.utc(2025, 6, 1).toIso8601String(),
+      'read': true,
+    });
+    await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/notifications', api: server.client);
+    expect(find.text('A Beto le gustó tu cuaderno'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('notification-n-legacy')));
+    await tester.pumpAndSettle();
+    expect(server.requests, contains('GET /notebooks/${nb['id']}'));
+  });
 }

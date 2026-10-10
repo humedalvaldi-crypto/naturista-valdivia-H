@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/l10n/generated/app_localizations.dart';
 import '../../../core/l10n/l10n.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_scope.dart';

@@ -53,6 +53,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   String _text(AppLocalizations l10n, AppNotification n) {
     final name = n.actor?.name ?? l10n.someone;
+    final body = n.body;
+    if (body != null && body.trim().isNotEmpty) return body; // aviso de la app anterior
     return switch (n.type) {
       'follow' => l10n.notifFollow(name),
       'comment' => l10n.notifComment(name),
@@ -100,6 +102,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
                       final n = c.items[i];
                       final actor = n.actor;
                       final postId = n.postId;
+                      final notebookId = n.notebookId;
+                      final conversationId = n.conversationId;
                       return ListTile(
                         key: Key('notification-${n.id}'),
                         tileColor: n.read ? null : Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.35),
@@ -108,7 +112,13 @@ class _NotificationsPageState extends State<NotificationsPage> {
                             : PersonAvatar(person: actor, imageUrl: _api.url(actor.photo)),
                         title: Text(_text(l10n, n)),
                         subtitle: Text(formatWhen(context, n.createdAt)),
-                        onTap: postId == null ? null : () => context.push('/posts/$postId'),
+                        onTap: postId != null
+                            ? () => context.push('/posts/$postId')
+                            : notebookId != null
+                                ? () => context.push('/notebooks/$notebookId')
+                                : conversationId != null
+                                    ? () => context.push('/messages/$conversationId')
+                                    : null,
                       );
                     },
                   ),

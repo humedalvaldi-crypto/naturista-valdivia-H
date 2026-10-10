@@ -9,7 +9,9 @@ import {
   mapGroup,
   mapGroupMember,
   mapNotebook,
+  mapNotebookLike,
   mapNotebookPages,
+  mapNotification,
   mapObservation,
   mapPlace,
   mapPost,
@@ -27,9 +29,6 @@ import { lit } from './sql';
 
 /** Colecciones que se leen pero, por decisión, no se migran (quedan en el informe). */
 export const NOT_MIGRATED: Record<string, string> = {
-  notebook_likes: 'los "me gusta" de cuadernos no existen en la app nueva',
-  notifications: 'avisos antiguos y efímeros; la app nueva genera los suyos',
-  users__notifications: 'avisos antiguos y efímeros; la app nueva genera los suyos',
   reports: 'mensajes de contacto con correos personales; se revisan a mano, no se migran',
   species_album: 'álbum de especies aún sin equivalente en la app nueva',
   profile_views: 'registro de visitas a perfiles: no se conserva (privacidad)',
@@ -98,6 +97,9 @@ export function transform(snapshotDir: string, outDir: string, migrationsDir: st
   for (const d of col('user_collections')) mapUserCollection(ctx, d);
   mapChatMessages(ctx, col('chat_messages'));
   for (const d of col('places')) mapPlace(ctx, d, 'places');
+  for (const d of col('notebook_likes')) mapNotebookLike(ctx, d);
+  for (const d of col('notifications')) mapNotification(ctx, d, 'notifications');
+  for (const d of col('users__notifications')) mapNotification(ctx, d, 'users__notifications');
   for (const d of col('wetlands')) mapPlace(ctx, d, 'wetlands');
   // Cuentas que su dueña eliminó en la app nueva: una nueva copia no las revive.
   // Se resuelve dentro de D1 (tabla deleted_accounts), sin que los UID pasen por los registros.
@@ -114,6 +116,7 @@ export function transform(snapshotDir: string, outDir: string, migrationsDir: st
   const handled = new Set([
     'settings', 'species_catalog', 'user_file_assets', 'profiles', 'groups', 'group_members', 'follows', 'posts',
     'notebooks', 'notebook_pages', 'observations', 'chat_messages', 'places', 'wetlands', 'user_collections',
+    'notebook_likes', 'notifications', 'users__notifications',
   ]);
   if (existsSync(fsDir)) {
     for (const file of readdirSync(fsDir).filter((f) => f.endsWith('.jsonl'))) {

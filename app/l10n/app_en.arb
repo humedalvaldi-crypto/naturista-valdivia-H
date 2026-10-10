@@ -473,5 +473,6 @@
   "legalRightsBody": "You can view and correct your profile, download a copy of all your data and delete your account from Settings. Deleting it removes your content from our servers; files are removed in the daily cleanup.",
   "legalTermsTitle": "Rules of use",
   "legalTermsBody": "Respect other people and nature: do not post other people's personal data, offensive content or locations that put species at risk. We may hide reported content that breaks these rules.",
-  "visibilityShortFollowers": "Followers"
+  "visibilityShortFollowers": "Followers",
+  "notebookLikes": "{count, plural, =0{No likes} =1{1 like} other{{count} likes}}"
 }

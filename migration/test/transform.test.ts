@@ -91,14 +91,31 @@ describe('plan sobre una instantánea de prueba', () => {
     expect(count(db, "SELECT count(*) n FROM users WHERE id = 'uidAna'")).toBe(1);
   });
 
+  it('me gusta de cuadernos y avisos antiguos con su texto', () => {
+    const db = freshDb();
+    applyFiles(db, join(out, 'sql'), files);
+    expect(count(db, 'SELECT count(*) n FROM notebook_likes')).toBe(1);
+    const rows = db
+      .prepare("SELECT user_id, actor_id, type, post_id IS NOT NULL AS has_post, notebook_id IS NOT NULL AS has_nb, body, read_at IS NOT NULL AS read FROM notifications ORDER BY legacy_id")
+      .all() as Record<string, unknown>[];
+    expect(rows).toEqual([
+      { user_id: 'uidAna', actor_id: 'uidBeto', type: 'follow', has_post: 0, has_nb: 0, body: null, read: 1 },
+      { user_id: 'uidAna', actor_id: 'uidBeto', type: 'system', has_post: 0, has_nb: 1, body: 'A Beto le gustó tu cuaderno', read: 0 },
+      { user_id: 'uidAna', actor_id: 'uidBeto', type: 'reaction', has_post: 1, has_nb: 0, body: null, read: 0 },
+      { user_id: 'uidBeto', actor_id: null, type: 'system', has_post: 0, has_nb: 0, body: 'Bienvenido a Naturista Valdivia', read: 0 },
+    ]);
+    const report = JSON.parse(readFileSync(join(out, 'report.json'), 'utf8'));
+    expect(JSON.stringify(report)).toContain('cuaderno no migrado o inexistente');
+  });
+
   it('es idempotente: aplicarlo dos veces no duplica nada', () => {
     const db = freshDb();
     applyFiles(db, join(out, 'sql'), files);
-    const before = ['users', 'posts', 'observations', 'notebook_pages', 'notebook_elements', 'messages', 'follows', 'community_members'].map((t) =>
+    const before = ['users', 'posts', 'observations', 'notebook_pages', 'notebook_elements', 'messages', 'follows', 'community_members', 'notebook_likes', 'notifications'].map((t) =>
       count(db, `SELECT count(*) n FROM ${t}`),
     );
     applyFiles(db, join(out, 'sql'), files);
-    const after = ['users', 'posts', 'observations', 'notebook_pages', 'notebook_elements', 'messages', 'follows', 'community_members'].map((t) =>
+    const after = ['users', 'posts', 'observations', 'notebook_pages', 'notebook_elements', 'messages', 'follows', 'community_members', 'notebook_likes', 'notifications'].map((t) =>
       count(db, `SELECT count(*) n FROM ${t}`),
     );
     expect(after).toEqual(before);

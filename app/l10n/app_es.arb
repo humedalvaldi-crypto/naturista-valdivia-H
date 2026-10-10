@@ -743,5 +743,13 @@
   "legalRightsBody": "Puedes ver y corregir tu perfil, descargar una copia de todos tus datos y eliminar tu cuenta desde Configuración. Al eliminarla se borra tu contenido de nuestros servidores; los archivos se borran en la limpieza diaria.",
   "legalTermsTitle": "Normas de uso",
   "legalTermsBody": "Respeta a las demás personas y a la naturaleza: no publiques datos personales de otros, contenido ofensivo ni ubicaciones que pongan en riesgo especies. Podemos ocultar contenido reportado que no cumpla estas normas.",
-  "visibilityShortFollowers": "Seguidores"
+  "visibilityShortFollowers": "Seguidores",
+  "notebookLikes": "{count, plural, =0{Sin me gusta} =1{1 me gusta} other{{count} me gusta}}",
+  "@notebookLikes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

@@ -24,7 +24,7 @@ abstract final class AppTheme {
     if (reduceMotion) {
       theme = theme.copyWith(
         pageTransitionsTheme: PageTransitionsTheme(builders: {
-          for (final p in TargetPlatform.values) p: _NoTransitionsBuilder(),
+          for (final p in TargetPlatform.values) p: const _NoTransitionsBuilder(),
         }),
       );
     }

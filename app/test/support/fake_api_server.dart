@@ -234,6 +234,12 @@ class FakeApiServer {
       final nb = notebooks.where((n) => n['id'] == seg[1]).firstOrNull;
       if (nb == null) return null;
       if (seg.length == 2 && method == 'GET') return _json({'data': nb});
+      if (seg.length == 3 && seg[2] == 'like') {
+        final liked = method == 'PUT';
+        if (liked != (nb['likedByMe'] ?? false)) nb['likeCount'] = ((nb['likeCount'] as int?) ?? 0) + (liked ? 1 : -1);
+        nb['likedByMe'] = liked;
+        return _json({'data': {'likeCount': nb['likeCount'], 'likedByMe': liked}});
+      }
       if (seg.length == 2 && method == 'PATCH') {
         nb.addAll(body);
         return _json({'data': nb});
