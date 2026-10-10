@@ -11,6 +11,8 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 APP_ENV = "development"
 FIREBASE_PROJECT_ID = "humedalvaldivia-c7d08"
+CONSENT_VERSION = "2026-10"
+MIN_AGE = "14"
 ALLOWED_ORIGINS = "https://humedalvaldi-crypto.github.io,http://localhost:8080,http://localhost:5173"
 
 [[d1_databases]]

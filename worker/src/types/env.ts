@@ -13,6 +13,10 @@ export interface Env {
   RL_WRITE?: RateLimit;
   RL_UPLOAD?: RateLimit;
   RL_PUBLIC?: RateLimit;
+  /** Versión vigente de términos; vacía = no se exige consentimiento (solo en pruebas). */
+  CONSENT_VERSION?: string;
+  /** Edad mínima que la persona debe confirmar. */
+  MIN_AGE?: string;
 }
 
 /** Identidad verificada a partir de un Firebase ID token. */
@@ -23,6 +27,15 @@ export interface AuthUser {
   name: string | null;
   picture: string | null;
   signInProvider: string | null;
+  /** Momento del inicio de sesión (segundos), se conserva al renovar el token. */
+  authTime: number;
+}
+
+/** Estado de la cuenta en D1, leído una vez por petición autenticada. */
+export interface AccountState {
+  exists: boolean;
+  status: string | null;
+  consentVersion: string | null;
 }
 
 export interface AppVariables {
@@ -30,6 +43,7 @@ export interface AppVariables {
   user: AuthUser;
   /** Presente solo en rutas con autenticación opcional cuando hay token válido. */
   maybeUser?: AuthUser;
+  account?: AccountState;
 }
 
 export type AppBindings = { Bindings: Env; Variables: AppVariables };

@@ -28,3 +28,10 @@ export const feedbackSchema = z.strictObject({
   appVersion: z.string().trim().max(40).optional(),
   platform: z.string().trim().max(40).optional(),
 });
+
+/** Aceptar términos exige marcar ambas casillas: no hay valores por defecto. */
+export const consentSchema = z.strictObject({
+  version: z.string().trim().min(1).max(20),
+  termsAccepted: z.literal(true),
+  ageConfirmed: z.literal(true),
+});

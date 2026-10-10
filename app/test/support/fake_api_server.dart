@@ -44,6 +44,9 @@ class FakeApiServer {
   };
   bool accountDeleted = false;
 
+  /// Estado de consentimiento que devuelve `GET /me` (null = el servidor no lo informa).
+  Map<String, dynamic>? consent;
+
   /// Preferencias del servidor (`/me/settings`).
   Map<String, dynamic> serverSettings = {
     'language': 'es',
@@ -321,7 +324,14 @@ class FakeApiServer {
           requestBodies['${req.method} $path'] = body;
           final seg = path.split('/').where((s) => s.isNotEmpty).toList();
 
-          if (req.method == 'GET' && path == '/me') return _json({'data': {}});
+          if (req.method == 'GET' && path == '/me') {
+            return _json({'data': consent == null ? {} : {'consent': consent}});
+          }
+          if (path == '/me/consent' && req.method == 'POST') {
+            consent = {...?consent, 'upToDate': true, 'acceptedVersion': body['version']};
+            return http.Response('', 204);
+          }
+          if (path == '/me/sessions/revoke' && req.method == 'POST') return http.Response('', 204);
           if (path == '/me/profile' && req.method == 'GET') return _json({'data': myProfile});
           if (path == '/me/settings' && req.method == 'GET') return _json({'data': serverSettings});
           if (path == '/me/settings' && req.method == 'PATCH') {

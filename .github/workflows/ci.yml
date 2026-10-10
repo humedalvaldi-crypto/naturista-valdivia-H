@@ -67,6 +67,8 @@ jobs:
         run: bash branding_web/apply.sh
       - name: Permisos de Android (internet y ubicación)
         run: bash platform_patches/android_permissions.sh
+      - name: Android para huella o rostro (local_auth)
+        run: bash platform_patches/android_biometric.sh
       - run: flutter pub get
       - run: flutter gen-l10n
       - name: flutter analyze
@@ -111,3 +113,67 @@ jobs:
             exit 1
           fi
       - run: flutter build web --release
+
+  android:
+    name: Android (compila con huella y permisos)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Generar carpetas de plataforma si faltan
+        run: |
+          if [ ! -d android ]; then
+            flutter create . --platforms=android --project-name naturista_valdivia --org cl.naturistavaldivia
+            rm -f test/widget_test.dart
+          fi
+      - run: bash platform_patches/android_permissions.sh
+      - run: bash platform_patches/android_biometric.sh
+      - run: flutter pub get
+      - run: flutter gen-l10n
+      - name: Compilar APK de depuración
+        run: flutter build apk --debug
+      - name: Comprobar el manifiesto final
+        run: |
+          grep -q "USE_BIOMETRIC" android/app/src/main/AndroidManifest.xml
+          grep -rq "FlutterFragmentActivity" android/app/src/main
+          echo "::notice::Android compila con FlutterFragmentActivity y USE_BIOMETRIC."
+
+  security:
+    name: Seguridad (dependencias y secretos)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: npm audit (Worker y migración)
+        run: |
+          (cd worker && npm ci --ignore-scripts && npm audit --audit-level=high)
+          (cd migration && npm ci --ignore-scripts && npm audit --audit-level=high)
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Dependencias de Flutter (OSV)
+        working-directory: app
+        run: |
+          flutter pub get
+          go install github.com/google/osv-scanner/v2/cmd/osv-scanner@latest
+          "$(go env GOPATH)/bin/osv-scanner" scan source --lockfile=pubspec.lock
+      - name: Buscar secretos en el repositorio
+        run: |
+          # Claves privadas, cuentas de servicio y tokens no deben estar en Git (repositorio público).
+          if git grep -nIE -- '-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----|"type": *"service_account"|"private_key_id"|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{36}|xox[baprs]-[A-Za-z0-9-]{10,}' -- . ':!*.md' ':!.github/workflows/*'; then
+            echo "::error::Posible secreto en el repositorio (ver líneas arriba)."; exit 1
+          fi
+          echo "::notice::Sin secretos detectados en archivos versionados."

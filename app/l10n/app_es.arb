@@ -732,7 +732,7 @@
   "faqContactA": "Para contenido inapropiado, usa \"Reportar\" en la publicación o el perfil. Para fallas o ideas: Configuración → Contacto.",
   "legalDraftNotice": "Versión preliminar en lenguaje simple. Describe cómo funciona la app hoy.",
   "legalDataTitle": "Qué datos guardamos",
-  "legalDataBody": "Tu correo y forma de entrar; lo que escribes en tu perfil; tus publicaciones, comentarios, mensajes, observaciones (con su ubicación), cuadernos, fotos y audios; y tus preferencias. No pedimos RUT, fecha de nacimiento, género ni dirección.",
+  "legalDataBody": "Tu correo y forma de entrar; lo que escribes en tu perfil; tus publicaciones, comentarios, mensajes, observaciones (con su ubicación), cuadernos, fotos y audios; y tus preferencias. No pedimos RUT, fecha de nacimiento, género ni dirección. Si activas el desbloqueo con huella o rostro, la comparación la hace tu teléfono: no recibimos ni guardamos datos biométricos.",
   "legalUseTitle": "Para qué los usamos",
   "legalUseBody": "Solo para que la app funcione: mostrar tu contenido, el mapa de biodiversidad y la comunidad. No vendemos datos ni mostramos publicidad.",
   "legalLocationTitle": "Ubicación",
@@ -795,7 +795,7 @@
   "securityLastSignIn": "Último inicio de sesión",
   "securityGoogleManaged": "Entras con Google: la contraseña y la verificación en dos pasos se administran en tu cuenta de Google.",
   "securitySignOutHere": "Cerrar sesión en este dispositivo",
-  "securityNotAvailable": "Aún no disponible: verificación en dos pasos por SMS y cerrar sesión en todos los dispositivos a la vez. Necesitan servicios de pago de Firebase; preferimos no mostrar opciones que no funcionan.",
+  "securityNotAvailable": "Aún no disponible: verificación en dos pasos por SMS. Necesita un servicio de pago de Firebase; preferimos no mostrar una opción que no funciona.",
   "securityDangerZone": "Zona de peligro",
   "privacyMessagesFrom": "Quién puede escribirme mensajes",
   "privacyEveryone": "Todos",
@@ -911,5 +911,50 @@
   "aboutServer": "Servidor",
   "aboutServerConnected": "Conectado",
   "aboutTech": "Hecha con Flutter, Cloudflare Workers y D1, y Firebase Authentication.",
-  "aboutLicenses": "Licencias de código abierto"
+  "aboutLicenses": "Licencias de código abierto",
+  "lockTitle": "Naturista Valdivia está bloqueada",
+  "lockBody": "Usa tu huella o tu rostro para continuar.",
+  "lockUnlock": "Desbloquear",
+  "lockUseAccount": "Entrar con mi cuenta",
+  "lockReason": "Desbloquea Naturista Valdivia",
+  "lockFailed": "{count, plural, =1{No se reconoció. Queda 1 intento antes de pedir tu cuenta.} other{No se reconoció. Quedan {count} intentos antes de pedir tu cuenta.}}",
+  "@lockFailed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "lockLockedOut": "Demasiados intentos. Entra con tu cuenta.",
+  "lockUnavailable": "No se pudo usar la biometría. Entra con tu cuenta.",
+  "biometricTitle": "Desbloqueo con huella o rostro",
+  "biometricHint": "Al abrir la app o volver después de 2 minutos se pide tu huella o rostro.",
+  "biometricNotEnrolled": "Registra una huella o tu rostro en los ajustes del teléfono para activarlo.",
+  "biometricUnsupported": "No compatible en este navegador o dispositivo. Entra con tu cuenta de Google o correo, como siempre.",
+  "biometricPrivacy": "La huella y el rostro los compara el teléfono: nunca salen de él ni se guardan en nuestros servidores. Al cerrar sesión se desactiva.",
+  "biometricEnableReason": "Confirma tu huella o rostro para activar el desbloqueo",
+  "biometricEnabled": "Desbloqueo con huella o rostro activado.",
+  "biometricDisabled": "Desbloqueo con huella o rostro desactivado.",
+  "biometricCancelled": "Cancelado: no se activó.",
+  "biometricNotEnabled": "No se pudo activar. Revisa que tengas una huella o rostro registrado y conexión.",
+  "securityRevokeAll": "Cerrar sesión en todos los dispositivos",
+  "securityRevokeAllHint": "Útil si perdiste un teléfono o usaste un computador ajeno.",
+  "securityRevokeAllBody": "Todas las sesiones, también esta, dejarán de funcionar y tendrás que volver a entrar con tu cuenta.",
+  "securityRevokeAllAction": "Cerrar todas",
+  "securityRevokedDone": "Se cerraron todas tus sesiones.",
+  "consentTitle": "Términos de uso",
+  "consentIntro": "Antes de publicar o guardar contenido, lee y acepta cómo funciona Naturista Valdivia.",
+  "consentSummary": "• Respeta a las demás personas y a la naturaleza.\n• No publiques datos personales de otros ni ubicaciones que pongan en riesgo especies.\n• Tus datos se usan solo para que la app funcione; puedes descargarlos o eliminar tu cuenta cuando quieras.\n• No pedimos tu fecha de nacimiento: solo que confirmes la edad mínima.",
+  "consentReadTerms": "Leer privacidad y condiciones completas",
+  "consentTermsCheck": "Leí y acepto los términos de uso y la política de privacidad.",
+  "consentAgeCheck": "Tengo {age} años o más, o cuento con la autorización de mi madre, padre o tutor.",
+  "@consentAgeCheck": {
+    "placeholders": {
+      "age": {
+        "type": "int"
+      }
+    }
+  },
+  "consentAgeHint": "Si eres menor de esa edad, pide a una persona adulta responsable que lo revise contigo.",
+  "consentAccept": "Aceptar y continuar"
 }

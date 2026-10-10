@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import type { JWTVerifyGetKey } from 'jose';
-import { optionalAuth, requireAuth } from './middleware/auth';
+import { optionalAuth, requireAuth, requireConsent } from './middleware/auth';
 import { corsPolicy, errorHandler, notFoundHandler, requestId, securityHeaders } from './middleware/common';
 import { rateLimit } from './middleware/rate-limit';
 import { healthRoutes } from './routes/health';
@@ -63,13 +63,21 @@ export function createApp(options: AppOptions = {}) {
       });
     }
     return auth(c, async () => {
-      await writeLimit(c, next);
+      // Bloquear o desbloquear es una acción de seguridad: no exige consentimiento.
+      if (/\/block$/.test(c.req.path)) {
+        await writeLimit(c, next);
+        return;
+      }
+      await requireConsent(c, async () => {
+        await writeLimit(c, next);
+      });
     });
   });
 
   // Cuenta propia.
   v1.use('/me', auth);
   v1.use('/me/*', auth, writeLimit);
+  v1.use('/me/profile', requireConsent);
   v1.route('/me/profile', myProfileRoutes);
   v1.route('/me/notifications', notificationsRoutes);
   v1.route('/me', myConnectionsRoutes);
@@ -98,6 +106,11 @@ export function createApp(options: AppOptions = {}) {
     v1.use(base, auth, writeLimit);
     v1.use(`${base}/*`, auth, writeLimit);
   }
+  // Denunciar no exige consentimiento; comentar y escribir mensajes sí.
+  for (const base of ['/comments', '/conversations']) {
+    v1.use(base, requireConsent);
+    v1.use(`${base}/*`, requireConsent);
+  }
   v1.route('/comments', commentsRoutes);
   v1.route('/conversations', messagesRoutes);
   v1.route('/reports', reportsRoutes);
@@ -108,7 +121,7 @@ export function createApp(options: AppOptions = {}) {
 
   // Archivos: la subida, listado, enlaces y borrado exigen sesión;
   // la descarga admite dueño, archivo público o URL firmada.
-  v1.post('/media', auth, rateLimit('RL_UPLOAD'));
+  v1.post('/media', auth, requireConsent, rateLimit('RL_UPLOAD'));
   v1.use('/media/mine', auth);
   v1.post('/media/:id/link', auth, rateLimit('RL_WRITE'));
   v1.delete('/media/:id', auth, rateLimit('RL_WRITE'));

@@ -9,6 +9,9 @@ import 'core/network/api_scope.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/application/auth_controller.dart';
+import 'features/security/application/app_lock_controller.dart';
+import 'features/security/application/consent_controller.dart';
+import 'features/security/presentation/lock_screen.dart';
 import 'features/settings/application/settings_controller.dart';
 
 /// Raíz de la aplicación. Escucha las preferencias para cambiar idioma y tema
@@ -36,17 +39,23 @@ class NaturistaApp extends StatefulWidget {
 }
 
 class _NaturistaAppState extends State<NaturistaApp> {
-  late final GoRouter _router = buildRouter(
-    auth: widget.auth,
-    settings: widget.settings,
-    initialLocation: widget.initialLocation,
-  );
-
   late final ApiClient _api =
       widget.api ?? ApiClient(baseUrl: AppConfig.apiBaseUrl, auth: widget.auth.repository);
 
+  late final ConsentController _consent = ConsentController(widget.auth, _api);
+  late final AppLockController _lock = AppLockController(widget.auth);
+
+  late final GoRouter _router = buildRouter(
+    auth: widget.auth,
+    settings: widget.settings,
+    consent: _consent,
+    initialLocation: widget.initialLocation,
+  );
+
   @override
   void dispose() {
+    _consent.dispose();
+    _lock.dispose();
     if (widget.api == null) _api.close();
     _router.dispose();
     super.dispose();
@@ -60,8 +69,12 @@ class _NaturistaAppState extends State<NaturistaApp> {
         controller: widget.auth,
         child: ApiScope(
           client: _api,
+          child: ConsentScope(
+          controller: _consent,
+          child: AppLockScope(
+          controller: _lock,
           child: ListenableBuilder(
-          listenable: widget.settings,
+          listenable: Listenable.merge([widget.settings, _lock]),
           builder: (context, _) {
             final prefs = widget.settings.settings;
             return MaterialApp.router(
@@ -98,11 +111,26 @@ class _NaturistaAppState extends State<NaturistaApp> {
                       highContrast: media.highContrast || prefs.highContrast,
                       alwaysUse24HourFormat: prefs.use24h,
                     ),
-                    child: child ?? const SizedBox.shrink(),
+                    // Con el bloqueo activo no se construye nada de la app detrás.
+                    // Con el bloqueo, la app sigue montada (no se pierde lo abierto)
+                    // pero ni se pinta, ni se anuncia, ni anima.
+                    child: Stack(fit: StackFit.expand, children: [
+                      Offstage(
+                        offstage: _lock.locked,
+                        child: ExcludeSemantics(
+                          excluding: _lock.locked,
+                          child: TickerMode(enabled: !_lock.locked, child: child ?? const SizedBox.shrink()),
+                        ),
+                      ),
+                      if (_lock.locked)
+                        Overlay(key: const ValueKey('lock-overlay'), initialEntries: [OverlayEntry(builder: (_) => LockScreen(controller: _lock))]),
+                    ]),
                   );
                 },
               );
             },
+          ),
+          ),
           ),
         ),
       ),

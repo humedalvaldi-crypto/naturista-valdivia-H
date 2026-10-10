@@ -17,6 +17,8 @@ export default defineConfig(async () => {
             FIREBASE_PROJECT_ID: 'test-project',
             ALLOWED_ORIGINS: 'https://app.example.test,http://localhost:8080',
             MEDIA_SIGNING_KEY: 'clave-de-prueba-solo-para-tests',
+            // El consentimiento se prueba aparte (security.test.ts) activándolo explícitamente.
+            CONSENT_VERSION: '',
           },
         },
       }),

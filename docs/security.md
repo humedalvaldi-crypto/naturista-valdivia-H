@@ -124,3 +124,76 @@
 | Configuración de Firebase cliente | `flutterfire configure` → archivos ignorados por git. No son secretos, pero son por entorno. |
 
 No se afirma cumplimiento de ninguna normativa (p. ej. Ley 19.628 de Chile sobre datos personales) sin una revisión específica.
+
+## Sección 19 — Biometría y seguridad avanzada (informe)
+
+> Ningún sistema es invulnerable. Este informe dice qué controles hay, qué se
+> probó de verdad y qué riesgos quedan.
+
+### Desbloqueo con huella o rostro (app)
+
+- `local_auth` 3 (BiometricPrompt en Android) con `biometricOnly: true`: sin PIN
+  ni contraseña propios de la app que permitan saltarse Firebase.
+- Solo protege una sesión de Firebase ya iniciada; no crea cuentas.
+- Se guarda únicamente el UID de la cuenta que lo activó, en
+  `flutter_secure_storage` (Keystore de Android). Nunca huellas, plantillas ni
+  imágenes: el sistema operativo compara y responde sí/no. Nada biométrico va a
+  Firebase, Cloudflare, D1 ni R2.
+- Activarlo exige una huella válida y renovar el token de Firebase (sesión vigente).
+- Al desbloquear se renueva el token: si la sesión fue revocada, la cuenta se
+  deshabilitó o cambiaron las credenciales, se cierra sesión y se pide la cuenta.
+- 5 intentos fallidos o bloqueo del sistema → se cierra sesión y se pide la cuenta.
+- Se desactiva al cerrar sesión o al entrar con otra cuenta.
+- Se pide al abrir la app y al volver tras 2 minutos en segundo plano. Mientras
+  está bloqueada, la app no se pinta ni se expone a lectores de pantalla.
+- Web: se muestra como **no compatible** (no hay biometría estándar para esto en
+  el navegador sin un servidor WebAuthn); se entra con Google o correo.
+- Android: `platform_patches/android_biometric.sh` (FlutterFragmentActivity,
+  `USE_BIOMETRIC`, tema AppCompat, minSdk 24). La CI compila el APK.
+
+### Sesiones y consentimiento (API)
+
+- `POST /me/sessions/revoke`: rechaza todo token con `auth_time` anterior
+  (los tokens renovados conservan `auth_time`, así que también caen).
+- Tokens anteriores a la eliminación de la cuenta se rechazan (`session_revoked`).
+- Cuentas `suspended`: solo lectura, exportar o eliminar.
+- Consentimiento: `POST /me/consent` exige `termsAccepted: true`,
+  `ageConfirmed: true` y la versión vigente (`CONSENT_VERSION`); sin él, las
+  escrituras de contenido responden **428**. No se guarda fecha de nacimiento.
+  Denunciar, bloquear, leer, exportar y eliminar no lo exigen.
+  `MIN_AGE = 14` está en `wrangler.toml`: **confirmar la edad con asesoría
+  legal** (Ley 21.719 de protección de datos personales).
+
+### Pruebas que se ejecutaron
+
+- `worker/test/security.test.ts` (15 pruebas): acceso sin token, token de otro
+  proyecto, escalada (editar/borrar lo ajeno, `ownerId`/`role` en el cuerpo),
+  datos privados de otra persona, archivos privados y firma manipulada,
+  sesiones revocadas y tokens renovados, cuenta eliminada, cuenta suspendida,
+  operaciones duplicadas y concurrentes, versión de página vieja, parámetros
+  manipulados e inyección SQL, cuerpo gigante, archivo con firma falsa,
+  filtración de correos y ubicaciones sensibles, errores sin detalles internos,
+  y bypass del consentimiento y la edad.
+- `app/test/security_test.dart`: bloqueo al abrir, contenido oculto, 5 fallos,
+  bloqueo del sistema, sesión revocada, alternativa con la cuenta, desbloqueo
+  de otra cuenta, activar/desactivar, navegador no compatible, cerrar sesión en
+  todos los dispositivos y pantalla de términos.
+- Migración: una cuenta eliminada no vuelve con una nueva copia
+  (`migration/test/transform.test.ts`).
+- Análisis: `tsc` estricto, `flutter analyze`, `npm audit` (0 vulnerabilidades
+  en Worker y migración al 10-10-2026), OSV para dependencias de Flutter y
+  búsqueda de secretos en Git (CI, trabajo "Seguridad").
+
+### Riesgos y límites conocidos
+
+- Un ID token robado vale hasta 1 hora (lo emite Firebase); revocar sesiones lo
+  corta en nuestra API, pero no en otros servicios de Firebase.
+- En un teléfono con root, el almacenamiento seguro y la biometría pueden ser
+  manipulados; por eso el servidor nunca confía en la app para autorizar.
+- Verificación en dos pasos por SMS: no implementada (requiere Identity
+  Platform de pago).
+- El repositorio es público: los registros de CI no contienen datos personales,
+  pero cualquiera puede leer el código (no hay secretos en él).
+- La caché local de imágenes es solo memoria y se puede liberar en
+  Configuración → Sincronización; no guarda tokens ni secretos.
+

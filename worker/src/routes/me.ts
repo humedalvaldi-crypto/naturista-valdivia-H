@@ -5,7 +5,7 @@ import { UsersRepository, type SettingsRow, type UserRow } from '../repositories
 import { parseBody, personDto } from '../services/dto';
 import { badRequest } from '../services/http-error';
 import type { AppBindings } from '../types/env';
-import { feedbackSchema, NOTIFICATION_KINDS, updateSettingsSchema } from '../validators/settings';
+import { consentSchema, feedbackSchema, NOTIFICATION_KINDS, updateSettingsSchema } from '../validators/settings';
 
 
 const toUserDto = (u: UserRow) => ({
@@ -49,7 +49,44 @@ export const meRoutes = new Hono<AppBindings>()
     const repo = new UsersRepository(c.env.DB);
     const user = await repo.upsertFromAuth(c.get('user'));
     const settings = await repo.getSettings(user.id);
-    return c.json({ data: { user: toUserDto(user), settings: settings ? toSettingsDto(settings) : null } });
+    const required = c.env.CONSENT_VERSION || null;
+    return c.json({
+      data: {
+        user: toUserDto(user),
+        settings: settings ? toSettingsDto(settings) : null,
+        consent: {
+          requiredVersion: required,
+          minAge: Number(c.env.MIN_AGE ?? 14),
+          acceptedVersion: user.consent_version ?? null,
+          acceptedAt: user.consent_at ?? null,
+          upToDate: required === null || user.consent_version === required,
+        },
+      },
+    });
+  })
+  // POST /api/v1/me/consent — acepta los términos vigentes y confirma la edad mínima.
+  .post('/consent', async (c) => {
+    const input = await parseBody(c, consentSchema);
+    const required = c.env.CONSENT_VERSION;
+    if (required && input.version !== required) {
+      throw badRequest('La versión de los términos no es la vigente. Recarga la app.');
+    }
+    const user = c.get('user');
+    await new UsersRepository(c.env.DB).upsertFromAuth(user);
+    await c.env.DB.prepare(
+      `UPDATE users SET consent_version = ?2, consent_at = ?3, age_confirmed = 1 WHERE id = ?1`,
+    )
+      .bind(user.uid, input.version, new Date().toISOString())
+      .run();
+    return c.body(null, 204);
+  })
+  // POST /api/v1/me/sessions/revoke — cierra la sesión en todos los dispositivos.
+  .post('/sessions/revoke', async (c) => {
+    const user = c.get('user');
+    // Un segundo de margen: el token actual también deja de valer.
+    const at = new Date(Date.now() + 1000).toISOString();
+    await c.env.DB.prepare(`UPDATE users SET tokens_valid_after = ?2 WHERE id = ?1`).bind(user.uid, at).run();
+    return c.body(null, 204);
   })
   // GET /api/v1/me/settings — preferencias guardadas en el servidor (avisos y privacidad).
   .get('/settings', async (c) => {

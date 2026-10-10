@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/l10n/l10n.dart';
+import '../../../core/network/api_client.dart';
 import '../../../core/network/api_scope.dart';
 import '../../../shared/media/api_image.dart';
 import '../../../shared/widgets/server_required.dart';
@@ -10,6 +11,8 @@ import '../../auth/application/auth_controller.dart';
 import '../../drawing_editor/presentation/drawing_editor_page.dart' show orderStickers;
 import '../../drawing_editor/presentation/painters.dart' show parseHex;
 import '../../profile/presentation/server_status.dart';
+import '../../security/application/app_lock_controller.dart';
+import '../../security/data/biometric_auth.dart';
 import '../application/settings_controller.dart';
 import '../data/account_api.dart';
 import '../data/settings_repository.dart';
@@ -162,12 +165,21 @@ class _SecuritySection extends StatelessWidget {
           title: Text(l10n.emailNotVerified),
           trailing: TextButton(onPressed: () => context.go('/verify-email'), child: Text(l10n.verifyNow)),
         ),
+      const _BiometricTile(),
       ListTile(
         key: const Key('security-sign-out'),
         leading: const Icon(Icons.logout),
         title: Text(l10n.securitySignOutHere),
         onTap: () => confirmSignOut(context),
       ),
+      if (online)
+        ListTile(
+          key: const Key('security-revoke-all'),
+          leading: const Icon(Icons.devices_other_outlined),
+          title: Text(l10n.securityRevokeAll),
+          subtitle: Text(l10n.securityRevokeAllHint),
+          onTap: () => _revokeAll(context),
+        ),
       InfoNote(l10n.securityNotAvailable),
       if (online) ...[
         SectionHeader(l10n.securityDangerZone),
@@ -179,6 +191,103 @@ class _SecuritySection extends StatelessWidget {
           onTap: () => deleteAccount(context),
         ),
       ],
+    ]);
+  }
+}
+
+Future<void> _revokeAll(BuildContext context) async {
+  final l10n = context.l10n;
+  final messenger = ScaffoldMessenger.of(context);
+  final api = ApiScope.of(context);
+  final auth = AuthScope.read(context);
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(l10n.securityRevokeAll),
+      content: Text(l10n.securityRevokeAllBody),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.cancel)),
+        FilledButton(key: const Key('confirm-revoke-all'), onPressed: () => Navigator.pop(context, true), child: Text(l10n.securityRevokeAllAction)),
+      ],
+    ),
+  );
+  if (ok != true) return;
+  try {
+    await api.post('/me/sessions/revoke');
+    await auth.signOut();
+    messenger.showSnackBar(SnackBar(content: Text(l10n.securityRevokedDone)));
+  } catch (e) {
+    messenger.showSnackBar(SnackBar(content: Text(e is ApiException ? e.message : l10n.errorGeneric)));
+  }
+}
+
+/// Desbloqueo con huella o rostro (sección 19).
+class _BiometricTile extends StatefulWidget {
+  const _BiometricTile();
+
+  @override
+  State<_BiometricTile> createState() => _BiometricTileState();
+}
+
+class _BiometricTileState extends State<_BiometricTile> {
+  BiometricAvailability? _availability;
+  bool _working = false;
+
+  @override
+  void initState() {
+    super.initState();
+    BiometricAuth.instance.availability().then((a) {
+      if (mounted) setState(() => _availability = a);
+    });
+  }
+
+  Future<void> _toggle(AppLockController lock, bool on) async {
+    final l10n = context.l10n;
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _working = true);
+    try {
+      if (!on) {
+        await lock.disable();
+        messenger.showSnackBar(SnackBar(content: Text(l10n.biometricDisabled)));
+        return;
+      }
+      final result = await lock.enable(l10n.biometricEnableReason);
+      messenger.showSnackBar(SnackBar(
+        content: Text(switch (result) {
+          BiometricResult.success => l10n.biometricEnabled,
+          BiometricResult.cancelled => l10n.biometricCancelled,
+          BiometricResult.lockedOut => l10n.lockLockedOut,
+          _ => l10n.biometricNotEnabled,
+        }),
+      ));
+    } finally {
+      if (mounted) setState(() => _working = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final lock = AppLockScope.maybeOf(context);
+    final availability = _availability;
+    if (lock == null || availability == null) {
+      return ListTile(leading: const Icon(Icons.fingerprint), title: Text(l10n.biometricTitle), subtitle: const LinearProgressIndicator());
+    }
+    final supported = availability == BiometricAvailability.available;
+    return Column(children: [
+      SwitchListTile(
+        key: const Key('biometric-switch'),
+        secondary: const Icon(Icons.fingerprint),
+        title: Text(l10n.biometricTitle),
+        subtitle: Text(switch (availability) {
+          BiometricAvailability.available => l10n.biometricHint,
+          BiometricAvailability.notEnrolled => l10n.biometricNotEnrolled,
+          BiometricAvailability.unsupported => l10n.biometricUnsupported,
+        }),
+        value: lock.enabled,
+        onChanged: _working || (!supported && !lock.enabled) ? null : (v) => _toggle(lock, v),
+      ),
+      InfoNote(l10n.biometricPrivacy, icon: Icons.privacy_tip_outlined),
     ]);
   }
 }

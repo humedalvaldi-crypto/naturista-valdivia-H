@@ -23,6 +23,8 @@ import '../../features/observations/presentation/observation_detail_page.dart';
 import '../../features/observations/presentation/observation_form_page.dart';
 import '../../features/observations/presentation/observations_page.dart';
 import '../../features/profile/presentation/profile_page.dart';
+import '../../features/security/application/consent_controller.dart';
+import '../../features/security/presentation/consent_page.dart';
 import '../../features/settings/application/settings_controller.dart';
 import '../../features/settings/presentation/edit_profile_page.dart';
 import '../../features/settings/presentation/settings_sections.dart';
@@ -52,6 +54,7 @@ String? resolveRedirect({
   required bool needsEmailVerification,
   required bool onboardingDone,
   required Uri location,
+  bool needsConsent = false,
 }) {
   final path = location.path;
 
@@ -78,8 +81,17 @@ String? resolveRedirect({
     if (needsEmailVerification && path == '/register') return '/verify-email';
     return _safeFrom(from) ?? '/';
   }
+
+  // 5. Términos y edad mínima pendientes: primero aceptarlos (se pueden leer antes).
+  if (signedIn && needsConsent && !_consentFree.contains(path)) {
+    return Uri(path: '/consent', queryParameters: {'from': location.toString()}).toString();
+  }
+  if (path == '/consent' && (!signedIn || !needsConsent)) return _safeFrom(from) ?? '/';
   return null;
 }
+
+/// Pantallas visibles sin haber aceptado los términos.
+const _consentFree = {'/consent', '/settings/legal', '/settings/help', '/verify-email'};
 
 /// Editar algo propio (p. ej. `/observations/<id>/edit`) exige sesión.
 bool _isEditRoute(String path) => path.startsWith('/observations/') && path.endsWith('/edit');
@@ -96,16 +108,18 @@ String? _safeFrom(String? from) {
 GoRouter buildRouter({
   required AuthController auth,
   required SettingsController settings,
+  ConsentController? consent,
   String? initialLocation,
 }) {
   return GoRouter(
     initialLocation: initialLocation,
-    refreshListenable: Listenable.merge([auth, settings]),
+    refreshListenable: Listenable.merge([auth, settings, ?consent]),
     redirect: (context, state) => resolveRedirect(
       status: auth.status,
       needsEmailVerification: auth.user?.needsEmailVerification ?? false,
       onboardingDone: settings.settings.onboardingDone,
       location: state.uri,
+      needsConsent: consent?.needsConsent ?? false,
     ),
     routes: [
       GoRoute(path: '/splash', builder: (context, state) => const SplashPage()),
@@ -120,6 +134,7 @@ GoRouter buildRouter({
       ),
       GoRoute(path: '/forgot-password', builder: (context, state) => const ForgotPasswordPage()),
       GoRoute(path: '/verify-email', builder: (context, state) => const VerifyEmailPage()),
+      GoRoute(path: '/consent', builder: (context, state) => const ConsentPage()),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
             AdaptiveShell(navigationShell: navigationShell),

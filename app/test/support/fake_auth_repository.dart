@@ -24,6 +24,9 @@ class FakeAuthRepository implements AuthRepository {
   AuthUser? _user;
   int tokenRequests = 0;
   int forcedRefreshes = 0;
+
+  /// Simula una sesión revocada o credenciales cambiadas: renovar el token falla.
+  bool revoked = false;
   int verificationEmails = 0;
   final List<String> resetEmails = [];
 
@@ -100,6 +103,7 @@ class FakeAuthRepository implements AuthRepository {
     if (_user == null) return null;
     tokenRequests++;
     if (forceRefresh) forcedRefreshes++;
+    if (forceRefresh && revoked) throw const AuthException(AuthErrorCode.requiresRecentLogin);
     return forceRefresh ? 'token-fresh' : 'token-cached';
   }
 }

@@ -84,5 +84,6 @@ export async function verifyFirebaseIdToken(token: string, opts: VerifyOptions):
     name: str(payload['name']),
     picture: str(payload['picture']),
     signInProvider: str(firebase?.sign_in_provider),
+    authTime,
   };
 }
