@@ -110,6 +110,12 @@ class PageEditorController extends ChangeNotifier {
   }
 
   void _markDirty() {
+    // Tras un conflicto no se guarda nada más hasta recargar la página:
+    // así nunca se pisa la versión guardada desde otro dispositivo.
+    if (status == SaveStatus.conflict) {
+      notifyListeners();
+      return;
+    }
     status = SaveStatus.dirty;
     notifyListeners();
     _timer?.cancel();
