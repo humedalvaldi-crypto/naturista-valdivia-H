@@ -10,6 +10,7 @@ import { communitiesRoutes } from './routes/communities';
 import { mediaDownloadRoutes, mediaRoutes } from './routes/media';
 import { messagesRoutes } from './routes/messages';
 import { notificationsRoutes, reportsRoutes } from './routes/notifications';
+import { notebooksRoutes, pagesRoutes } from './routes/notebooks';
 import { myConnectionsRoutes, peopleRoutes } from './routes/people';
 import { commentsRoutes, postsRoutes } from './routes/posts';
 import { myProfileRoutes, publicProfileRoutes } from './routes/profiles';
@@ -40,9 +41,11 @@ export function createApp(options: AppOptions = {}) {
 
   const app = new Hono<AppBindings>();
   app.use('*', requestId, securityHeaders, corsPolicy);
-  // Todo cuerpo JSON tiene tope, salvo la subida de archivos (POST /api/v1/media).
+  // Todo cuerpo JSON tiene tope de 64 KB, salvo la subida de archivos
+  // (límite por tipo) y el guardado de una página de cuaderno (2 MB).
   app.use('/api/*', async (c, next) => {
     if (c.req.method === 'POST' && c.req.path === '/api/v1/media') return next();
+    if (c.req.method === 'PUT' && /^\/api\/v1\/pages\/[^/]+$/.test(c.req.path)) return next();
     return jsonLimit(c, next);
   });
 
@@ -72,13 +75,15 @@ export function createApp(options: AppOptions = {}) {
   v1.route('/me', meRoutes);
 
   // Red social (Fase 5).
-  for (const base of ['/posts', '/users', '/communities']) {
+  for (const base of ['/posts', '/users', '/communities', '/notebooks', '/pages']) {
     v1.use(base, readOpenWriteAuth);
     v1.use(`${base}/*`, readOpenWriteAuth);
   }
   v1.route('/posts', postsRoutes);
   v1.route('/users', peopleRoutes);
   v1.route('/communities', communitiesRoutes);
+  v1.route('/notebooks', notebooksRoutes);
+  v1.route('/pages', pagesRoutes);
   for (const base of ['/comments', '/conversations', '/reports']) {
     v1.use(base, auth, writeLimit);
     v1.use(`${base}/*`, auth, writeLimit);
