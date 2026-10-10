@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { redact } from './redact';
 
 export const WORKER_DIR = join(import.meta.dirname, '../../../worker');
 
@@ -16,7 +17,7 @@ export type Target = { kind: 'local' } | { kind: 'remote' };
 
 function wrangler(args: string[]): string {
   const res = spawnSync('npx', ['wrangler', ...args], { cwd: WORKER_DIR, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
-  if (res.status !== 0) throw new Error(`wrangler ${args.slice(0, 3).join(' ')} falló:\n${(res.stderr || res.stdout).slice(-2000)}`);
+  if (res.status !== 0) throw new Error(`wrangler ${args.slice(0, 3).join(' ')} falló:\n${redact((res.stderr || res.stdout).slice(-2000))}`);
   return res.stdout;
 }
 

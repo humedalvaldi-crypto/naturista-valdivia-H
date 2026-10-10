@@ -22,6 +22,7 @@ import { parseArgs } from 'node:util';
 import { AwsClient } from 'aws4fetch';
 import { applicationDefault, initializeApp } from 'firebase-admin/app';
 import { resolveBucket } from './lib/bucket';
+import { redact } from './lib/redact';
 import type { MediaEntry } from './transform/media';
 import { mediaChunkSql, mediaInsertSql, prepareMedia, type CopiedMedia } from './transform/media-copy';
 
@@ -132,7 +133,7 @@ async function worker() {
       copied++;
       if (copied % 50 === 0) console.log(`  ${copied} copiados…`);
     } catch (err) {
-      fail(err instanceof Error ? err.message.slice(0, 120) : 'error desconocido');
+      fail(err instanceof Error ? redact(err.message).slice(0, 120) : 'error desconocido');
     }
   }
 }

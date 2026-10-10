@@ -25,6 +25,11 @@ on:
         description: "Para el modo migrar, escribe MIGRAR"
         type: string
         default: ""
+  # También con un archivo de solicitud (solo quien puede escribir en el repositorio):
+  # migration/run-request.json → {"mode": "ensayo"} o {"mode": "migrar", "confirm": "MIGRAR"}
+  push:
+    branches: [main]
+    paths: ["migration/run-request.json"]
 
 permissions:
   contents: read
@@ -44,11 +49,22 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
+      - uses: actions/checkout@v4
+      - name: Modo pedido
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            MODE=$(python3 -c "import json;print(json.load(open('migration/run-request.json')).get('mode','ensayo'))")
+            CONFIRM=$(python3 -c "import json;print(json.load(open('migration/run-request.json')).get('confirm',''))")
+          else
+            MODE="${{ inputs.mode }}"; CONFIRM="${{ inputs.confirm }}"
+          fi
+          case "$MODE" in ensayo|migrar) ;; *) echo "::error::Modo no válido: $MODE"; exit 1;; esac
+          echo "MODE=$MODE" >> "$GITHUB_ENV"
+          echo "CONFIRM=$CONFIRM" >> "$GITHUB_ENV"
+          echo "::notice::Modo: $MODE"
       - name: Comprobar configuración
         env:
           SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          MODE: ${{ inputs.mode }}
-          CONFIRM: ${{ inputs.confirm }}
         run: |
           [ -n "$SA" ] || { echo "::error::Falta el secreto FIREBASE_SERVICE_ACCOUNT (ver docs/migration-plan.md)."; exit 1; }
           echo "$SA" | python3 -c "import sys,json;d=json.load(sys.stdin);assert d.get('type')=='service_account' and d.get('project_id')=='$PROJECT'" \
@@ -58,7 +74,6 @@ jobs:
             [ -n "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLARE_ACCOUNT_ID" ] || { echo "::error::Faltan los secretos de Cloudflare."; exit 1; }
           fi
 
-      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -94,14 +109,14 @@ jobs:
       - name: 4. Fotos (ensayo o copia a D1)
         working-directory: migration
         run: |
-          if [ "${{ inputs.mode }}" = "migrar" ]; then
+          if [ "$MODE" = "migrar" ]; then
             npm run copy-media -- --plan "$OUT/plan" --project "$PROJECT" --store d1 --confirm
           else
             npm run copy-media -- --plan "$OUT/plan" --project "$PROJECT"
           fi
 
       - name: Base D1 de producción
-        if: inputs.mode == 'migrar'
+        if: env.MODE == 'migrar'
         working-directory: worker
         run: |
           ID=$(npx wrangler d1 list --json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const l=JSON.parse(s.slice(s.indexOf("[")));const d=l.find(x=>x.name===process.argv[1]);process.stdout.write(d?(d.uuid||d.id||""):"")})' "$DB_NAME")
@@ -111,11 +126,11 @@ jobs:
           echo "Punto de restauración antes de migrar:"
           npx wrangler d1 time-travel info "$DB_NAME"
       - name: 5. Copiar datos a la app nueva
-        if: inputs.mode == 'migrar'
+        if: env.MODE == 'migrar'
         working-directory: migration
         run: npm run apply -- --plan "$OUT/plan" --remote --mode production --confirm "$DB_NAME" --skip-backup
       - name: 6. Validar
-        if: inputs.mode == 'migrar'
+        if: env.MODE == 'migrar'
         working-directory: migration
         run: npm run validate -- --plan "$OUT/plan" --remote
 
@@ -123,7 +138,7 @@ jobs:
         if: always()
         run: |
           {
-            echo "## Migración desde Firebase — modo ${{ inputs.mode }}"
+            echo "## Migración desde Firebase — modo $MODE"
             [ -f "$OUT/plan/report.md" ] && sed -n '1,60p' "$OUT/plan/report.md"
             ls "$OUT"/plan/media-report-*.json >/dev/null 2>&1 && { echo; echo '### Fotos'; echo '```'; cat "$OUT"/plan/media-report-*.json; echo '```'; }
             [ -f "$OUT/plan/validation-remote.md" ] && { echo; echo '### Validación'; cat "$OUT/plan/validation-remote.md"; }
@@ -132,7 +147,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: informe-migracion-${{ inputs.mode }}
+          name: informe-migracion-${{ env.MODE }}
           retention-days: 30
           if-no-files-found: ignore
           path: |

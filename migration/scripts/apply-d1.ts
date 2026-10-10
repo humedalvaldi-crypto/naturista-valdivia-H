@@ -16,6 +16,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { databaseName, executeFile, exportBackup, query, type Target } from './lib/d1';
+import { redact } from './lib/redact';
 import { lit } from './transform/sql';
 
 const { values } = parseArgs({
@@ -91,7 +92,7 @@ try {
   console.log('Listo. Ahora: npm run validate');
 } catch (err) {
   query(db, target, `UPDATE migration_runs SET status = 'failed', finished_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ${lit(runId)}`);
-  console.error(err instanceof Error ? err.message : err);
+  console.error(err instanceof Error ? redact(err.message) : 'error desconocido');
   console.error('Se detuvo. Corrige y vuelve a ejecutar: continuará desde el archivo que falló.');
   process.exit(1);
 }
