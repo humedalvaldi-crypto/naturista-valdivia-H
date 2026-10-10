@@ -142,10 +142,9 @@ class _NotebooksPageState extends State<NotebooksPage> {
     } else {
       body = RefreshIndicator(
         onRefresh: _load,
-        child: LayoutBuilder(
-          builder: (context, constraints) => GridView.builder(
+        child: GridView.builder(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
               maxCrossAxisExtent: 220,
               mainAxisSpacing: 16,
               crossAxisSpacing: 16,
@@ -159,7 +158,6 @@ class _NotebooksPageState extends State<NotebooksPage> {
                 if (mounted) _load();
               },
             ),
-          ),
         ),
       );
     }

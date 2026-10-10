@@ -75,6 +75,8 @@ jobs:
             exit 1
           fi
       - name: flutter test
+        # También corre si el análisis falló, para ver todos los errores de una vez.
+        if: ${{ !cancelled() }}
         run: |
           set -o pipefail
           if ! flutter test --reporter=expanded 2>&1 | tee test.log; then

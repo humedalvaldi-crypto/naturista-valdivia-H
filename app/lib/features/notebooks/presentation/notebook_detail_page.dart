@@ -106,10 +106,11 @@ class _NotebookDetailPageState extends State<NotebookDetailPage> {
         if (mounted) await _load();
       });
 
+  /// `to` ya viene ajustado por haber quitado el elemento en `from`.
   Future<void> _reorder(int from, int to) async {
     final list = [..._pages];
     final item = list.removeAt(from);
-    list.insert(to > from ? to - 1 : to, item);
+    list.insert(to, item);
     setState(() => _pages = list);
     await _run(() async {
       final pages = await _api.reorder(widget.notebookId, [for (final p in list) p.id]);
@@ -197,7 +198,7 @@ class _NotebookDetailPageState extends State<NotebookDetailPage> {
           ? ReorderableListView.builder(
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 96),
               itemCount: _pages.length,
-              onReorder: _reorder,
+              onReorderItem: _reorder,
               itemBuilder: (context, i) => tile(_pages[i], i),
             )
           : ListView.builder(
