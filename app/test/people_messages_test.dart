@@ -31,7 +31,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('compose-photo')));
     await tester.pumpAndSettle();
-    expect(find.byType(Image), findsWidgets);
+    expect(find.text('garza.jpg'), findsOneWidget); // vista previa (bytes de prueba no decodificables)
     await tester.enterText(find.byKey(const Key('compose-body')), 'Garza en el humedal');
     await tester.tap(find.byKey(const Key('compose-submit')));
     await tester.pumpAndSettle();

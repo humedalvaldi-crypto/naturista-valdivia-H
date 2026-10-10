@@ -111,7 +111,19 @@ class _ComposePostPageState extends State<ComposePostPage> {
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: Image.memory(photo.bytes, height: 220, width: double.infinity, fit: BoxFit.cover),
+                        child: Image.memory(
+                          photo.bytes,
+                          height: 220,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          // Si la vista previa no se puede mostrar, el servidor igual valida el archivo.
+                          errorBuilder: (context, _, _) => Container(
+                            height: 220,
+                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                            alignment: Alignment.center,
+                            child: Text(photo.name),
+                          ),
+                        ),
                       ),
                       Positioned(
                         top: 6,
