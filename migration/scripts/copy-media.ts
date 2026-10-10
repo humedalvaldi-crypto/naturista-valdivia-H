@@ -21,7 +21,7 @@ import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { AwsClient } from 'aws4fetch';
 import { applicationDefault, initializeApp } from 'firebase-admin/app';
-import { resolveBucket } from './lib/bucket';
+import { BucketUnavailable, resolveBucket } from './lib/bucket';
 import { redact } from './lib/redact';
 import type { MediaEntry } from './transform/media';
 import { mediaChunkSql, mediaInsertSql, prepareMedia, type CopiedMedia } from './transform/media-copy';
@@ -64,7 +64,15 @@ if (needsStorage && !values.project) {
   process.exit(2);
 }
 if (values.project) initializeApp({ credential: applicationDefault(), projectId: values.project });
-const storageBucket = values.project && needsStorage ? await resolveBucket(values.project, values.bucket) : null;
+let storageBucket: Awaited<ReturnType<typeof resolveBucket>> | null = null;
+if (values.project && needsStorage) {
+  try {
+    storageBucket = await resolveBucket(values.project, values.bucket);
+  } catch (err) {
+    if (!(err instanceof BucketUnavailable)) throw err;
+    console.log(`::warning::${err.message} Las fotos de Storage no se copian; las imágenes incrustadas sí.`);
+  }
+}
 
 const confirm = values.confirm === true;
 let r2: { client: AwsClient; base: string } | null = null;
@@ -82,7 +90,8 @@ if (confirm && store === 'r2') {
 
 async function readSource(e: MediaEntry): Promise<Uint8Array> {
   if (e.source.kind === 'inline') return new Uint8Array(readFileSync(join(planDir, 'inline', e.source.file)));
-  const [buf] = await storageBucket!.file(e.source.path).download(); // solo lectura
+  if (!storageBucket) throw new Error('Firebase Storage no accesible');
+  const [buf] = await storageBucket.file(e.source.path).download(); // solo lectura
   return new Uint8Array(buf);
 }
 

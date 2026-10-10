@@ -20,7 +20,7 @@ import { parseArgs } from 'node:util';
 import { applicationDefault, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { FieldPath, getFirestore } from 'firebase-admin/firestore';
-import { resolveBucket } from './lib/bucket';
+import { BucketUnavailable, resolveBucket } from './lib/bucket';
 import { encodeValue } from './lib/encode';
 import { LEGACY_SUBCOLLECTIONS } from './lib/legacy-inventory';
 
@@ -124,7 +124,16 @@ async function exportFirestore(): Promise<Record<string, number>> {
 
 async function exportStorage(): Promise<number> {
   const out = createWriteStream(join(dir, 'storage.jsonl'));
-  const bucket = await resolveBucket(projectId!, values.bucket);
+  let bucket;
+  try {
+    bucket = await resolveBucket(projectId!, values.bucket);
+  } catch (err) {
+    if (!(err instanceof BucketUnavailable)) throw err;
+    // Sin Storage se exportan igual los datos; las fotos quedarán contadas como no copiadas.
+    console.log(`::warning::${err.message} Se continúa sin fotos de Storage.`);
+    await close(out);
+    return 0;
+  }
   const [files] = await bucket.getFiles({ prefix: 'user-files/', autoPaginate: true });
   for (const f of files) {
     await line(out, {
