@@ -44,12 +44,24 @@ Pruebas: `worker/test/api.test.ts` aplica esta migración sobre un D1 local y ve
 
 Todas las tablas que vienen de Firestore tienen `legacy_id` único para migrar sin duplicar.
 
-## Esquema previsto (fases 6–7)
+## Migración `0004_notebooks.sql` (Fase 6)
+
+| Tabla | Propósito | Origen Firestore |
+|---|---|---|
+| `notebooks` | Cuaderno: dueño, título (1–120), descripción (≤ 500), color `#RRGGBB`, portada opcional, visibilidad `private`/`public` (privado por defecto), contador de páginas, borrado lógico | `notebooks` |
+| `notebook_pages` | Página: posición, título, fecha de salida, lugar y coordenadas (con origen `gps`/`manual`), clima, papel (`plain`, `lined`, `grid`, `dots`) y `version` para concurrencia optimista | `notebook_pages` |
+| `notebook_elements` | Elementos de la página (`text`, `photo`, `drawing`, `sticker`, `species`, `coordinates`) con posición, tamaño, rotación, orden `z`, `data_json` validado y foto opcional en `media_assets` | campos internos de `notebook_pages` |
+
+- Lienzo lógico de 1000 × 1414 unidades (proporción A4): la página se ve igual en cualquier pantalla.
+- Un dibujo es un elemento `drawing` con sus trazos (`tool`, `color`, `width`, `opacity`, `points` como lista plana `x,y,…` y presión opcional `p`).
+- Guardar una página reemplaza todos sus elementos en un solo lote atómico, solo si la `version` enviada es la actual; si no, responde 409 sin tocar nada.
+- Límites: 200 elementos por página, 400 000 caracteres por elemento, 2 MB por guardado.
+
+## Esquema previsto (Fase 7)
 
 | Tabla | Origen Firestore | Fase |
 |---|---|---|
 | `profile_private` | `profiles` (rut, fechaNacimiento, telefono, whatsapp, genero, addressValdivia) | 4 — **pendiente de decisión**, ver `security.md` |
-| `notebooks`, `notebook_pages`, `notebook_elements` | `notebooks`, `notebook_pages` | 6 |
 | `observations`, `species` | `observations`, `species_catalog`, `species_album`, `user_collections` | 7 |
 | `map_layers`, puntos del mapa | `wetlands`, `places` | 7 |
 

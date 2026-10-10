@@ -15,6 +15,7 @@ import '../../features/home/presentation/home_page.dart';
 import '../../features/messages/presentation/chat_page.dart';
 import '../../features/messages/presentation/messages_page.dart';
 import '../../features/people/presentation/person_page.dart';
+import '../../features/notebooks/presentation/notebook_detail_page.dart';
 import '../../features/notebooks/presentation/notebooks_page.dart';
 import '../../features/notifications/presentation/notifications_page.dart';
 import '../../features/observations/presentation/observations_page.dart';
@@ -30,7 +31,7 @@ import '../../shared/widgets/state_views.dart';
 import '../l10n/l10n.dart';
 
 /// Rutas que exigen sesión iniciada.
-const privateRoutes = {'/profile', '/notebooks', '/drawing', '/observations', '/messages', '/notifications', '/community/new'};
+const privateRoutes = {'/profile', '/notebooks', '/drawing', '/observations', '/messages', '/notifications', '/community/new', '/notebook-pages'};
 
 /// Pantallas de acceso: con sesión iniciada no tienen sentido.
 const authRoutes = {'/login', '/register', '/forgot-password'};
@@ -121,7 +122,16 @@ GoRouter buildRouter({
             GoRoute(path: '/map', builder: (context, state) => const BiodiversityMapPage()),
           ]),
           StatefulShellBranch(routes: [
-            GoRoute(path: '/notebooks', builder: (context, state) => const NotebooksPage()),
+            GoRoute(
+              path: '/notebooks',
+              builder: (context, state) => const NotebooksPage(),
+              routes: [
+                GoRoute(
+                  path: ':id',
+                  builder: (context, state) => NotebookDetailPage(notebookId: state.pathParameters['id']!),
+                ),
+              ],
+            ),
           ]),
           StatefulShellBranch(routes: [
             GoRoute(path: '/community', builder: (context, state) => const SocialFeedPage()),
@@ -152,7 +162,12 @@ GoRouter buildRouter({
         builder: (context, state) => PostDetailPage(postId: state.pathParameters['id']!),
       ),
       GoRoute(path: '/observations', builder: (context, state) => const ObservationsPage()),
-      GoRoute(path: '/drawing', builder: (context, state) => const DrawingEditorPage()),
+      // El editor de dibujo vive dentro de las páginas de cada cuaderno.
+      GoRoute(path: '/drawing', redirect: (context, state) => '/notebooks'),
+      GoRoute(
+        path: '/notebook-pages/:id',
+        builder: (context, state) => DrawingEditorPage(pageId: state.pathParameters['id']!),
+      ),
       GoRoute(path: '/communities', builder: (context, state) => const CommunitiesPage()),
       GoRoute(path: '/messages', builder: (context, state) => const MessagesPage()),
       GoRoute(path: '/notifications', builder: (context, state) => const NotificationsPage()),

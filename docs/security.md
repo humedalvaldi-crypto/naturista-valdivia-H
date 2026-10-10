@@ -45,6 +45,18 @@
 | Notificaciones: nunca a uno mismo; marcar leídas solo afecta a las propias | `repositories/notifications.ts` | Sí |
 | Denuncias idempotentes con motivos de una lista cerrada | `routes/notifications.ts` | Sí |
 
+## Implementado en la Fase 6
+
+| Control | Dónde | Probado |
+|---|---|---|
+| Cuadernos privados por defecto; uno privado responde 404 a cualquier otra persona | `worker/src/routes/notebooks.ts` | Sí |
+| Cuaderno público: lectura para todos, edición solo del dueño (`editable: false` a terceros) | `routes/notebooks.ts` | Sí |
+| Concurrencia optimista: un guardado con versión vieja recibe 409 y no cambia nada (lote atómico con guarda) | `repositories/notebooks.ts` | Sí |
+| Elementos validados: tipos de una lista cerrada, IDs sin caracteres de ruta, sin duplicados, tamaños positivos, coordenadas en pares, límites de tamaño | `validators/notebooks.ts` | Sí |
+| Las fotos de una página deben ser archivos propios; al publicar el cuaderno se publican sus fotos | `routes/notebooks.ts` | Sí |
+| Fotos privadas en la app: se descargan con la sesión (no con enlaces públicos) | `app/lib/shared/media/api_image.dart` | — |
+| La app no sobrescribe cambios hechos en otro dispositivo: muestra el conflicto y ofrece recargar | `app/lib/features/drawing_editor/domain/page_editor_controller.dart` | Sí |
+
 ## Pendiente (con fase)
 
 - Autorización por recurso y propietario en cada módulo, con pruebas cruzadas entre usuarios (Fases 5–7).

@@ -16,7 +16,12 @@ class FakeApiServer {
   final people = <String, Map<String, dynamic>>{};
   final conversations = <Map<String, dynamic>>[];
   final messages = <String, List<Map<String, dynamic>>>{};
+  final notebooks = <Map<String, dynamic>>[];
+  final pages = <String, Map<String, dynamic>>{};
   bool failNext = false;
+
+  /// Si es true, el próximo guardado de página responde 409 (otro dispositivo guardó antes).
+  bool conflictNext = false;
   int _seq = 0;
 
   static Map<String, dynamic> person(String id, String name) => {'id': id, 'name': name, 'username': null, 'photo': null};
@@ -51,6 +56,110 @@ class FakeApiServer {
         'isMe': false,
       };
 
+  Map<String, dynamic> addNotebook(String title, {String ownerId = 'u1', List<Map<String, dynamic>> elements = const []}) {
+    final nb = {
+      'id': 'nb${_seq++}',
+      'ownerId': ownerId,
+      'title': title,
+      'description': null,
+      'color': '#2E5B2A',
+      'visibility': 'private',
+      'pageCount': 0,
+      'updatedAt': DateTime.utc(2026, 10, 9).toIso8601String(),
+    };
+    notebooks.insert(0, nb);
+    _addPage(nb, elements: elements);
+    return nb;
+  }
+
+  Map<String, dynamic> _addPage(Map<String, dynamic> nb, {List<Map<String, dynamic>> elements = const [], int? at}) {
+    final list = pagesOf(nb['id'] as String);
+    final page = {
+      'id': 'pg${_seq++}',
+      'notebookId': nb['id'],
+      'position': list.length,
+      'version': 1,
+      'title': null,
+      'pageDate': null,
+      'paper': 'plain',
+      'editable': true,
+      'elements': [...elements],
+    };
+    pages[page['id'] as String] = page;
+    if (at != null) {
+      for (final p in list.where((p) => (p['position'] as int) >= at)) {
+        p['position'] = (p['position'] as int) + 1;
+      }
+      page['position'] = at;
+    }
+    nb['pageCount'] = list.length + 1;
+    return page;
+  }
+
+  List<Map<String, dynamic>> pagesOf(String notebookId) =>
+      pages.values.where((p) => p['notebookId'] == notebookId).toList()..sort((a, b) => (a['position'] as int).compareTo(b['position'] as int));
+
+  Map<String, dynamic> _pageInfo(Map<String, dynamic> p) => {...p}..remove('elements');
+
+  http.Response? _notebooksRoute(String method, List<String> seg, Map<String, dynamic> body) {
+    if (seg.first == 'notebooks') {
+      if (seg.length == 1 && method == 'GET') return _json({'data': notebooks});
+      if (seg.length == 1 && method == 'POST') {
+        final nb = addNotebook(body['title'] as String);
+        nb['color'] = body['color'] ?? nb['color'];
+        nb['description'] = body['description'];
+        return _json({'data': nb}, 201);
+      }
+      final nb = notebooks.where((n) => n['id'] == seg[1]).firstOrNull;
+      if (nb == null) return null;
+      if (seg.length == 2 && method == 'GET') return _json({'data': nb});
+      if (seg.length == 2 && method == 'PATCH') {
+        nb.addAll(body);
+        return _json({'data': nb});
+      }
+      if (seg.length == 2 && method == 'DELETE') {
+        notebooks.remove(nb);
+        pages.removeWhere((_, p) => p['notebookId'] == nb['id']);
+        return http.Response('', 204);
+      }
+      if (seg[2] == 'pages' && method == 'GET') return _json({'data': [for (final p in pagesOf(nb['id'] as String)) _pageInfo(p)]});
+      if (seg[2] == 'pages' && method == 'POST') return _json({'data': _pageInfo(_addPage(nb))}, 201);
+      if (seg[2] == 'page-order') {
+        final ids = (body['pageIds'] as List).cast<String>();
+        for (var i = 0; i < ids.length; i++) {
+          pages[ids[i]]!['position'] = i;
+        }
+        return _json({'data': [for (final p in pagesOf(nb['id'] as String)) _pageInfo(p)]});
+      }
+    }
+    if (seg.first == 'pages') {
+      final page = pages[seg[1]];
+      if (page == null) return null;
+      if (seg.length == 2 && method == 'GET') return _json({'data': page});
+      if (seg.length == 2 && method == 'PUT') {
+        if (conflictNext || body['version'] != page['version']) {
+          conflictNext = false;
+          return _json({'error': {'code': 'version_conflict', 'message': 'La página cambió.', 'details': {'currentVersion': page['version']}}}, 409);
+        }
+        page['elements'] = body['elements'];
+        page['version'] = (page['version'] as int) + 1;
+        return _json({'data': {'id': page['id'], 'version': page['version']}});
+      }
+      if (seg.length == 2 && method == 'DELETE') {
+        pages.remove(page['id']);
+        final nb = notebooks.firstWhere((n) => n['id'] == page['notebookId']);
+        nb['pageCount'] = pagesOf(nb['id'] as String).length;
+        return http.Response('', 204);
+      }
+      if (seg[2] == 'duplicate') {
+        final nb = notebooks.firstWhere((n) => n['id'] == page['notebookId']);
+        final copy = _addPage(nb, elements: (page['elements'] as List).cast<Map<String, dynamic>>(), at: (page['position'] as int) + 1);
+        return _json({'data': _pageInfo(copy)}, 201);
+      }
+    }
+    return null;
+  }
+
   http.Response _json(Object body, [int status = 200]) =>
       http.Response(jsonEncode(body), status, headers: {'content-type': 'application/json; charset=utf-8'});
 
@@ -72,6 +181,11 @@ class FakeApiServer {
           final seg = path.split('/').where((s) => s.isNotEmpty).toList();
 
           if (req.method == 'GET' && path == '/me') return _json({'data': {}});
+          if (req.method == 'GET' && seg.first == 'media') {
+            return http.Response.bytes(const [0xff, 0xd8, 0xff, 0xd9], 200, headers: {'content-type': 'image/jpeg'});
+          }
+          final notebookResponse = _notebooksRoute(req.method, seg, body);
+          if (notebookResponse != null) return notebookResponse;
           if (seg.first == 'posts') {
             if (seg.length == 1 && req.method == 'GET') return _json({'data': posts, 'nextCursor': null});
             if (seg.length == 1 && req.method == 'POST') {

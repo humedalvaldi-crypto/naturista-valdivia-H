@@ -15,7 +15,7 @@ biodiversidad y comunidad naturalista. App para **Android y web**.
 
 ## Estado
 
-**Fases 1, 3, 4 y 5 completadas** (mensajes: falta la pantalla). App publicada: https://humedalvaldi-crypto.github.io/naturista-valdivia-H/
+**Fases 1, 3, 4, 5 y 6 completadas.** App publicada: https://humedalvaldi-crypto.github.io/naturista-valdivia-H/
 Qué funciona hoy y qué está planificado: ver la pantalla de inicio de la app o
 `app/lib/core/router/app_modules.dart`, y `docs/`.
 
@@ -25,8 +25,8 @@ Qué funciona hoy y qué está planificado: ver la pantalla de inicio de la app 
 | 2 | App Flutter: navegación, temas, idiomas | Base hecha en Fase 1 (navegación adaptable, tema claro/oscuro, es/en) |
 | 3 | Firebase Auth + Google Sign-In | ✅ Google y correo/contraseña, registro, verificación, recuperación, rutas protegidas |
 | 4 | Worker, D1, R2, seguridad | ✅ Perfiles, archivos en R2, límites de frecuencia, despliegue manual (falta crear la cuenta de Cloudflare: `docs/deployment.md`) |
-| 5 | Perfiles, publicaciones, social | ✅ API completa (publicaciones, comentarios, me gusta, seguir, bloquear, comunidades, mensajes, notificaciones, denuncias); en la app: feed, publicar, comentarios, comunidades y notificaciones. Pantalla de mensajes pendiente |
-| 6 | Cuadernos de campo y editor de dibujo | Pendiente |
+| 5 | Perfiles, publicaciones, social | ✅ API completa (publicaciones, comentarios, me gusta, seguir, bloquear, comunidades, mensajes, notificaciones, denuncias); en la app: feed, publicar, comentarios, comunidades, notificaciones, mensajes, perfil de otras personas y fotos en publicaciones |
+| 6 | Cuadernos de campo y editor de dibujo | ✅ Cuadernos (crear, duplicar, privado/público, borrar), páginas (agregar, reordenar, duplicar, borrar), editor con lápiz/pincel/marcador/borrador y presión de lápiz óptico, texto, pegatinas, fotos, mover/rotar/escalar, deshacer/rehacer, guardado automático con control de conflictos. Exportar PNG/PDF pendiente |
 | 7 | Mapa, observaciones, capas | Pendiente |
 | 8 | Herramientas de migración y validación | Auditoría lista |
 | 9 | Pruebas integrales, rendimiento, publicación | Pendiente |

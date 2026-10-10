@@ -63,9 +63,9 @@
   "moduleMap": "Mapa de biodiversidad",
   "moduleMapBody": "Mapa real con capas de flora, fauna, funga, amenazas, patrimonio y usos del río.",
   "moduleNotebooks": "Cuadernos de campo",
-  "moduleNotebooksBody": "Páginas con texto, fotos, dibujos, pegatinas y coordenadas.",
+  "moduleNotebooksBody": "Páginas con texto, fotos, dibujos y pegatinas. Disponible (requiere el servidor).",
   "moduleDrawing": "Editor de dibujo",
-  "moduleDrawingBody": "Lápiz, pinceles, borrador, capas de color y deshacer.",
+  "moduleDrawingBody": "Lápiz, pincel, marcador, borrador, colores, grosor, opacidad y deshacer. Disponible dentro de cada página.",
   "moduleSocial": "Publicaciones",
   "moduleSocialBody": "Publicaciones, comentarios y me gusta. Disponible (requiere el servidor).",
   "moduleCommunities": "Comunidades",
@@ -325,5 +325,73 @@
   "reportUser": "Denunciar",
   "reported": "Gracias. Revisaremos la denuncia.",
   "profileRestricted": "Este perfil solo lo ven sus seguidores.",
-  "personPosts": "Publicaciones"
+  "personPosts": "Publicaciones",
+  "notebooksTitle": "Cuadernos de campo",
+  "newNotebook": "Nuevo cuaderno",
+  "notebookTitleLabel": "Título",
+  "notebookDescriptionLabel": "Descripción (opcional)",
+  "notebooksEmpty": "Aún no tienes cuadernos. Crea el primero para tus salidas a terreno.",
+  "pagesCount": "{count, plural, =1{1 página} other{{count} páginas}}",
+  "@pagesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "addPage": "Agregar página",
+  "pageNumber": "Página {number}",
+  "@pageNumber": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "duplicate": "Duplicar",
+  "deleteNotebook": "Eliminar cuaderno",
+  "deleteNotebookConfirm": "¿Eliminar «{title}» y todas sus páginas?",
+  "@deleteNotebookConfirm": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "deletePage": "Eliminar página",
+  "deletePageConfirm": "¿Eliminar esta página? No se puede deshacer.",
+  "makePublic": "Hacer público",
+  "makePrivate": "Hacer privado",
+  "visibilityPrivate": "Privado",
+  "modeSelect": "Mover",
+  "modeDraw": "Dibujar",
+  "addTextShort": "Texto",
+  "addStickerShort": "Pegatina",
+  "addPhotoShort": "Foto",
+  "undo": "Deshacer",
+  "redo": "Rehacer",
+  "zoomIn": "Acercar",
+  "zoomOut": "Alejar",
+  "toolPen": "Lápiz",
+  "toolBrush": "Pincel",
+  "toolMarker": "Marcador",
+  "toolEraser": "Borrador",
+  "widthLabel": "Grosor",
+  "opacityLabel": "Opacidad",
+  "textHint": "Escribe una nota de terreno…",
+  "ok": "Aceptar",
+  "deleteElement": "Eliminar elemento",
+  "bringToFront": "Traer al frente",
+  "saveSaved": "Guardado",
+  "saveSaving": "Guardando…",
+  "saveDirty": "Sin guardar",
+  "saveError": "Error al guardar · Reintentar",
+  "saveConflict": "Cambió en otro dispositivo · Recargar",
+  "reloadPageConfirm": "Recargar traerá la versión guardada y descartará los cambios hechos aquí que no se guardaron.",
+  "reload": "Recargar",
+  "readOnly": "Solo lectura",
+  "stickersTitle": "Pegatinas e ilustraciones",
+  "editText": "Editar texto",
+  "paperLabel": "Papel",
+  "pressureNote": "Con lápiz óptico, el grosor sigue la presión."
 }

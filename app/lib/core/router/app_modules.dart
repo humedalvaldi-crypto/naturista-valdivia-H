@@ -48,7 +48,6 @@ final List<AppModule> appModules = [
     icon: Icons.menu_book_outlined,
     title: (l) => l.moduleNotebooks,
     description: (l) => l.moduleNotebooksBody,
-    phase: 6,
   ),
   AppModule(
     id: 'drawing',
@@ -56,7 +55,6 @@ final List<AppModule> appModules = [
     icon: Icons.brush_outlined,
     title: (l) => l.moduleDrawing,
     description: (l) => l.moduleDrawingBody,
-    phase: 6,
   ),
   AppModule(
     id: 'social',

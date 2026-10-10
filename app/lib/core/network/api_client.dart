@@ -46,6 +46,8 @@ class ApiClient {
 
   Future<Map<String, dynamic>> put(String path) => _send('PUT', path);
 
+  Future<Map<String, dynamic>> putJson(String path, Map<String, Object?> body) => _send('PUT', path, body: body);
+
   Future<Map<String, dynamic>> delete(String path) => _send('DELETE', path);
 
   /// URL absoluta para rutas de archivos devueltas por la API (`/api/v1/media/...`).
@@ -59,7 +61,17 @@ class ApiClient {
   Future<Map<String, dynamic>> upload(String path, List<int> bytes, String contentType) =>
       _send('POST', path, rawBody: bytes, rawContentType: contentType);
 
-  Future<Map<String, dynamic>> _send(
+  /// Descarga un archivo de la API (p. ej. una foto privada) con la sesión.
+  /// `path` puede ser absoluto o relativo a `baseUrl` (`/api/v1/media/...`).
+  Future<List<int>> getBytes(String path) async {
+    final relative = path.startsWith(baseUrl) ? path.substring(baseUrl.length) : path;
+    final apiPath = relative.startsWith('/api/v1') ? relative.substring('/api/v1'.length) : relative;
+    final response = await _raw('GET', apiPath, authenticated: hasSession);
+    if (response.statusCode >= 200 && response.statusCode < 300) return response.bodyBytes;
+    throw ApiException(response.statusCode, 'http_error', 'No se pudo descargar el archivo.');
+  }
+
+  Future<http.Response> _raw(
     String method,
     String path, {
     Map<String, Object?>? body,
@@ -86,17 +98,35 @@ class ApiClient {
       return http.Response.fromStream(await _http.send(request));
     }
 
-    late http.Response response;
     try {
-      response = await attempt(forceRefresh: false);
+      final response = await attempt(forceRefresh: false);
       if (response.statusCode == 401 && authenticated) {
-        response = await attempt(forceRefresh: true);
+        return await attempt(forceRefresh: true);
       }
+      return response;
     } on ApiException {
       rethrow;
     } catch (_) {
       throw const ApiException(0, 'network_error', 'No se pudo conectar con el servidor.');
     }
+  }
+
+  Future<Map<String, dynamic>> _send(
+    String method,
+    String path, {
+    Map<String, Object?>? body,
+    List<int>? rawBody,
+    String? rawContentType,
+    bool authenticated = true,
+  }) async {
+    final response = await _raw(
+      method,
+      path,
+      body: body,
+      rawBody: rawBody,
+      rawContentType: rawContentType,
+      authenticated: authenticated,
+    );
 
     final decoded = _decode(response.body);
     if (response.statusCode >= 200 && response.statusCode < 300) return decoded;

@@ -28,7 +28,7 @@ void main() {
   });
 
   test('rutas privadas exigen sesión', () {
-    for (final r in ['/profile', '/notebooks', '/messages', '/notifications', '/drawing', '/observations', '/verify-email']) {
+    for (final r in ['/profile', '/notebooks', '/messages', '/notifications', '/drawing', '/observations', '/notebook-pages/pg1', '/notebooks/nb1', '/verify-email']) {
       expect(go(r), startsWith('/login?from='), reason: r);
       expect(go(r, status: AuthStatus.signedIn), isNull, reason: r);
     }
