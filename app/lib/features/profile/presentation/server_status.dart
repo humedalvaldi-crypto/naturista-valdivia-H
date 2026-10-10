@@ -16,15 +16,21 @@ class ServerAccountStatus extends StatefulWidget {
 
 class _ServerAccountStatusState extends State<ServerAccountStatus> {
   Future<Map<String, dynamic>>? _request;
+  ApiClient? _api;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final api = ApiScope.of(context);
+    _api = api;
     if (api.isConfigured) _request ??= api.get('/me');
   }
 
-  void _retry() => setState(() => _request = ApiScope.of(context).get('/me'));
+  void _retry() {
+    final api = _api;
+    if (api == null) return;
+    setState(() => _request = api.get('/me'));
+  }
 
   @override
   Widget build(BuildContext context) {
