@@ -99,6 +99,9 @@ export function transform(snapshotDir: string, outDir: string, migrationsDir: st
   mapChatMessages(ctx, col('chat_messages'));
   for (const d of col('places')) mapPlace(ctx, d, 'places');
   for (const d of col('wetlands')) mapPlace(ctx, d, 'wetlands');
+  // Cuentas que su dueña eliminó en la app nueva: una nueva copia no las revive.
+  // Se resuelve dentro de D1 (tabla deleted_accounts), sin que los UID pasen por los registros.
+  plan.statements.get('890-respect-deletions')!.push(...respectDeletionsStatements());
   for (const s of recountStatements()) plan.statements.get('900-recount')!.push(s);
   // Enlaza archivos copiados después del contenido (solo si la columna sigue vacía y el archivo existe).
   for (const l of plan.relinks) {
@@ -212,4 +215,14 @@ export function renderReport(r: PlanReport): string {
     for (const note of s.notes) lines.push(`- ${note}`);
   }
   return `${lines.join('\n')}\n`;
+}
+
+/** Igual que AccountRepository.delete del Worker, para todas las cuentas eliminadas. */
+export function respectDeletionsStatements(): string[] {
+  return [
+    `UPDATE posts SET community_id = NULL
+     WHERE community_id IN (SELECT id FROM communities WHERE created_by IN (SELECT uid FROM deleted_accounts))
+       AND author_id NOT IN (SELECT uid FROM deleted_accounts);`,
+    'DELETE FROM users WHERE id IN (SELECT uid FROM deleted_accounts);',
+  ];
 }

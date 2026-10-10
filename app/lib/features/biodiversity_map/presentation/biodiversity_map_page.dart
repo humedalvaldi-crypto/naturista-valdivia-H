@@ -14,6 +14,8 @@ import '../../auth/application/auth_controller.dart';
 import '../../observations/data/observations_api.dart';
 import '../../observations/domain/observation_models.dart';
 import '../../observations/presentation/taxon_ui.dart';
+import '../../settings/application/settings_controller.dart';
+import '../../settings/data/settings_repository.dart';
 
 /// Mapa de biodiversidad (lámina, pantallas 41–50): mapa real con las
 /// observaciones de la zona visible, filtros por grupo y capas.
@@ -31,7 +33,7 @@ class _BiodiversityMapPageState extends State<BiodiversityMapPage> {
   bool _ready = false;
   int _seq = 0;
 
-  BaseMap _base = BaseMap.streets;
+  late BaseMap _base = SettingsScope.settingsOf(context).mapBase == MapBasePreference.topo ? BaseMap.topo : BaseMap.streets;
   bool _showObservations = true;
   bool _onlyMine = false;
   bool _showPlaces = true;

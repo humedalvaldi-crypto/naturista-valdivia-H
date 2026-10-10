@@ -33,6 +33,16 @@ class FakeApiServer {
     ],
   };
   final notebooks = <Map<String, dynamic>>[];
+
+  /// Cuadernos en la papelera (con `deletedAt`).
+  final trashed = <Map<String, dynamic>>[];
+
+  /// Perfil propio (`/me/profile`).
+  Map<String, dynamic> myProfile = {
+    'userId': 'u1', 'username': 'eva', 'fullName': 'Eva', 'bio': null, 'location': null,
+    'photo': null, 'banner': null, 'visibility': 'public',
+  };
+  bool accountDeleted = false;
   final pages = <String, Map<String, dynamic>>{};
   bool failNext = false;
 
@@ -206,6 +216,14 @@ class FakeApiServer {
 
   http.Response? _notebooksRoute(String method, List<String> seg, Map<String, dynamic> body) {
     if (seg.first == 'notebooks') {
+      if (seg.length == 2 && seg[1] == 'trash' && method == 'GET') return _json({'data': trashed});
+      if (seg.length == 3 && seg[2] == 'restore' && method == 'POST') {
+        final t = trashed.where((n) => n['id'] == seg[1]).firstOrNull;
+        if (t == null) return _json({'error': {'code': 'not_found', 'message': 'Cuaderno no encontrado en la papelera.'}}, 404);
+        trashed.remove(t);
+        notebooks.add(t..remove('deletedAt'));
+        return _json({'data': t});
+      }
       if (seg.length == 1 && method == 'GET') return _json({'data': notebooks});
       if (seg.length == 1 && method == 'POST') {
         final nb = addNotebook(body['title'] as String);
@@ -222,7 +240,7 @@ class FakeApiServer {
       }
       if (seg.length == 2 && method == 'DELETE') {
         notebooks.remove(nb);
-        pages.removeWhere((_, p) => p['notebookId'] == nb['id']);
+        trashed.add({...nb, 'deletedAt': DateTime.now().toUtc().toIso8601String()});
         return http.Response('', 204);
       }
       if (seg[2] == 'pages' && method == 'GET') return _json({'data': [for (final p in pagesOf(nb['id'] as String)) _pageInfo(p)]});
@@ -284,6 +302,34 @@ class FakeApiServer {
           final seg = path.split('/').where((s) => s.isNotEmpty).toList();
 
           if (req.method == 'GET' && path == '/me') return _json({'data': {}});
+          if (path == '/me/profile' && req.method == 'GET') return _json({'data': myProfile});
+          if (path == '/me/profile' && req.method == 'PATCH') {
+            for (final e in body.entries) {
+              switch (e.key) {
+                case 'photoAssetId':
+                  myProfile['photo'] = e.value == null ? null : '/api/v1/media/${e.value}';
+                case 'bannerAssetId':
+                  myProfile['banner'] = e.value == null ? null : '/api/v1/media/${e.value}';
+                default:
+                  myProfile[e.key] = e.value;
+              }
+            }
+            if (myProfile['username'] == 'tomado') {
+              return _json({'error': {'code': 'username_taken', 'message': 'Ese nombre de usuario ya está en uso.'}}, 409);
+            }
+            return _json({'data': myProfile});
+          }
+          if (path == '/me/export' && req.method == 'GET') {
+            return http.Response(jsonEncode({'format': 'naturista-valdivia/export/v1', 'account': {'id': 'u1'}}), 200,
+                headers: {'content-type': 'application/json'});
+          }
+          if (path == '/me' && req.method == 'DELETE') {
+            if (req.headers['X-Confirm-Delete'] != 'ELIMINAR' && req.headers['x-confirm-delete'] != 'ELIMINAR') {
+              return _json({'error': {'code': 'bad_request', 'message': 'Falta confirmar.'}}, 400);
+            }
+            accountDeleted = true;
+            return http.Response('', 204);
+          }
           if (req.method == 'GET' && seg.first == 'media') {
             return http.Response.bytes(const [0xff, 0xd8, 0xff, 0xd9], 200, headers: {'content-type': 'image/jpeg'});
           }

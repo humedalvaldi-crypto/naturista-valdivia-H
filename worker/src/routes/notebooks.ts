@@ -106,7 +106,10 @@ async function checkMedia(db: D1Database, ownerId: string, ids: string[], makePu
  * GET    /:id/pages             páginas
  * POST   /:id/pages             agregar página al final (dueña)
  * PUT    /:id/page-order        reordenar (dueña)
+ * GET    /trash                 papelera: borrados hace menos de 30 días (dueña)
+ * POST   /:id/restore           sacar de la papelera (dueña)
  */
+export const TRASH_DAYS = 30;
 export const notebooksRoutes = new Hono<AppBindings>()
   .get('/', async (c) => {
     const viewer = viewerOf(c);
@@ -131,6 +134,17 @@ export const notebooksRoutes = new Hono<AppBindings>()
     });
     await repo.addPage(id, crypto.randomUUID(), new Date().toISOString().slice(0, 10));
     return c.json({ data: notebookDto((await repo.get(id))!) }, 201);
+  })
+  .get('/trash', async (c) => {
+    const viewer = viewerOf(c);
+    if (!viewer) throw new HttpError(401, 'unauthorized', 'Autenticación requerida.');
+    const rows = await new NotebooksRepository(c.env.DB).trash(viewer, TRASH_DAYS);
+    return c.json({ data: rows.map((n) => ({ ...notebookDto(n), deletedAt: n.deleted_at })) });
+  })
+  .post('/:id/restore', async (c) => {
+    const repo = new NotebooksRepository(c.env.DB);
+    if (!(await repo.restore(c.req.param('id'), c.get('user').uid, TRASH_DAYS))) throw notFound('Cuaderno no encontrado en la papelera.');
+    return c.json({ data: notebookDto((await repo.get(c.req.param('id')))!) });
   })
   .get('/:id', async (c) => {
     const n = await readable(new NotebooksRepository(c.env.DB), c.req.param('id'), viewerOf(c));

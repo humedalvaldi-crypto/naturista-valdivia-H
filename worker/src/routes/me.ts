@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { AccountRepository } from '../repositories/account';
 import { UsersRepository, type SettingsRow, type UserRow } from '../repositories/users';
 import { badRequest } from '../services/http-error';
 import type { AppBindings } from '../types/env';
@@ -27,6 +28,24 @@ export const meRoutes = new Hono<AppBindings>()
     const user = await repo.upsertFromAuth(c.get('user'));
     const settings = await repo.getSettings(user.id);
     return c.json({ data: { user: toUserDto(user), settings: settings ? toSettingsDto(settings) : null } });
+  })
+  // GET /api/v1/me/export — copia de todos los datos propios (JSON descargable).
+  .get('/export', async (c) => {
+    const uid = c.get('user').uid;
+    const data = await new AccountRepository(c.env.DB).export(uid);
+    return c.body(JSON.stringify(data, null, 2), 200, {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Content-Disposition': 'attachment; filename="naturista-valdivia-mis-datos.json"',
+      'Cache-Control': 'no-store',
+    });
+  })
+  // DELETE /api/v1/me — elimina la cuenta y su contenido. Exige confirmación explícita.
+  .delete('/', async (c) => {
+    if (c.req.header('X-Confirm-Delete') !== 'ELIMINAR') {
+      throw badRequest('Confirma la eliminación enviando la cabecera X-Confirm-Delete: ELIMINAR.');
+    }
+    await new AccountRepository(c.env.DB).delete(c.get('user').uid);
+    return c.body(null, 204);
   })
   // PATCH /api/v1/me/settings — idioma y tema.
   .patch('/settings', async (c) => {

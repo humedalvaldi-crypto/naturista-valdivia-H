@@ -17,6 +17,39 @@ abstract final class AppColors {
 }
 
 abstract final class AppTheme {
+  /// Tema según las preferencias de accesibilidad.
+  static ThemeData resolve({required Brightness brightness, bool highContrast = false, bool reduceMotion = false}) {
+    var theme = brightness == Brightness.light ? light() : dark();
+    if (highContrast) theme = _highContrast(theme);
+    if (reduceMotion) {
+      theme = theme.copyWith(
+        pageTransitionsTheme: const PageTransitionsTheme(builders: {
+          for (final p in TargetPlatform.values) p: _NoTransitionsBuilder(),
+        }),
+      );
+    }
+    return theme;
+  }
+
+  /// Más contraste: texto secundario igual al principal, bordes marcados.
+  static ThemeData _highContrast(ThemeData base) {
+    final light = base.brightness == Brightness.light;
+    final ink = light ? Colors.black : Colors.white;
+    final scheme = ColorScheme.fromSeed(
+      seedColor: AppColors.forest,
+      brightness: base.brightness,
+      contrastLevel: 1.0,
+    ).copyWith(
+      primary: light ? AppColors.forestDark : const Color(0xFFB8F0A8),
+      surface: light ? Colors.white : Colors.black,
+      onSurface: ink,
+      onSurfaceVariant: ink,
+      outline: ink,
+      outlineVariant: light ? const Color(0xFF555555) : const Color(0xFFBBBBBB),
+    );
+    return _build(scheme);
+  }
+
   static ThemeData light() {
     final scheme = ColorScheme.fromSeed(
       seedColor: AppColors.forest,
@@ -102,4 +135,19 @@ abstract final class AppTheme {
       visualDensity: VisualDensity.standard,
     );
   }
+}
+
+/// Cambia de pantalla sin animación (preferencia "reducir movimiento").
+class _NoTransitionsBuilder extends PageTransitionsBuilder {
+  const _NoTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) =>
+      child;
 }

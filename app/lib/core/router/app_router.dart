@@ -24,7 +24,10 @@ import '../../features/observations/presentation/observation_form_page.dart';
 import '../../features/observations/presentation/observations_page.dart';
 import '../../features/profile/presentation/profile_page.dart';
 import '../../features/settings/application/settings_controller.dart';
+import '../../features/settings/presentation/edit_profile_page.dart';
+import '../../features/settings/presentation/help_pages.dart';
 import '../../features/settings/presentation/settings_page.dart';
+import '../../features/settings/presentation/trash_page.dart';
 import '../../features/social/domain/models.dart';
 import '../../features/social/presentation/compose_post_page.dart';
 import '../../features/social/presentation/post_detail_page.dart';
@@ -34,7 +37,7 @@ import '../../shared/widgets/state_views.dart';
 import '../l10n/l10n.dart';
 
 /// Rutas que exigen sesión iniciada.
-const privateRoutes = {'/profile', '/notebooks', '/drawing', '/observations/new', '/messages', '/notifications', '/community/new', '/notebook-pages', '/album'};
+const privateRoutes = {'/profile', '/notebooks', '/drawing', '/observations/new', '/messages', '/notifications', '/community/new', '/notebook-pages', '/album', '/settings/profile', '/settings/trash'};
 
 /// Pantallas de acceso: con sesión iniciada no tienen sentido.
 const authRoutes = {'/login', '/register', '/forgot-password'};
@@ -147,7 +150,16 @@ GoRouter buildRouter({
           ]),
         ],
       ),
-      GoRoute(path: '/settings', builder: (context, state) => const SettingsPage()),
+      GoRoute(
+        path: '/settings',
+        builder: (context, state) => const SettingsPage(),
+        routes: [
+          GoRoute(path: 'profile', builder: (context, state) => const EditProfilePage()),
+          GoRoute(path: 'trash', builder: (context, state) => const TrashPage()),
+          GoRoute(path: 'help', builder: (context, state) => const HelpPage()),
+          GoRoute(path: 'privacy', builder: (context, state) => const LegalPage()),
+        ],
+      ),
       GoRoute(
         path: '/community/new',
         builder: (context, state) => ComposePostPage(communitySlug: state.uri.queryParameters['community']),

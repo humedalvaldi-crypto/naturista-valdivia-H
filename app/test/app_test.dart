@@ -25,6 +25,7 @@ void main() {
     await pumpTestApp(tester, at: '/settings');
 
     expect(find.text('Configuración'), findsWidgets);
+    await tester.scrollUntilVisible(find.byKey(const Key('language-en')), 200, scrollable: find.byType(Scrollable).first);
     await tester.tap(find.byKey(const Key('language-en')));
     await tester.pumpAndSettle();
 
@@ -36,6 +37,7 @@ void main() {
   testWidgets('cambia el tema a oscuro', (tester) async {
     await pumpTestApp(tester, at: '/settings');
 
+    await tester.scrollUntilVisible(find.byKey(const Key('theme-dark')), 200, scrollable: find.byType(Scrollable).first);
     await tester.tap(find.byKey(const Key('theme-dark')));
     await tester.pumpAndSettle();
 

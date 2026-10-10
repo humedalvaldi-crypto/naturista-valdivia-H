@@ -51,6 +51,12 @@ class NotebooksApi implements PageStore {
 
   Future<void> delete(String id) => _api.delete('/notebooks/$id');
 
+  /// Cuadernos eliminados en los últimos 30 días.
+  Future<List<Notebook>> trash() async => _list(await _api.get('/notebooks/trash')).map(Notebook.fromJson).toList();
+
+  Future<Notebook> restore(String id) async =>
+      Notebook.fromJson((await _api.post('/notebooks/$id/restore'))['data'] as Map<String, dynamic>);
+
   Future<Notebook> duplicate(String id) async =>
       Notebook.fromJson((await _api.post('/notebooks/$id/duplicate'))['data'] as Map<String, dynamic>);
 

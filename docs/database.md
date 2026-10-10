@@ -87,6 +87,13 @@ Añade el tipo `audio` a `notebook_elements` (notas de audio en las páginas). S
 
 Los desbloqueos nuevos no se guardan: se calculan al vuelo desde las observaciones. Para terceros solo cuentan las observaciones y cuadernos públicos.
 
+## Migración `0009_deleted_accounts.sql` (Configuración)
+
+`deleted_accounts(uid, deleted_at)`: solo el UID de quien eliminó su cuenta
+desde Configuración (`DELETE /api/v1/me` con `X-Confirm-Delete: ELIMINAR`).
+Sirve para que una nueva copia desde Firebase no la reviva: la etapa
+`890-respect-deletions` del migrador borra esas cuentas dentro de D1.
+
 ## Políticas de borrado
 
 - Borrar un usuario: `ON DELETE CASCADE` en sus preferencias y perfil. El contenido social se decidirá en la Fase 5 (anonimizar vs. borrar) y quedará documentado aquí.

@@ -43,6 +43,16 @@ class SettingsController extends ChangeNotifier {
   Future<bool> setTheme(AppThemePreference theme) =>
       _update(_settings.copyWith(theme: theme));
 
+  Future<bool> setTextScale(double value) => _update(_settings.copyWith(textScale: value));
+
+  Future<bool> setHighContrast(bool value) => _update(_settings.copyWith(highContrast: value));
+
+  Future<bool> setReduceMotion(bool value) => _update(_settings.copyWith(reduceMotion: value));
+
+  Future<bool> setMapBase(MapBasePreference value) => _update(_settings.copyWith(mapBase: value));
+
+  Future<bool> setObservationsPrivate(bool value) => _update(_settings.copyWith(observationsPrivate: value));
+
   Future<bool> completeOnboarding() => _update(_settings.copyWith(onboardingDone: true));
 
   Future<bool> _update(AppSettings next) async {
@@ -75,4 +85,8 @@ class SettingsScope extends InheritedNotifier<SettingsController> {
   /// Sin suscribirse a cambios (para callbacks).
   static SettingsController read(BuildContext context) =>
       context.getInheritedWidgetOfExactType<SettingsScope>()!.notifier!;
+
+  /// Preferencias actuales, o las de fábrica si no hay [SettingsScope] (p. ej. en pruebas aisladas).
+  static AppSettings settingsOf(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<SettingsScope>()?.notifier?.settings ?? const AppSettings();
 }

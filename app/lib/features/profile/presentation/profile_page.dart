@@ -105,6 +105,13 @@ class ProfilePage extends StatelessWidget {
                   const ServerAccountStatus(),
                   const SizedBox(height: 8),
                   FilledButton.tonalIcon(
+                    key: const Key('edit-profile'),
+                    onPressed: () => context.push('/settings/profile'),
+                    icon: const Icon(Icons.edit_outlined),
+                    label: Text(l10n.settingsEditProfile),
+                  ),
+                  const SizedBox(height: 8),
+                  FilledButton.tonalIcon(
                     key: const Key('my-album'),
                     onPressed: () => context.push('/album'),
                     icon: const Icon(Icons.collections_bookmark_outlined),

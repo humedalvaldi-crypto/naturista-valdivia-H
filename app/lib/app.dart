@@ -63,11 +63,20 @@ class _NaturistaAppState extends State<NaturistaApp> {
           child: ListenableBuilder(
           listenable: widget.settings,
           builder: (context, _) {
+            final prefs = widget.settings.settings;
             return MaterialApp.router(
               onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
               debugShowCheckedModeBanner: false,
-              theme: AppTheme.light(),
-              darkTheme: AppTheme.dark(),
+              theme: AppTheme.resolve(
+                brightness: Brightness.light,
+                highContrast: prefs.highContrast,
+                reduceMotion: prefs.reduceMotion,
+              ),
+              darkTheme: AppTheme.resolve(
+                brightness: Brightness.dark,
+                highContrast: prefs.highContrast,
+                reduceMotion: prefs.reduceMotion,
+              ),
               themeMode: widget.settings.themeMode,
               locale: widget.settings.locale,
               supportedLocales: AppLocalizations.supportedLocales,
@@ -78,6 +87,19 @@ class _NaturistaAppState extends State<NaturistaApp> {
                 GlobalCupertinoLocalizations.delegate,
               ],
                 routerConfig: _router,
+                // Tamaño de texto y movimiento elegidos en Configuración.
+                builder: (context, child) {
+                  final media = MediaQuery.of(context);
+                  final systemScale = media.textScaler.scale(1);
+                  return MediaQuery(
+                    data: media.copyWith(
+                      textScaler: TextScaler.linear((systemScale * prefs.textScale).clamp(0.8, 2.0)),
+                      disableAnimations: media.disableAnimations || prefs.reduceMotion,
+                      highContrast: media.highContrast || prefs.highContrast,
+                    ),
+                    child: child ?? const SizedBox.shrink(),
+                  );
+                },
               );
             },
           ),

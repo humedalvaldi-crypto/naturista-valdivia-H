@@ -20,6 +20,7 @@ class Notebook {
     required this.updatedAt,
     this.description,
     this.ownerId,
+    this.deletedAt,
   });
 
   factory Notebook.fromJson(Map<String, dynamic> j) => Notebook(
@@ -31,10 +32,14 @@ class Notebook {
         pageCount: (j['pageCount'] as num?)?.toInt() ?? 0,
         updatedAt: _date(j['updatedAt']),
         ownerId: j['ownerId'] as String?,
+        deletedAt: j['deletedAt'] == null ? null : _date(j['deletedAt']),
       );
 
   final String id;
   final String? ownerId;
+
+  /// Solo en la papelera: cuándo se eliminó.
+  final DateTime? deletedAt;
   final String title;
   final String? description;
   final String color;

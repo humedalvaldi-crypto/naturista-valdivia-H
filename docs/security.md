@@ -82,6 +82,19 @@
 | Escribir en D1 remota exige repetir el nombre de la base y hace respaldo antes | `scripts/apply-d1.ts` | Manual |
 | Credenciales solo por variables de entorno; instantáneas y planes fuera de git | `.gitignore`, `migration/README.md` | — |
 
+## Implementado en Configuración (derechos sobre los datos)
+
+- `GET /api/v1/me/export`: copia JSON de todos los datos propios, `Cache-Control: no-store`.
+- `DELETE /api/v1/me`: exige la cabecera `X-Confirm-Delete: ELIMINAR` (y la app pide
+  escribir la palabra). Borra en cascada; las publicaciones de otras personas en
+  comunidades de la cuenta se conservan sin comunidad. Deja solo el UID en
+  `deleted_accounts`. **No** se borra el usuario de Firebase Authentication: lo
+  comparte la app antigua y Firebase no se modifica durante la convivencia.
+- Papelera de cuadernos: 30 días (`GET /notebooks/trash`, `POST /notebooks/:id/restore`);
+  el cron diario los borra definitivamente después.
+- Perfil: no se piden RUT, fecha de nacimiento, género ni dirección (minimización).
+- Exportación CSV: celdas que empiezan con `= + - @` se prefijan con `'` (sin fórmulas).
+
 ## Pendiente (con fase)
 
 - Autorización por recurso y propietario en cada módulo, con pruebas cruzadas entre usuarios (Fases 5–7).

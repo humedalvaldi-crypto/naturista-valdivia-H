@@ -81,6 +81,16 @@ describe('plan sobre una instantánea de prueba', () => {
     expect(count(db, "SELECT count(*) n FROM posts WHERE author_id = 'uidAna'")).toBe(2); // su contenido antiguo sí llega
   });
 
+  it('una cuenta eliminada en la app nueva no vuelve con una nueva copia', () => {
+    const db = freshDb();
+    db.exec("INSERT INTO deleted_accounts (uid) VALUES ('uidBeto')");
+    applyFiles(db, join(out, 'sql'), files);
+    expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+    expect(count(db, "SELECT count(*) n FROM users WHERE id = 'uidBeto'")).toBe(0);
+    expect(count(db, "SELECT count(*) n FROM follows WHERE follower_id = 'uidBeto' OR followed_id = 'uidBeto'")).toBe(0);
+    expect(count(db, "SELECT count(*) n FROM users WHERE id = 'uidAna'")).toBe(1);
+  });
+
   it('es idempotente: aplicarlo dos veces no duplica nada', () => {
     const db = freshDb();
     applyFiles(db, join(out, 'sql'), files);

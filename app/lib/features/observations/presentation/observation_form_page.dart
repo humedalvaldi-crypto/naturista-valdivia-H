@@ -13,6 +13,7 @@ import '../../../shared/media/api_image.dart';
 import '../../../shared/media/photo_picker.dart';
 import '../../../shared/widgets/server_required.dart';
 import '../../../shared/widgets/state_views.dart';
+import '../../settings/application/settings_controller.dart';
 import '../data/observations_api.dart';
 import '../domain/observation_models.dart';
 import 'taxon_ui.dart';
@@ -52,7 +53,7 @@ class _ObservationFormPageState extends State<ObservationFormPage> {
   String _source = 'manual';
   bool _locating = false;
   bool _hideLocation = false;
-  bool _private = false;
+  late bool _private = SettingsScope.settingsOf(context).observationsPrivate;
   PickedPhoto? _photo;
   String? _existingPhotoPath;
   String? _existingPhotoId;

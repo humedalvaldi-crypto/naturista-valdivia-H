@@ -49,7 +49,8 @@ class ApiClient {
 
   Future<Map<String, dynamic>> putJson(String path, Map<String, Object?> body) => _send('PUT', path, body: body);
 
-  Future<Map<String, dynamic>> delete(String path) => _send('DELETE', path);
+  Future<Map<String, dynamic>> delete(String path, {Map<String, String> headers = const {}}) =>
+      _send('DELETE', path, headers: headers);
 
   /// URL absoluta para rutas de archivos devueltas por la API (`/api/v1/media/...`).
   String? absolute(String? path) {
@@ -79,21 +80,22 @@ class ApiClient {
     List<int>? rawBody,
     String? rawContentType,
     bool authenticated = true,
+    Map<String, String> headers = const {},
   }) async {
     if (!isConfigured) {
       throw const ApiException(0, 'not_configured', 'El servidor todavía no está conectado.');
     }
 
     Future<http.Response> attempt({required bool forceRefresh}) async {
-      final headers = <String, String>{'Accept': 'application/json'};
-      if (body != null) headers['Content-Type'] = 'application/json';
-      if (rawBody != null) headers['Content-Type'] = rawContentType ?? 'application/octet-stream';
+      final all = <String, String>{'Accept': 'application/json', ...headers};
+      if (body != null) all['Content-Type'] = 'application/json';
+      if (rawBody != null) all['Content-Type'] = rawContentType ?? 'application/octet-stream';
       if (authenticated) {
         final token = await _auth.idToken(forceRefresh: forceRefresh);
         if (token == null) throw const ApiException(401, 'unauthorized', 'Inicia sesión para continuar.');
-        headers['Authorization'] = 'Bearer $token';
+        all['Authorization'] = 'Bearer $token';
       }
-      final request = http.Request(method, _uri(path))..headers.addAll(headers);
+      final request = http.Request(method, _uri(path))..headers.addAll(all);
       if (body != null) request.body = jsonEncode(body);
       if (rawBody != null) request.bodyBytes = rawBody;
       return http.Response.fromStream(await _http.send(request));
@@ -119,6 +121,7 @@ class ApiClient {
     List<int>? rawBody,
     String? rawContentType,
     bool authenticated = true,
+    Map<String, String> headers = const {},
   }) async {
     final response = await _raw(
       method,
@@ -127,6 +130,7 @@ class ApiClient {
       rawBody: rawBody,
       rawContentType: rawContentType,
       authenticated: authenticated,
+      headers: headers,
     );
 
     final decoded = _decode(response.body);

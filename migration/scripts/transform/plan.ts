@@ -19,6 +19,7 @@ export const STAGES = [
   '130-conversations',
   '140-messages',
   '150-places',
+  '890-respect-deletions',
   '900-recount',
   '910-relink-media',
 ] as const;

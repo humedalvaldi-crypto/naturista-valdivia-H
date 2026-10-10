@@ -11,6 +11,7 @@ export interface NotebookRow {
   page_count: number;
   created_at: string;
   updated_at: string;
+  deleted_at?: string | null;
 }
 
 export interface PageRow {
@@ -89,6 +90,33 @@ export class NotebooksRepository {
       .prepare(`UPDATE notebooks SET ${sets.join(', ')}, updated_at = ?${entries.length + 2} WHERE id = ?1`)
       .bind(id, ...entries.map(([, v]) => v ?? null), new Date().toISOString())
       .run();
+  }
+
+  /** Papelera: cuadernos propios borrados hace menos de [days] días. */
+  async trash(ownerId: string, days: number): Promise<NotebookRow[]> {
+    const since = new Date(Date.now() - days * 86_400_000).toISOString();
+    return (
+      await this.db
+        .prepare(`SELECT * FROM notebooks WHERE owner_id = ?1 AND deleted_at IS NOT NULL AND deleted_at >= ?2 ORDER BY deleted_at DESC`)
+        .bind(ownerId, since)
+        .all<NotebookRow>()
+    ).results;
+  }
+
+  async restore(id: string, ownerId: string, days: number): Promise<boolean> {
+    const since = new Date(Date.now() - days * 86_400_000).toISOString();
+    const res = await this.db
+      .prepare(`UPDATE notebooks SET deleted_at = NULL, updated_at = ?4 WHERE id = ?1 AND owner_id = ?2 AND deleted_at IS NOT NULL AND deleted_at >= ?3`)
+      .bind(id, ownerId, since, new Date().toISOString())
+      .run();
+    return res.meta.changes > 0;
+  }
+
+  /** Borrado definitivo de lo que lleva más de [days] días en la papelera (páginas y elementos en cascada). */
+  async purgeTrash(days: number, now = Date.now()): Promise<number> {
+    const before = new Date(now - days * 86_400_000).toISOString();
+    const res = await this.db.prepare(`DELETE FROM notebooks WHERE deleted_at IS NOT NULL AND deleted_at < ?1`).bind(before).run();
+    return res.meta.changes;
   }
 
   async softDelete(id: string): Promise<void> {

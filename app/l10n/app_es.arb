@@ -611,5 +611,137 @@
   "achFollowers5": "En comunidad",
   "achFollowers5Body": "Consigue 5 personas que te sigan.",
   "achPioneer": "Desde el comienzo",
-  "achPioneerBody": "Tu colección llegó desde la app antigua."
+  "achPioneerBody": "Tu colección llegó desde la app antigua.",
+  "settingsSectionAccount": "Cuenta",
+  "settingsEditProfile": "Editar perfil",
+  "settingsEditProfileHint": "Nombre, usuario, presentación, foto y portada",
+  "settingsSeeProfile": "Ver mi perfil",
+  "settingsSignInTitle": "Inicia sesión",
+  "settingsSignInBody": "Para editar tu perfil, tu privacidad y tus datos.",
+  "settingsChangePassword": "Cambiar contraseña",
+  "settingsChangePasswordHint": "Te enviamos un correo con un enlace seguro para elegir una nueva.",
+  "settingsPasswordResetSent": "Enviamos el enlace a {email}. Revisa también la carpeta de spam.",
+  "@settingsPasswordResetSent": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsSectionPrivacy": "Privacidad",
+  "settingsProfileVisibility": "Quién puede ver mi perfil",
+  "settingsObservationsPrivate": "Observaciones nuevas privadas",
+  "settingsObservationsPrivateHint": "Al registrar una observación, empieza marcada como privada. Puedes cambiarla en cada una.",
+  "settingsGeoprivacyTitle": "Ubicación de especies sensibles",
+  "settingsGeoprivacyBody": "Las especies amenazadas y las observaciones con \"ocultar ubicación\" se muestran a otras personas solo en una zona de unos 10 km. La ubicación exacta la ves solo tú.",
+  "settingsSectionMap": "Mapa",
+  "settingsSectionAccessibility": "Accesibilidad",
+  "settingsTextSize": "Tamaño del texto",
+  "textSizeSmall": "Pequeño",
+  "textSizeNormal": "Normal",
+  "textSizeLarge": "Grande",
+  "textSizeHuge": "Muy grande",
+  "settingsHighContrast": "Alto contraste",
+  "settingsHighContrastHint": "Texto más oscuro y bordes más marcados.",
+  "settingsReduceMotion": "Reducir movimiento",
+  "settingsReduceMotionHint": "Cambia de pantalla sin animaciones.",
+  "settingsSectionData": "Tus datos",
+  "settingsAlbumHint": "Especies desbloqueadas y logros",
+  "settingsExportCsv": "Exportar observaciones (CSV)",
+  "settingsExportCsvHint": "Para abrir en Excel o en una hoja de cálculo.",
+  "settingsExportAll": "Descargar todos mis datos",
+  "settingsExportAllHint": "Perfil, publicaciones, mensajes, observaciones y cuadernos en un archivo JSON.",
+  "settingsPreparingFile": "Preparando el archivo…",
+  "deleteAccountTitle": "Eliminar mi cuenta",
+  "deleteAccountHint": "Borra tu perfil y todo tu contenido de Naturista Valdivia.",
+  "deleteAccountBody": "Se borrarán tu perfil, publicaciones, comentarios, mensajes, observaciones, cuadernos, fotos y álbum. No se puede deshacer.\n\nTe recomendamos descargar antes tus datos.\n\nTu forma de entrar (Google o correo) se comparte con la app anterior y no se elimina mientras ambas convivan. Si vuelves a entrar, empezarás con una cuenta vacía.",
+  "deleteAccountWord": "ELIMINAR",
+  "deleteAccountTypeWord": "Escribe {word} para confirmar",
+  "@deleteAccountTypeWord": {
+    "placeholders": {
+      "word": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteAccountAction": "Eliminar para siempre",
+  "deleteAccountDone": "Tu cuenta y tu contenido fueron eliminados.",
+  "settingsSectionHelp": "Ayuda e información",
+  "helpTitle": "Ayuda y preguntas frecuentes",
+  "legalTitle": "Privacidad y condiciones",
+  "aboutTitle": "Acerca de Naturista Valdivia",
+  "aboutLegalese": "Proyecto de biodiversidad de Valdivia.",
+  "aboutBody": "Mapas © colaboradores de OpenStreetMap (ODbL) y OpenTopoMap (CC-BY-SA). Toca \"Ver licencias\" para las bibliotecas de código abierto que usa la app.",
+  "profileChangePhoto": "Cambiar foto",
+  "profileChangeBanner": "Cambiar portada",
+  "remove": "Quitar",
+  "profileFullName": "Nombre",
+  "profileUsername": "Nombre de usuario",
+  "profileUsernameHint": "3 a 30 letras minúsculas, números, punto o guion bajo.",
+  "profileUsernameInvalid": "Usa 3 a 30 letras minúsculas, números, punto o guion bajo (sin dos signos seguidos).",
+  "usernameTaken": "Ese nombre de usuario ya está en uso.",
+  "profileBio": "Presentación",
+  "profileLocation": "Localidad",
+  "profileMinimalData": "Solo pedimos lo necesario para tu perfil. No pedimos RUT, fecha de nacimiento, género ni dirección.",
+  "save": "Guardar",
+  "profileSaved": "Perfil guardado",
+  "trashTitle": "Papelera",
+  "trashHint": "Recupera cuadernos eliminados",
+  "trashExplanation": "Los cuadernos eliminados se guardan aquí {days} días con todas sus páginas. Después se borran para siempre.",
+  "@trashExplanation": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "trashEmpty": "La papelera está vacía.",
+  "trashRestore": "Restaurar",
+  "trashRestored": "\"{title}\" volvió a tus cuadernos.",
+  "@trashRestored": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "trashDaysLeft": "{days, plural, =0{Se borra hoy} =1{Queda 1 día} other{Quedan {days} días}}",
+  "@trashDaysLeft": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "open": "Abrir",
+  "faqObservationQ": "¿Cómo registro una observación?",
+  "faqObservationA": "En el mapa, toca \"+\" o mantén presionado un punto. Elige la especie (o escribe un nombre si no está en el catálogo), la fecha, la ubicación y, si quieres, una foto. Al guardar la foto se le quitan los datos GPS del archivo.",
+  "faqLocationQ": "¿Quién ve dónde estuve?",
+  "faqLocationA": "Las observaciones públicas muestran el punto exacto, salvo especies amenazadas o si activas \"ocultar ubicación\": entonces otras personas ven solo una zona de unos 10 km. Las observaciones privadas solo las ves tú.",
+  "faqNotebookQ": "¿Se guardan solos mis cuadernos?",
+  "faqNotebookA": "Sí. Cada página se guarda unos segundos después de cada cambio; arriba verás \"Guardado\". Si la misma página cambió en otro dispositivo, la app te avisa en vez de sobrescribirla.",
+  "faqTrashQ": "Borré un cuaderno, ¿lo puedo recuperar?",
+  "faqTrashA": "Sí, durante 30 días: Configuración → Papelera → Restaurar. Vuelve con todas sus páginas.",
+  "faqOldAppQ": "¿Qué pasó con lo que tenía en la app anterior?",
+  "faqOldAppA": "Se copió a esta app: perfil, cuadernos con sus páginas, fotos, seguidores, mensajes y álbum. Entras con la misma cuenta de Google o correo. Lo que crees en la app anterior después de la copia no aparece aquí automáticamente.",
+  "faqOfflineQ": "¿Funciona sin internet?",
+  "faqOfflineA": "Todavía no. Los mapas, cuadernos y observaciones necesitan conexión. Preferimos no mostrar un botón de \"descargar mapa\" hasta que funcione de verdad.",
+  "faqMissingQ": "¿Por qué faltan opciones de la app anterior?",
+  "faqMissingA": "Solo incluimos opciones que funcionan. Aún no están: verificación en dos pasos por SMS, mapas satelitales o sin conexión, intercambio de stickers y cartas, notificaciones al teléfono o por correo, e idiomas distintos de español e inglés. Tampoco pedimos RUT, fecha de nacimiento, género ni dirección: no hacen falta.",
+  "faqContactQ": "¿Cómo reporto un problema?",
+  "faqContactA": "Para contenido inapropiado, usa \"Reportar\" en la publicación o el perfil. Para fallas de la app, avisa a quien administra el proyecto indicando qué pantalla usabas y qué pasó.",
+  "legalDraftNotice": "Versión preliminar en lenguaje simple. Describe cómo funciona la app hoy.",
+  "legalDataTitle": "Qué datos guardamos",
+  "legalDataBody": "Tu correo y forma de entrar; lo que escribes en tu perfil; tus publicaciones, comentarios, mensajes, observaciones (con su ubicación), cuadernos, fotos y audios; y tus preferencias. No pedimos RUT, fecha de nacimiento, género ni dirección.",
+  "legalUseTitle": "Para qué los usamos",
+  "legalUseBody": "Solo para que la app funcione: mostrar tu contenido, el mapa de biodiversidad y la comunidad. No vendemos datos ni mostramos publicidad.",
+  "legalLocationTitle": "Ubicación",
+  "legalLocationBody": "La app solo usa tu ubicación cuando tú lo pides (botón \"mi ubicación\" o al registrar una observación). Las fotos se guardan sin sus datos GPS. Las especies amenazadas se muestran a otras personas con ubicación aproximada.",
+  "legalProvidersTitle": "Servicios que usamos",
+  "legalProvidersBody": "Firebase Authentication (Google) para iniciar sesión. Cloudflare (Workers y D1) para guardar los datos y archivos. Los mapas se cargan desde OpenStreetMap y OpenTopoMap, que reciben tu dirección IP al mostrar el mapa.",
+  "legalRightsTitle": "Tus derechos",
+  "legalRightsBody": "Puedes ver y corregir tu perfil, descargar una copia de todos tus datos y eliminar tu cuenta desde Configuración. Al eliminarla se borra tu contenido de nuestros servidores; los archivos se borran en la limpieza diaria.",
+  "legalTermsTitle": "Normas de uso",
+  "legalTermsBody": "Respeta a las demás personas y a la naturaleza: no publiques datos personales de otros, contenido ofensivo ni ubicaciones que pongan en riesgo especies. Podemos ocultar contenido reportado que no cumpla estas normas.",
+  "visibilityShortFollowers": "Seguidores"
 }
