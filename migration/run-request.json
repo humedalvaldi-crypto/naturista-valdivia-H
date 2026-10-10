@@ -1,1 +1,1 @@
-{ "mode": "migrar", "confirm": "MIGRAR", "nota": "Copia real autorizada por la dueña del proyecto el 2026-10-10. Firebase no se modifica." }
+{ "mode": "migrar", "confirm": "MIGRAR", "nota": "Repetición autorizada: traer álbumes (user_collections) y notas de audio. Idempotente; Firebase no se modifica." }
