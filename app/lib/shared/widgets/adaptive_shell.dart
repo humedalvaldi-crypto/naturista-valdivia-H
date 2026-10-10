@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/l10n/l10n.dart';
+import '../branding/brand.dart';
 
 /// Breakpoints de Material 3 (compacto / mediano / expandido).
 abstract final class Breakpoints {
@@ -70,7 +71,7 @@ class AdaptiveShell extends StatelessWidget {
               onDestinationSelected: _onSelect,
               leading: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                child: Icon(Icons.eco, color: Theme.of(context).colorScheme.primary, size: 32),
+                child: BrandMark(size: 48, color: Theme.of(context).colorScheme.primary),
               ),
               destinations: [
                 for (final d in _destinations)
