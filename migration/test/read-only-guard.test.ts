@@ -7,7 +7,12 @@ import { describe, expect, it } from 'vitest';
  * escritura sobre Firebase. Si en la Fase 8 se añaden escritores, deben vivir
  * en archivos separados y no ejecutarse sin autorización explícita.
  */
-const AUDIT_FILES = ['scripts/audit-firestore.ts', ...readdirSync('scripts/lib').map((f) => join('scripts/lib', f))];
+const AUDIT_FILES = [
+  'scripts/audit-firestore.ts',
+  'scripts/export-firestore.ts',
+  'scripts/copy-media.ts',
+  ...readdirSync('scripts/lib').map((f) => join('scripts/lib', f)),
+];
 
 const FORBIDDEN = [
   /\.set\(/,
@@ -27,7 +32,7 @@ const FORBIDDEN = [
   /setMetadata\(/,
 ];
 
-describe('auditoría de solo lectura', () => {
+describe('auditoría y exportación de solo lectura', () => {
   for (const file of AUDIT_FILES) {
     it(`${file} no contiene escrituras a Firebase`, () => {
       const source = readFileSync(file, 'utf8');

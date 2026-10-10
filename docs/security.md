@@ -69,6 +69,19 @@
 | Fechas futuras, coordenadas fuera de rango, especies inexistentes y campos desconocidos se rechazan | `validators/observations.ts` | Sí |
 | Mapas base con atribución visible y User-Agent propio (política de uso de OpenStreetMap) | `app/lib/shared/map/map_tiles.dart` | — |
 
+## Implementado en la Fase 8 (migración)
+
+| Control | Dónde | Probado |
+|---|---|---|
+| Los scripts que leen Firebase no contienen operaciones de escritura | `migration/test/read-only-guard.test.ts` | Sí |
+| Datos personales heredados (RUT, teléfono, etc.) no se migran; el informe solo los cuenta | `scripts/transform/mappers.ts` | Sí |
+| Contenido sin dueño verificable (`anon`, `guest`, UID inexistente) no se migra | `scripts/transform/mappers.ts` | Sí |
+| El 2FA simulado de la app antigua no se conserva | `mapSettings` | Sí |
+| Archivos migrados: tipo real, límites por uso y sin GPS, igual que una subida nueva | `scripts/transform/media-copy.ts` | Sí |
+| Observaciones de especies sensibles migradas con la ubicación protegida | `mapObservation`, `validate-core.ts` | Sí |
+| Escribir en D1 remota exige repetir el nombre de la base y hace respaldo antes | `scripts/apply-d1.ts` | Manual |
+| Credenciales solo por variables de entorno; instantáneas y planes fuera de git | `.gitignore`, `migration/README.md` | — |
+
 ## Pendiente (con fase)
 
 - Autorización por recurso y propietario en cada módulo, con pruebas cruzadas entre usuarios (Fases 5–7).

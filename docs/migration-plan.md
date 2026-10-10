@@ -1,6 +1,6 @@
 # Plan de migración Firestore → Cloudflare D1/R2
 
-> Estado: **Fase 1 — solo auditoría preparada.** No se ha leído ningún dato real todavía y no se ha migrado nada.
+> Estado: **Fase 8 — herramientas listas y probadas con datos ficticios.** No se ha leído ningún dato real todavía y no se ha migrado nada.
 
 ## 1. Principios
 
@@ -32,13 +32,21 @@ Archivos: Firebase Storage bajo `user-files/{uid}/{propósito}/{archivo}`, con m
 | Etapa | Herramienta | Estado |
 |---|---|---|
 | A. Auditoría de solo lectura | `npm run audit -- --project humedalvaldivia-c7d08` | **Lista para ejecutar** (requiere credenciales de lectura) |
-| B. Mapa de correspondencias Firestore → D1/R2 | `migration/schemas/` | Fase 8, con el informe de A |
-| C. Migrador idempotente por lotes con puntos de control | `migration/scripts/` | Fase 8 |
-| D. Copia de archivos Storage → R2, reescritura de URLs | `migration/scripts/` | Fase 8 |
-| E. Validación: conteos, referencias, hashes | `migration/validation/` | Fase 8 |
-| F. Ensayo en staging + informe | — | Fase 8 |
-| G. Migración definitiva | — | Solo con tu autorización |
+| B. Exportación de solo lectura a instantánea local | `npm run export` | **Lista** |
+| C. Mapeo Firestore → D1 e informe (sin conexión) | `npm run plan` — `scripts/transform/` | **Lista**; ajustar campos tras la auditoría real |
+| D. Copia Storage → R2 (limpia GPS, verifica tamaño) | `npm run copy-media` | **Lista** (ensayo sin `--confirm`) |
+| E. Aplicación a D1 con respaldo y puntos de control | `npm run apply` | **Lista** (probada en D1 local) |
+| F. Validación: conteos, claves foráneas, ubicaciones protegidas, hashes | `npm run validate` | **Lista** |
+| G. Ensayo en staging + informe | — | Pendiente: requiere credenciales y una base de staging |
+| H. Migración definitiva | — | Solo con tu autorización |
 
-## 5. Cómo ejecutar la auditoría (etapa A)
+Las URLs de archivos no se "reescriben": cada documento pasa a apuntar a una
+fila de `media_assets` (ID determinista por ruta de Storage), y la app sirve
+el archivo desde R2 con los permisos de la API.
 
-Ver `migration/README.md`. El resultado (`migration/output/audit-*.md|json`) no contiene valores de documentos, solo nombres de campos, tipos y conteos, y está ignorado por git.
+Pendiente de la auditoría real: la lista "Campos sin mapear" del informe dirá
+si algún dato importante de la app antigua quedó fuera del mapeo.
+
+## 5. Cómo ejecutar las herramientas
+
+Ver `migration/README.md` (pasos, garantías y credenciales). El resultado de la auditoría (`migration/output/audit-*.md|json`) no contiene valores de documentos, solo nombres de campos, tipos y conteos, y está ignorado por git.

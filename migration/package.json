@@ -3,13 +3,19 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Auditoría y migración Firestore → Cloudflare D1/R2. Fase 1: solo auditoría de lectura.",
+  "description": "Auditoría y migración Firestore → Cloudflare D1/R2. Lectura de Firebase, plan idempotente, copia a R2 y aplicación a D1 con confirmación explícita.",
   "scripts": {
     "audit": "tsx scripts/audit-firestore.ts",
+    "export": "tsx scripts/export-firestore.ts",
+    "plan": "tsx scripts/plan-migration.ts",
+    "copy-media": "tsx scripts/copy-media.ts",
+    "apply": "tsx scripts/apply-d1.ts",
+    "validate": "tsx scripts/validate.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "aws4fetch": "^1.0.20",
     "firebase-admin": "^14.5.0"
   },
   "devDependencies": {
