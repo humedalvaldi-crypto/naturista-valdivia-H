@@ -224,6 +224,8 @@ void main() {
       final pageId = server.pagesOf(nb['id'] as String).single['id'];
       await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/notebook-pages/$pageId', api: server.client);
 
+      await tester.ensureVisible(find.byKey(const Key('choose-paper')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('choose-paper')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('paper-grid')));
@@ -241,6 +243,8 @@ void main() {
       final pageId = server.pagesOf(nb['id'] as String).single['id'];
       await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/notebook-pages/$pageId', api: server.client);
 
+      await tester.ensureVisible(find.byKey(const Key('add-audio')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('add-audio')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('record-start')));
@@ -268,6 +272,8 @@ void main() {
       final nb = server.addNotebook('Bitácora');
       final pageId = server.pagesOf(nb['id'] as String).single['id'];
       await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/notebook-pages/$pageId', api: server.client);
+      await tester.ensureVisible(find.byKey(const Key('add-audio')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('add-audio')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('record-start')));
