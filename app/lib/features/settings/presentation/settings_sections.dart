@@ -275,7 +275,10 @@ class _BlockedPeoplePageState extends State<BlockedPeoplePage> {
     try {
       await api.unblock(p.id);
       messenger.showSnackBar(SnackBar(content: Text(l10n.privacyUnblocked(p.name))));
-      setState(() => _future = api.blocked());
+      final next = api.blocked();
+      setState(() {
+        _future = next;
+      });
     } catch (e) {
       if (mounted) messenger.showSnackBar(SnackBar(content: Text(errorMessage(context, e))));
     }

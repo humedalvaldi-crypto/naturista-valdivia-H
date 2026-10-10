@@ -18,8 +18,8 @@ import 'support/test_app.dart';
 const _eva = AuthUser(uid: 'u1', email: 'eva@example.test', displayName: 'Eva', providers: ['password'], emailVerified: true);
 final _png = base64Decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==');
 
-Future<void> _scrollTo(WidgetTester tester, Finder finder) async {
-  await tester.scrollUntilVisible(finder, 200, scrollable: find.byType(Scrollable).first);
+Future<void> _scrollTo(WidgetTester tester, Finder finder, {bool up = false}) async {
+  await tester.scrollUntilVisible(finder, up ? -200 : 200, scrollable: find.byType(Scrollable).first);
   await tester.pumpAndSettle();
 }
 
@@ -40,7 +40,7 @@ void main() {
       await _scrollTo(tester, find.byKey(Key('settings-section-$id')));
     }
 
-    await _scrollTo(tester, find.byKey(const Key('settings-section-map')));
+    await _scrollTo(tester, find.byKey(const Key('settings-section-map')), up: true);
     await tester.tap(find.byKey(const Key('settings-section-map')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('map-base-topo')));
@@ -221,7 +221,10 @@ void main() {
 
   testWidgets('estadísticas y contacto', (tester) async {
     final server = FakeApiServer();
-    await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/settings/stats', api: server.client);
+    await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/settings', api: server.client);
+    await _scrollTo(tester, find.byKey(const Key('settings-section-stats')));
+    await tester.tap(find.byKey(const Key('settings-section-stats')));
+    await tester.pumpAndSettle();
     expect(find.text('Especies en el álbum'), findsOneWidget);
     expect(find.text('7'), findsOneWidget);
 

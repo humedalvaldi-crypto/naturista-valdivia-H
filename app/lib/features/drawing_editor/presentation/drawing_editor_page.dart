@@ -113,6 +113,7 @@ class _DrawingEditorPageState extends State<DrawingEditorPage> {
 
   Future<void> _addSticker() async {
     final l10n = context.l10n;
+    final size = SettingsScope.settingsOf(context).stickerSize;
     final asset = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
@@ -153,7 +154,6 @@ class _DrawingEditorPageState extends State<DrawingEditorPage> {
       ),
     );
     if (asset == null) return;
-    final size = SettingsScope.settingsOf(context).stickerSize;
     _controller!.add(ElementType.sticker, width: size, height: size, data: {'asset': asset});
   }
 

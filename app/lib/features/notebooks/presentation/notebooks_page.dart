@@ -64,6 +64,7 @@ class _NotebooksPageState extends State<NotebooksPage> {
 
   Future<void> _create() async {
     final messenger = ScaffoldMessenger.of(context);
+    final visibility = SettingsScope.settingsOf(context).notebookPublic ? 'public' : 'private';
     final input = await showDialog<_NewNotebook>(context: context, builder: (context) => const _NewNotebookDialog());
     if (input == null) return;
     try {
@@ -71,7 +72,7 @@ class _NotebooksPageState extends State<NotebooksPage> {
         title: input.title,
         description: input.description,
         color: input.color,
-        visibility: SettingsScope.settingsOf(context).notebookPublic ? 'public' : 'private',
+        visibility: visibility,
       );
       if (!mounted) return;
       setState(() => _items = [nb, ..._items]);

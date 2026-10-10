@@ -32,7 +32,12 @@ class _TrashPageState extends State<TrashPage> {
     if (client.isConfigured) _future ??= _api.trash();
   }
 
-  void _reload() => setState(() => _future = _api.trash());
+  void _reload() {
+    final next = _api.trash();
+    setState(() {
+      _future = next;
+    });
+  }
 
   Future<void> _restore(Notebook n) async {
     final l10n = context.l10n;
