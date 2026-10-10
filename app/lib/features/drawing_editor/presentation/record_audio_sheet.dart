@@ -129,11 +129,12 @@ class _RecordAudioSheetState extends State<RecordAudioSheet> {
               ),
             ],
             const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+            OverflowBar(
+              alignment: MainAxisAlignment.end,
+              spacing: 8,
+              overflowSpacing: 8,
               children: [
                 TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
-                const SizedBox(width: 8),
                 FilledButton(
                   key: const Key('record-save'),
                   onPressed: result == null || _recording ? null : () => Navigator.pop(context, (result, _label.text.trim())),
