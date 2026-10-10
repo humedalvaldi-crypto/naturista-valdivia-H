@@ -74,7 +74,9 @@ class PostCard extends StatelessWidget {
             ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            child: Row(
+            // Wrap: en pantallas estrechas los botones pasan a otra línea en vez de desbordarse.
+            child: Wrap(
+              spacing: 4,
               children: [
                 TextButton.icon(
                   key: Key('like-${post.id}'),
