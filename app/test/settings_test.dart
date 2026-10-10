@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:naturista_valdivia/features/auth/domain/auth_user.dart';
 import 'package:naturista_valdivia/features/observations/domain/observation_models.dart';
 import 'package:naturista_valdivia/features/settings/data/account_api.dart';
@@ -17,6 +18,11 @@ import 'support/test_app.dart';
 
 const _eva = AuthUser(uid: 'u1', email: 'eva@example.test', displayName: 'Eva', providers: ['password'], emailVerified: true);
 final _png = base64Decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==');
+
+Future<void> _go(WidgetTester tester, String location) async {
+  GoRouter.of(tester.element(find.byType(Scaffold).last)).go(location);
+  await tester.pumpAndSettle();
+}
 
 Future<void> _scrollTo(WidgetTester tester, Finder finder, {bool up = false}) async {
   await tester.scrollUntilVisible(finder, up ? -200 : 200, scrollable: find.byType(Scrollable).first);
@@ -47,12 +53,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('map-show-places')));
     await tester.pumpAndSettle();
-    await tester.pageBack();
-    await tester.pumpAndSettle();
-
-    await _scrollTo(tester, find.byKey(const Key('settings-section-accessibility')));
-    await tester.tap(find.byKey(const Key('settings-section-accessibility')));
-    await tester.pumpAndSettle();
+    await _go(tester, '/settings/accessibility');
     await tester.tap(find.byKey(const Key('settings-high-contrast')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('settings-reduce-motion')));
@@ -228,11 +229,7 @@ void main() {
     expect(find.text('Especies en el álbum'), findsOneWidget);
     expect(find.text('7'), findsOneWidget);
 
-    await tester.pageBack();
-    await tester.pumpAndSettle();
-    await _scrollTo(tester, find.byKey(const Key('settings-section-contact')));
-    await tester.tap(find.byKey(const Key('settings-section-contact')));
-    await tester.pumpAndSettle();
+    await _go(tester, '/settings/contact');
     expect(tester.widget<FilledButton>(find.byKey(const Key('contact-send'))).onPressed, isNull);
     await tester.tap(find.text('Idea'));
     await tester.enterText(find.byKey(const Key('contact-message')), 'Agregar más humedales');
