@@ -140,12 +140,19 @@ export class Plan {
       return assetId;
     }
     if (!path) {
-      let host = 'desconocido';
+      let host: string;
       try {
         const u = new URL(value);
         host = u.hostname || `${u.protocol} (enlace temporal del navegador)`;
       } catch {
-        /* no es URL */
+        // No es una URL: se clasifica por su forma, sin guardar el contenido.
+        host = value.startsWith('/')
+          ? 'ruta relativa de la app antigua'
+          : /^[\w-]{8,64}$/.test(value)
+            ? 'identificador de archivo (proveedor antiguo)'
+            : /^[A-Za-z0-9+/=\s]{200,}$/.test(value)
+              ? 'imagen en base64 sin encabezado'
+              : 'texto que no es URL';
       }
       this.externalUrls.set(host, (this.externalUrls.get(host) ?? 0) + 1);
       this.skip(o.collection, `archivo fuera de Firebase Storage (${o.field})`);

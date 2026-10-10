@@ -562,7 +562,11 @@ function mapPage(ctx: Context, d: SnapshotDoc, nb: { id: string; owner: string; 
   }
   if (r.str('audioNoteUrl', 'audioUrl')) ctx.plan.skip(c, 'nota de audio: el editor nuevo aún no tiene audio (no se migra)');
   const sticker = r.str('sticker', 'stickerId');
-  if (sticker) ctx.plan.skip(c, 'pegatina antigua sin equivalente (no se migra)');
+  if (sticker) {
+    // Nombre de pegatina de la app antigua (no es dato personal): se anota para buscarle equivalente.
+    const name = /^[\w\-./ ]{1,60}$/.test(sticker) ? sticker : '(otro formato)';
+    ctx.plan.skip(c, `pegatina antigua «${name}» sin equivalente (no se migra)`);
+  }
   finish(ctx, c, r);
 }
 

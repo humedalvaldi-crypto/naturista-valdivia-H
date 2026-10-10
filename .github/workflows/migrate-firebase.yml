@@ -157,7 +157,7 @@ jobs:
           r = json.load(open(sys.argv[1]))
           rows = ", ".join(f"{t}: {n}" for t, n in sorted(r["expected"].items()))
           hosts = ", ".join(f"{h} ({n})" for h, n in r["media"]["externalHosts"].items())
-          lines = [f"Filas a crear → {rows}", f"Fotos: {r['media']['total']} ({r['media']['inline']} incrustadas, {r['media']['fromStorage']} de Storage)", f"Fotos en otros servidores (dominio): {hosts or 'ninguna'}"]
+          lines = [f"Filas a crear → {rows}", f"Fotos: {r['media']['total']} ({r['media']['inline']} incrustadas, {r['media']['fromStorage']} de Storage o servidores externos)", f"Fotos en otros servidores (dominio): {hosts or 'ninguna'}"]
           for name, c in r["collections"].items():
               skipped = "; ".join(f"{k} ({v})" for k, v in c["skipped"].items())
               personal = ", ".join(f"{k} ({v})" for k, v in c["excludedPersonalFields"].items())
@@ -180,6 +180,11 @@ jobs:
             bash scripts/ci-run.sh npm run copy-media -- --plan "$OUT/plan" --project "$PROJECT"
           fi
 
+      - name: Resultado de las fotos
+        run: |
+          for f in "$OUT"/plan/media-report-*.json; do
+            [ -f "$f" ] && python3 -c "import json,sys;r=json.load(open(sys.argv[1]));print('::notice title=Fotos::válidas %s de %s · copiadas %s · problemas: %s' % (r['valid'], r['planned'], r['copiedTotal'], ', '.join(f'{k} ({v})' for k,v in r['failures'].items()) or 'ninguno'))" "$f"
+          done
       - name: Base D1 de producción
         if: env.MODE == 'migrar'
         working-directory: worker
