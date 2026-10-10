@@ -76,7 +76,7 @@ jobs:
           import base64, os
           raw = sys.stdin.read()
           t = raw.strip().lstrip("\ufeff").strip()
-          if len(t) >= 2 and t[0] == t[-1] and t[0] in "\"'`":
+          if len(t) >= 2 and t[0] == t[-1] and t[0] in "\"\x27`":
               t = t[1:-1].strip()  # comillas de más alrededor
           if t and not t.startswith("{"):
               try:  # quizás en base64
@@ -88,7 +88,7 @@ jobs:
           try:
               d = json.loads(t)
           except json.JSONDecodeError as e:
-              kind = lambda c: "llave {" if c == "{" else "llave }" if c == "}" else "comilla" if c in "\"'" else "letra" if c.isalpha() else "número" if c.isdigit() else "otro símbolo"
+              kind = lambda c: "llave {" if c == "{" else "llave }" if c == "}" else "comilla" if c in "\"\x27" else "letra" if c.isalpha() else "número" if c.isdigit() else "otro símbolo"
               msg = (f"FIREBASE_SERVICE_ACCOUNT no es JSON válido. Largo: {len(t)} caracteres (un archivo correcto tiene unos 2300). "
                      + (f"Empieza con: {kind(t[0])}. Termina con: {kind(t[-1])}. Se rompe al {round(100*e.pos/max(len(t),1))}% del contenido ({e.msg}). " if t else "Está vacío. ")
                      + "Pega el archivo .json completo, desde la primera llave { hasta la última }.")
