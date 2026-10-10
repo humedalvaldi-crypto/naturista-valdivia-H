@@ -16,6 +16,7 @@ import {
   mapProfile,
   mapSettings,
   mapSpecies,
+  mapUserCollection,
   recountStatements,
   type AuthUser,
   type CatalogSpecies,
@@ -31,7 +32,6 @@ export const NOT_MIGRATED: Record<string, string> = {
   users__notifications: 'avisos antiguos y efímeros; la app nueva genera los suyos',
   reports: 'mensajes de contacto con correos personales; se revisan a mano, no se migran',
   species_album: 'álbum de especies aún sin equivalente en la app nueva',
-  user_collections: 'colecciones desbloqueadas aún sin equivalente en la app nueva',
   profile_views: 'registro de visitas a perfiles: no se conserva (privacidad)',
 };
 
@@ -95,6 +95,7 @@ export function transform(snapshotDir: string, outDir: string, migrationsDir: st
   for (const d of col('notebooks')) mapNotebook(ctx, d);
   mapNotebookPages(ctx, col('notebook_pages'));
   for (const d of col('observations')) mapObservation(ctx, d);
+  for (const d of col('user_collections')) mapUserCollection(ctx, d);
   mapChatMessages(ctx, col('chat_messages'));
   for (const d of col('places')) mapPlace(ctx, d, 'places');
   for (const d of col('wetlands')) mapPlace(ctx, d, 'wetlands');
@@ -109,7 +110,7 @@ export function transform(snapshotDir: string, outDir: string, migrationsDir: st
 
   const handled = new Set([
     'settings', 'species_catalog', 'user_file_assets', 'profiles', 'groups', 'group_members', 'follows', 'posts',
-    'notebooks', 'notebook_pages', 'observations', 'chat_messages', 'places', 'wetlands',
+    'notebooks', 'notebook_pages', 'observations', 'chat_messages', 'places', 'wetlands', 'user_collections',
   ]);
   if (existsSync(fsDir)) {
     for (const file of readdirSync(fsDir).filter((f) => f.endsWith('.jsonl'))) {

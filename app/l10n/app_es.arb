@@ -167,7 +167,6 @@
   "providerGoogle": "Google",
   "providerPassword": "Correo y contraseña",
   "serverSyncPending": "Tu cuenta todavía no se sincroniza con el servidor de Naturista Valdivia: se conectará cuando la API esté publicada (Fase 4).",
-  "publicProfileSoon": "Álbum de especies y logros: próximamente.",
   "signIn": "Entrar",
   "homeGreeting": "Hola, {name}",
   "@homeGreeting": {
@@ -546,5 +545,71 @@
   "audioPlayError": "No se pudo reproducir el audio.",
   "audioDefaultLabel": "Nota de audio",
   "audioLabelHint": "Nombre de la nota (opcional)",
-  "more": "Más opciones"
+  "more": "Más opciones",
+  "albumTitle": "Álbum de especies",
+  "myAlbum": "Mi álbum y logros",
+  "viewAlbum": "Ver álbum",
+  "albumProgress": "{unlocked} de {total} especies",
+  "@albumProgress": {
+    "placeholders": {
+      "unlocked": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "achievementsTitle": "Logros",
+  "achievementUnlocked": "¡Conseguido!",
+  "achievementProgress": "{progress} de {target}",
+  "@achievementProgress": {
+    "placeholders": {
+      "progress": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "lockedSpecies": "Aún no la observas.",
+  "unlockedOn": "Desbloqueada el {date}",
+  "@unlockedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "observationsCount": "{count, plural, =1{1 observación} other{{count} observaciones}}",
+  "@observationsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "viaLegacy": "Traída desde la app antigua.",
+  "observeThis": "Registrar observación",
+  "achFirstObservation": "Primera observación",
+  "achFirstObservationBody": "Registra tu primera observación.",
+  "achObservations10": "Observación constante",
+  "achObservations10Body": "Registra 10 observaciones.",
+  "achSpecies5": "Cinco especies",
+  "achSpecies5Body": "Descubre 5 especies distintas.",
+  "achSpecies15": "Naturalista",
+  "achSpecies15Body": "Descubre 15 especies distintas.",
+  "achGroups3": "Mirada amplia",
+  "achGroups3Body": "Observa especies de 3 grupos distintos (aves, flora, hongos…).",
+  "achThreatened": "Guardianía",
+  "achThreatenedBody": "Observa una especie amenazada; su ubicación queda protegida.",
+  "achFirstNotebook": "Bitácora abierta",
+  "achFirstNotebookBody": "Crea tu primer cuaderno de campo.",
+  "achPages10": "Diez páginas",
+  "achPages10Body": "Llena 10 páginas en tus cuadernos.",
+  "achFollowers5": "En comunidad",
+  "achFollowers5Body": "Consigue 5 personas que te sigan.",
+  "achPioneer": "Desde el comienzo",
+  "achPioneerBody": "Tu colección llegó desde la app antigua."
 }

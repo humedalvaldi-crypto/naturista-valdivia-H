@@ -36,7 +36,7 @@ Qué funciona hoy y qué está planificado: ver la pantalla de inicio de la app 
 | 6 | Cuadernos de campo y editor de dibujo | ✅ Cuadernos (crear, duplicar, privado/público, borrar), páginas (agregar, reordenar, duplicar, borrar), editor con lápiz/pincel/marcador/borrador y presión de lápiz óptico, texto, pegatinas, fotos, mover/rotar/escalar, deshacer/rehacer, guardado automático con control de conflictos. Exportar PNG/PDF pendiente |
 | 7 | Mapa, observaciones, capas | ✅ Mapa real (OpenStreetMap / OpenTopoMap) con observaciones de la zona visible, filtros por grupo, capas (mías, lugares), mi ubicación; registrar con GPS o tocando el mapa, catálogo de especies, foto, privacidad; ubicación protegida para especies amenazadas y fotos sin GPS |
 | 8 | Herramientas de migración y validación | ✅ Exportación de solo lectura, plan idempotente con informe, copia de archivos a R2 sin GPS, aplicación con respaldo y puntos de control, validación. Pendiente: ensayo en staging con datos reales |
-| 9 | Pruebas integrales, rendimiento, publicación | Pendiente |
+| 9 | Pruebas integrales, rendimiento, publicación | En curso. Ya hechos: papel por página, notas de audio, exportar página (PNG) y cuaderno (PDF), álbum de especies y logros |
 
 ## Puesta en marcha
 

@@ -36,6 +36,9 @@ export const PERSONAL_FIELDS = new Set([
   'birthdate', 'birthdatePublic', 'age', 'ageVerified', 'rutVerified', 'edad',
 ]);
 
+const speciesKey = (v: string) =>
+  v.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
 const assetKey = (p: string) =>
   (p.split('?')[0]!.split('/').pop() ?? '').replace(/\.[a-z0-9]+$/i, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
@@ -47,6 +50,7 @@ export class Context {
   readonly postByLegacy = new Map<string, string>();
   readonly slugs = new Set<string>();
   readonly speciesByName = new Map<string, CatalogSpecies>();
+  readonly speciesByKey = new Map<string, CatalogSpecies>();
   readonly migratedAt = new Date().toISOString();
   /** Ilustraciones y pegatinas de la app nueva por nombre de archivo (sin extensión), para enlazar rutas antiguas. */
   readonly assetsByName = new Map<string, string>();
@@ -64,6 +68,15 @@ export class Context {
   addSpecies(s: CatalogSpecies) {
     this.speciesByName.set(s.scientificName.toLowerCase(), s);
     if (s.commonNameEs) this.speciesByName.set(s.commonNameEs.toLowerCase(), s);
+    // También por forma normalizada (sin tildes, guiones ni mayúsculas) y por el id del catálogo.
+    this.speciesByKey.set(speciesKey(s.scientificName), s);
+    if (s.commonNameEs) this.speciesByKey.set(speciesKey(s.commonNameEs), s);
+    this.speciesByKey.set(speciesKey(s.id.replace(/^sp-/, '')), s);
+  }
+
+  /** Especie del catálogo a partir de un identificador antiguo (p. ej. "chucao", "Lontra_provocax"). */
+  speciesFromLegacyId(v: string): CatalogSpecies | null {
+    return this.speciesByKey.get(speciesKey(v)) ?? null;
   }
 
   /** UID válido: existe en Auth y no es un marcador como 'anon' o 'guest'. */
@@ -833,6 +846,38 @@ export function mapFileAsset(ctx: Context, d: SnapshotDoc) {
   const purpose = PURPOSE_FROM_PATH[segment] ?? (/audio/.test(r.str('contentType', 'mimeType') ?? '') ? 'notebook-audio' : 'post-photo');
   r.known('contentType', 'mimeType', 'size', 'sizeBytes', 'createdAt', 'downloadUrl', 'url', 'name', 'fileName');
   ctx.plan.mediaFromStoragePath(path, owner, purpose, 'private', d.id);
+  finish(ctx, c, r);
+}
+
+// ── user_collections → species_unlocks (álbum) ─────────────────────────────
+export function mapUserCollection(ctx: Context, d: SnapshotDoc) {
+  const c = 'user_collections';
+  ctx.plan.collection(c).read++;
+  const uid = ctx.owner(c, d.id);
+  if (!uid) return;
+  const r = new FieldReader(d.data);
+  const raw = d.data['unlockedIds'] ?? d.data['unlocked'] ?? d.data['speciesIds'];
+  r.known('unlockedIds', 'unlocked', 'speciesIds', 'updatedAt', 'createdAt');
+  const ids = Array.isArray(raw) ? raw.filter((v): v is string => typeof v === 'string') : [];
+  const when = r.date('updatedAt', 'createdAt') ?? ctx.migratedAt;
+  const seen = new Set<string>();
+  for (const v of ids) {
+    const sp = ctx.speciesFromLegacyId(v);
+    if (!sp) {
+      // Son identificadores del catálogo de la app antigua (no datos personales): se listan para revisarlos.
+      const label = /^[\w\- .]{1,60}$/.test(v) ? v : '(otro formato)';
+      ctx.plan.skip(c, `especie del álbum antiguo sin equivalente en el catálogo: «${label}»`);
+      continue;
+    }
+    if (seen.has(sp.id)) continue;
+    seen.add(sp.id);
+    ctx.plan.add(
+      '125-species-unlocks',
+      c,
+      'species_unlocks',
+      insert('species_unlocks', { user_id: uid, species_id: { raw: `(SELECT id FROM species WHERE id = ${lit(sp.id)})` }, unlocked_at: when }),
+    );
+  }
   finish(ctx, c, r);
 }
 

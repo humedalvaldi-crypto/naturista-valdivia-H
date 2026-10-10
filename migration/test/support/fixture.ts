@@ -100,6 +100,10 @@ export function writeFixtureSnapshot(): string {
   fs('wetlands', [{ id: 'w1', data: { name: 'Humedal Angachilla', lat: -39.86, lng: -73.23, geometry: { type: 'Polygon', coordinates: [[[-73.24, -39.87], [-73.22, -39.87], [-73.22, -39.85], [-73.24, -39.87]]] } } }]);
   fs('places', [{ id: 'pl1', data: { name: 'Mirador del río', type: 'mirador', location: { $geo: [-39.82, -73.25] } } }]);
   fs('user_file_assets', [{ id: 'fa1', data: { ownerId: 'uidAna', storagePath: 'user-files/uidAna/observations/extra.jpg', contentType: 'image/jpeg' } }]);
+  fs('user_collections', [
+    { id: 'uidAna', data: { unlockedIds: ['chucao', 'Lontra_provocax', 'garza-grande', 'dragon-azul', 'chucao'] } },
+    { id: 'anon', data: { unlockedIds: ['chucao'] } },
+  ]);
   fs('reports', [{ id: 'r1', data: { userId: 'uidAna', userEmail: 'ana@example.test', message: 'Hola' } }]);
   fs('coleccion_nueva', [{ id: 'x1', data: { a: 1 } }]);
   return dir;

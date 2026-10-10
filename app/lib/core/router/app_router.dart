@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/album/presentation/album_page.dart';
 import '../../features/auth/application/auth_controller.dart';
 import '../../features/auth/presentation/forgot_password_page.dart';
 import '../../features/auth/presentation/login_page.dart';
@@ -33,7 +34,7 @@ import '../../shared/widgets/state_views.dart';
 import '../l10n/l10n.dart';
 
 /// Rutas que exigen sesión iniciada.
-const privateRoutes = {'/profile', '/notebooks', '/drawing', '/observations/new', '/messages', '/notifications', '/community/new', '/notebook-pages'};
+const privateRoutes = {'/profile', '/notebooks', '/drawing', '/observations/new', '/messages', '/notifications', '/community/new', '/notebook-pages', '/album'};
 
 /// Pantallas de acceso: con sesión iniciada no tienen sentido.
 const authRoutes = {'/login', '/register', '/forgot-password'};
@@ -154,7 +155,11 @@ GoRouter buildRouter({
       GoRoute(
         path: '/people/:id',
         builder: (context, state) => PersonPage(userId: state.pathParameters['id']!),
+        routes: [
+          GoRoute(path: 'album', builder: (context, state) => AlbumPage(userId: state.pathParameters['id'])),
+        ],
       ),
+      GoRoute(path: '/album', builder: (context, state) => const AlbumPage()),
       GoRoute(
         path: '/messages/:id',
         builder: (context, state) => ChatPage(

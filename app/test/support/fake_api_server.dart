@@ -21,6 +21,17 @@ class FakeApiServer {
     {'id': 'sp-huillin', 'scientificName': 'Lontra provocax', 'commonNameEs': 'Huillín', 'commonNameEn': 'Southern river otter', 'group': 'mamiferos', 'conservationStatus': 'EN', 'sensitive': true, 'illustration': null},
   ];
   final observations = <Map<String, dynamic>>[];
+  Map<String, dynamic> album = {
+    'species': [
+      {'id': 'sp-chucao', 'scientificName': 'Scelorchilus rubecula', 'commonNameEs': 'Chucao', 'group': 'aves', 'conservationStatus': 'LC', 'sensitive': false, 'illustration': null, 'unlocked': true, 'via': 'observation', 'firstSeen': '2026-10-01T11:00:00Z', 'observationCount': 2},
+      {'id': 'sp-huillin', 'scientificName': 'Lontra provocax', 'commonNameEs': 'Huillín', 'group': 'mamiferos', 'conservationStatus': 'EN', 'sensitive': true, 'illustration': null, 'unlocked': false, 'via': null, 'firstSeen': null, 'observationCount': 0},
+    ],
+    'stats': {'unlocked': 1, 'total': 2},
+    'achievements': [
+      {'id': 'first-observation', 'target': 1, 'progress': 1, 'unlocked': true},
+      {'id': 'species-5', 'target': 5, 'progress': 1, 'unlocked': false},
+    ],
+  };
   final notebooks = <Map<String, dynamic>>[];
   final pages = <String, Map<String, dynamic>>{};
   bool failNext = false;
@@ -310,6 +321,9 @@ class FakeApiServer {
             c['memberCount'] = (c['memberCount'] as int) + (join ? 1 : -1);
             c['myRole'] = join ? 'member' : null;
             return _json({'data': c});
+          }
+          if (seg.first == 'users' && seg.length == 3 && seg[2] == 'album') {
+            return _json({'data': album});
           }
           if (seg.first == 'users') {
             final u = people[seg[1]]!;

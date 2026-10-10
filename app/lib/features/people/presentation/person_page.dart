@@ -167,6 +167,13 @@ class _PersonPageState extends State<PersonPage> {
                     icon: const Icon(Icons.chat_bubble_outline),
                     label: Text(l10n.sendMessage),
                   ),
+                  if (!s.restricted)
+                    OutlinedButton.icon(
+                      key: const Key('person-album'),
+                      onPressed: () => context.push('/people/${s.person.id}/album'),
+                      icon: const Icon(Icons.collections_bookmark_outlined),
+                      label: Text(l10n.viewAlbum),
+                    ),
                 ],
               ),
             ],

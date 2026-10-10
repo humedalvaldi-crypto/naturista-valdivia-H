@@ -7,7 +7,7 @@ import '../../auth/domain/auth_user.dart';
 import 'server_status.dart';
 
 /// Perfil (pantalla 111 de la lámina, versión de la Fase 3): datos reales de
-/// la cuenta de Firebase y cierre de sesión. El perfil público llega en la Fase 5.
+/// la cuenta de Firebase, acceso al álbum y logros, y cierre de sesión.
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
@@ -103,7 +103,13 @@ class ProfilePage extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   const ServerAccountStatus(),
-                  _InfoNote(icon: Icons.lightbulb_outline, text: l10n.publicProfileSoon),
+                  const SizedBox(height: 8),
+                  FilledButton.tonalIcon(
+                    key: const Key('my-album'),
+                    onPressed: () => context.push('/album'),
+                    icon: const Icon(Icons.collections_bookmark_outlined),
+                    label: Text(l10n.myAlbum),
+                  ),
                   const SizedBox(height: 24),
                   OutlinedButton.icon(
                     key: const Key('sign-out'),
@@ -135,31 +141,6 @@ class _Avatar extends StatelessWidget {
       backgroundColor: scheme.primaryContainer,
       foregroundImage: photo == null ? null : NetworkImage(photo),
       child: Text(user.initials, style: TextStyle(fontSize: 28, color: scheme.onPrimaryContainer)),
-    );
-  }
-}
-
-class _InfoNote extends StatelessWidget {
-  const _InfoNote({required this.icon, required this.text});
-
-  final IconData icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 20, color: theme.colorScheme.onSurfaceVariant),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(text, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-          ),
-        ],
-      ),
     );
   }
 }

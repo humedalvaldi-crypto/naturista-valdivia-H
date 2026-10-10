@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { ACHIEVEMENTS, AlbumRepository } from '../repositories/album';
 import { NotificationsRepository } from '../repositories/notifications';
 import { ProfilesRepository } from '../repositories/profiles';
 import { SocialRepository } from '../repositories/social';
@@ -7,6 +8,7 @@ import { personDto } from '../services/dto';
 import { badRequest, notFound } from '../services/http-error';
 import { parseLimit } from '../services/pagination';
 import type { AppBindings } from '../types/env';
+import { speciesDto } from './observations';
 import { toProfileDto } from './profiles';
 
 /**
@@ -14,8 +16,47 @@ import { toProfileDto } from './profiles';
  * GET        /:id                 resumen público (perfil, contadores, si la sigo)
  * PUT|DELETE /:id/follow          seguir / dejar de seguir
  * PUT|DELETE /:id/block           bloquear / desbloquear
+ * GET        /:id/album           álbum de especies y logros (lo privado solo para la propia persona)
  */
 export const peopleRoutes = new Hono<AppBindings>()
+  .get('/:id/album', async (c) => {
+    const id = c.req.param('id');
+    const viewer = c.get('maybeUser')?.uid ?? null;
+    const social = new SocialRepository(c.env.DB);
+    if (!(await social.userExists(id))) throw notFound('Persona no encontrada.');
+    const self = viewer === id;
+    if (!self) {
+      if (viewer && (await social.blockedEitherWay(viewer, id))) throw notFound('Persona no encontrada.');
+      const visibility = (await new ProfilesRepository(c.env.DB).get(id))?.visibility ?? 'public';
+      const following = viewer ? await social.isFollowing(viewer, id) : false;
+      if (!(visibility === 'public' || (visibility === 'followers' && following))) throw notFound('Persona no encontrada.');
+    }
+    const repo = new AlbumRepository(c.env.DB);
+    const [rows, counts] = await Promise.all([repo.album(id, self), repo.counts(id, self)]);
+    const species = rows.map((r) => {
+      const fromObservation = r.observation_count > 0;
+      const unlocked = fromObservation || r.legacy_unlocked_at !== null;
+      return {
+        ...speciesDto(r),
+        unlocked,
+        via: fromObservation ? 'observation' : r.legacy_unlocked_at ? 'legacy' : null,
+        firstSeen: r.first_seen ?? r.legacy_unlocked_at,
+        observationCount: r.observation_count,
+      };
+    });
+    return c.json({
+      data: {
+        species,
+        stats: { unlocked: species.filter((s) => s.unlocked).length, total: species.length, ...counts },
+        achievements: ACHIEVEMENTS.map((a) => ({
+          id: a.id,
+          target: a.target,
+          progress: Math.min(counts[a.metric], a.target),
+          unlocked: counts[a.metric] >= a.target,
+        })),
+      },
+    });
+  })
   .get('/:id', async (c) => {
     const id = c.req.param('id');
     const viewer = c.get('maybeUser')?.uid ?? null;

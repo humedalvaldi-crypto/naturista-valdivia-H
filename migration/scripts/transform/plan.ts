@@ -15,6 +15,7 @@ export const STAGES = [
   '100-notebook-pages',
   '110-notebook-elements',
   '120-observations',
+  '125-species-unlocks',
   '130-conversations',
   '140-messages',
   '150-places',

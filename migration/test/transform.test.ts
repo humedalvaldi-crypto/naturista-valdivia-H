@@ -202,6 +202,16 @@ describe('plan sobre una instantánea de prueba', () => {
     ]);
   });
 
+  it('álbum antiguo: especies desbloqueadas por nombre o id; las desconocidas se listan', () => {
+    const db = freshDb();
+    applyFiles(db, join(out, 'sql'), files);
+    const rows = db.prepare("SELECT species_id FROM species_unlocks WHERE user_id = 'uidAna' ORDER BY species_id").all();
+    expect(rows).toEqual([{ species_id: 'sp-ardea-alba' }, { species_id: 'sp-lontra-provocax' }, { species_id: 'sp-scelorchilus-rubecula' }]);
+    expect(report.collections['user_collections']!.skipped).toMatchObject({
+      'especie del álbum antiguo sin equivalente en el catálogo: «dragon-azul»': 1,
+    });
+  });
+
   it('lugares y humedales con su contorno', () => {
     const db = freshDb();
     applyFiles(db, join(out, 'sql'), files);
