@@ -37,7 +37,7 @@ void main() {
   });
 
   testWidgets('si el servidor falla, lo dice y permite reintentar', (tester) async {
-    var calls = 0;
+    var failing = true;
     await pumpTestApp(
       tester,
       repo: FakeAuthRepository(initialUser: _eva),
@@ -46,14 +46,14 @@ void main() {
         baseUrl: 'https://api.example.test',
         auth: repo,
         client: MockClient((req) async {
-          calls++;
-          return calls == 1
+          return failing
               ? http.Response(jsonEncode({'error': {'code': 'internal_error', 'message': 'Error interno del servidor.'}}), 500)
               : http.Response('{}', 200);
         }),
       ),
     );
     expect(find.textContaining('No se pudo sincronizar'), findsOneWidget);
+    failing = false;
     await tester.tap(find.text('Reintentar'));
     await tester.pumpAndSettle();
     expect(find.text('Cuenta sincronizada con el servidor de Naturista Valdivia.'), findsOneWidget);

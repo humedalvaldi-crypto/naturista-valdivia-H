@@ -62,7 +62,7 @@ void main() {
 
   testWidgets('tras 5 intentos fallidos exige entrar con la cuenta', (tester) async {
     store.uid = 'u1';
-    final bio = _ScriptedBiometrics(List.filled(5, BiometricResult.failed));
+    final bio = _ScriptedBiometrics(List.filled(5, BiometricResult.failed, growable: true));
     BiometricAuth.instance = bio;
     final h = await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/profile');
     expect(find.textContaining('Quedan 4 intentos'), findsOneWidget);
