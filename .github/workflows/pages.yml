@@ -32,6 +32,8 @@ jobs:
             flutter create . --platforms=android,web --project-name naturista_valdivia --org cl.naturistavaldivia
             rm -f test/widget_test.dart
           fi
+      - name: Aplicar marca web (logo, nombre y colores)
+        run: bash branding_web/apply.sh
       - run: flutter pub get
       - run: flutter test
       - name: Compilar web

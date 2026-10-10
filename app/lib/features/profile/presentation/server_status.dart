@@ -29,7 +29,10 @@ class _ServerAccountStatusState extends State<ServerAccountStatus> {
   void _retry() {
     final api = _api;
     if (api == null) return;
-    setState(() => _request = api.get('/me'));
+    final request = api.get('/me');
+    setState(() {
+      _request = request;
+    });
   }
 
   @override

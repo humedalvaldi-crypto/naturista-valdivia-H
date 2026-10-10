@@ -67,7 +67,7 @@ class _LoginPageState extends State<LoginPage> {
     return AuthScaffold(
       title: l10n.loginTitle,
       subtitle: l10n.loginSubtitle,
-      header: BrandMark(size: 72, color: Theme.of(context).colorScheme.primary),
+      header: BrandMark(size: 96, color: Theme.of(context).colorScheme.primary),
       children: [
         if (error != null) AuthErrorBanner(error),
         Form(

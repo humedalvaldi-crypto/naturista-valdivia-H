@@ -2,26 +2,39 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
 
-/// Marca provisional: anillo dorado con hoja, sobre verde oscuro (ver lámina,
-/// pantalla 1 "Splash"). Reemplazar por el logotipo definitivo cuando exista
-/// como archivo (SVG/PNG) en assets/.
+/// Logotipo del proyecto "Vivir entre Humedales" (Proyecto Explora 25-26),
+/// dentro de un disco blanco para que se lea bien sobre fondos oscuros
+/// (pantalla 1 "Splash" de la lámina). [color] es el color del borde.
 class BrandMark extends StatelessWidget {
   const BrandMark({super.key, this.size = 96, this.color = AppColors.gold});
+
+  static const asset = 'assets/branding/logo_vivir_entre_humedales.jpg';
 
   final double size;
   final Color color;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: color, width: size * 0.04),
+    return Semantics(
+      image: true,
+      label: 'Vivir entre Humedales — Proyecto Explora 25-26',
+      child: Container(
+        width: size,
+        height: size,
+        padding: EdgeInsets.all(size * 0.02),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white,
+          border: Border.all(color: color, width: size * 0.025),
+        ),
+        child: ClipOval(
+          child: Image.asset(
+            asset,
+            fit: BoxFit.cover,
+            errorBuilder: (context, _, _) => Icon(Icons.eco, color: color, size: size * 0.5),
+          ),
+        ),
       ),
-      alignment: Alignment.center,
-      child: Icon(Icons.eco, color: color, size: size * 0.55, semanticLabel: 'Naturista Valdivia'),
     );
   }
 }

@@ -21,7 +21,7 @@ class SplashPage extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const BrandMark(size: 112),
+              const BrandMark(size: 168),
               const SizedBox(height: 28),
               Text(
                 l10n.appTitle,

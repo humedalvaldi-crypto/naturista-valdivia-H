@@ -16,3 +16,7 @@ Las imágenes se redimensionaron (máx. 1200 px) y se recomprimieron para la app
 | `stickers` | 6 pegatinas | **Por confirmar** |
 
 Nota: "intendecia" en `history/intendecia_e_iglesia_matriz_1870.jpg` conserva la grafía del archivo original.
+
+## Logotipo
+
+`branding/logo_vivir_entre_humedales.jpg` y los iconos web derivados (`app/branding_web/`): logotipo del proyecto **"Vivir entre Humedales" — Proyecto Explora 25-26**, entregado por el equipo (octubre 2026).
