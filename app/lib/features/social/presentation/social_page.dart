@@ -47,6 +47,12 @@ class _SocialFeedPageState extends State<SocialFeedPage> {
             ),
             if (signedIn)
               IconButton(
+                tooltip: l10n.messagesTitle,
+                icon: const Icon(Icons.chat_bubble_outline),
+                onPressed: () => context.push('/messages'),
+              ),
+            if (signedIn)
+              IconButton(
                 tooltip: l10n.notificationsTitle,
                 icon: const Icon(Icons.notifications_none),
                 onPressed: () => context.push('/notifications'),
@@ -103,11 +109,12 @@ class _SignInPrompt extends StatelessWidget {
 
 /// Lista de publicaciones con "me gusta" optimista y paginación.
 class FeedList extends StatefulWidget {
-  const FeedList({super.key, required this.api, required this.scope, this.community});
+  const FeedList({super.key, required this.api, required this.scope, this.community, this.author});
 
   final SocialApi api;
   final String scope;
   final String? community;
+  final String? author;
 
   @override
   State<FeedList> createState() => FeedListState();
@@ -115,7 +122,7 @@ class FeedList extends StatefulWidget {
 
 class FeedListState extends State<FeedList> {
   late final PagedController<Post> _controller =
-      PagedController((cursor) => widget.api.feed(scope: widget.scope, community: widget.community, cursor: cursor));
+      PagedController((cursor) => widget.api.feed(scope: widget.scope, community: widget.community, author: widget.author, cursor: cursor));
 
   @override
   void initState() {

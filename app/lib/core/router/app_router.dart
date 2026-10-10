@@ -12,13 +12,16 @@ import '../../features/biodiversity_map/presentation/biodiversity_map_page.dart'
 import '../../features/communities/presentation/communities_page.dart';
 import '../../features/drawing_editor/presentation/drawing_editor_page.dart';
 import '../../features/home/presentation/home_page.dart';
+import '../../features/messages/presentation/chat_page.dart';
 import '../../features/messages/presentation/messages_page.dart';
+import '../../features/people/presentation/person_page.dart';
 import '../../features/notebooks/presentation/notebooks_page.dart';
 import '../../features/notifications/presentation/notifications_page.dart';
 import '../../features/observations/presentation/observations_page.dart';
 import '../../features/profile/presentation/profile_page.dart';
 import '../../features/settings/application/settings_controller.dart';
 import '../../features/settings/presentation/settings_page.dart';
+import '../../features/social/domain/models.dart';
 import '../../features/social/presentation/compose_post_page.dart';
 import '../../features/social/presentation/post_detail_page.dart';
 import '../../features/social/presentation/social_page.dart';
@@ -132,6 +135,17 @@ GoRouter buildRouter({
       GoRoute(
         path: '/community/new',
         builder: (context, state) => ComposePostPage(communitySlug: state.uri.queryParameters['community']),
+      ),
+      GoRoute(
+        path: '/people/:id',
+        builder: (context, state) => PersonPage(userId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/messages/:id',
+        builder: (context, state) => ChatPage(
+          conversationId: state.pathParameters['id']!,
+          withPerson: state.extra is Person ? state.extra! as Person : null,
+        ),
       ),
       GoRoute(
         path: '/posts/:id',

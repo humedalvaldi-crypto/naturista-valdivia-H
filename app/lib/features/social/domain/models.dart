@@ -163,8 +163,87 @@ class AppNotification {
 }
 
 /// Página de resultados con cursor para la siguiente.
-class Page<T> {
-  const Page(this.items, this.nextCursor);
+class ResultPage<T> {
+  const ResultPage(this.items, this.nextCursor);
   final List<T> items;
   final String? nextCursor;
+}
+
+class PersonSummary {
+  const PersonSummary({
+    required this.person,
+    required this.restricted,
+    required this.followers,
+    required this.following,
+    required this.posts,
+    required this.followedByMe,
+    required this.isMe,
+    this.bio,
+    this.location,
+  });
+
+  factory PersonSummary.fromJson(Map<String, dynamic> j) {
+    final profile = j['profile'] as Map<String, dynamic>?;
+    final counts = j['counts'] as Map<String, dynamic>? ?? const {};
+    return PersonSummary(
+      person: Person(
+        id: j['id'] as String,
+        name: j['name'] as String? ?? 'Naturalista',
+        username: j['username'] as String?,
+        photo: profile?['photo'] as String?,
+      ),
+      restricted: j['restricted'] as bool? ?? false,
+      followers: (counts['followers'] as num?)?.toInt() ?? 0,
+      following: (counts['following'] as num?)?.toInt() ?? 0,
+      posts: (counts['posts'] as num?)?.toInt() ?? 0,
+      followedByMe: j['followedByMe'] as bool? ?? false,
+      isMe: j['isMe'] as bool? ?? false,
+      bio: profile?['bio'] as String?,
+      location: profile?['location'] as String?,
+    );
+  }
+
+  final Person person;
+  final bool restricted;
+  final int followers;
+  final int following;
+  final int posts;
+  final bool followedByMe;
+  final bool isMe;
+  final String? bio;
+  final String? location;
+}
+
+class Conversation {
+  const Conversation({required this.id, required this.withPerson, this.lastMessage, this.lastMessageAt, this.unread = 0});
+
+  factory Conversation.fromJson(Map<String, dynamic> j) => Conversation(
+        id: j['id'] as String,
+        withPerson: Person.fromJson(j['with'] as Map<String, dynamic>),
+        lastMessage: j['lastMessage'] as String?,
+        lastMessageAt: j['lastMessageAt'] == null ? null : _date(j['lastMessageAt']),
+        unread: (j['unread'] as num?)?.toInt() ?? 0,
+      );
+
+  final String id;
+  final Person withPerson;
+  final String? lastMessage;
+  final DateTime? lastMessageAt;
+  final int unread;
+}
+
+class ChatMessage {
+  const ChatMessage({required this.id, required this.body, required this.mine, required this.createdAt});
+
+  factory ChatMessage.fromJson(Map<String, dynamic> j) => ChatMessage(
+        id: j['id'] as String,
+        body: j['body'] as String? ?? '',
+        mine: j['mine'] as bool? ?? false,
+        createdAt: _date(j['createdAt']),
+      );
+
+  final String id;
+  final String body;
+  final bool mine;
+  final DateTime createdAt;
 }

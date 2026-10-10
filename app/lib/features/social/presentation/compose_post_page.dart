@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/l10n/l10n.dart';
 import '../../../core/network/api_scope.dart';
+import '../../../shared/media/photo_picker.dart';
 import '../../../shared/widgets/server_required.dart';
 import '../data/social_api.dart';
 
@@ -23,6 +24,17 @@ class _ComposePostPageState extends State<ComposePostPage> {
   String _visibility = 'public';
   bool _sending = false;
   String? _error;
+  PickedPhoto? _photo;
+
+  Future<void> _pickPhoto() async {
+    final l10n = context.l10n;
+    try {
+      final photo = await PhotoPicker.pick();
+      if (photo != null && mounted) setState(() => _photo = photo);
+    } on UnsupportedPhotoException {
+      if (mounted) setState(() => _error = l10n.photoUnsupported);
+    }
+  }
 
   @override
   void dispose() {
@@ -41,11 +53,15 @@ class _ComposePostPageState extends State<ComposePostPage> {
       _error = null;
     });
     try {
+      final photo = _photo;
+      // Primero se sube la foto (el servidor valida tipo y tamaño) y luego la publicación.
+      final mediaId = photo == null ? null : await api.uploadImage(photo.bytes, photo.contentType);
       final post = await api.createPost(
         body: _body.text.trim(),
         visibility: _visibility,
         locationName: _place.text,
         communitySlug: widget.communitySlug,
+        mediaAssetId: mediaId,
       );
       if (!mounted) return;
       messenger.showSnackBar(SnackBar(content: Text(l10n.postPublished)));
@@ -90,6 +106,35 @@ class _ComposePostPageState extends State<ComposePostPage> {
                   validator: (v) => (v == null || v.trim().isEmpty) ? l10n.errorRequired : null,
                 ),
                 const SizedBox(height: 8),
+                if (_photo case final photo?)
+                  Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.memory(photo.bytes, height: 220, width: double.infinity, fit: BoxFit.cover),
+                      ),
+                      Positioned(
+                        top: 6,
+                        right: 6,
+                        child: IconButton.filledTonal(
+                          tooltip: l10n.removePhoto,
+                          onPressed: _sending ? null : () => setState(() => _photo = null),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: OutlinedButton.icon(
+                      key: const Key('compose-photo'),
+                      onPressed: _sending ? null : _pickPhoto,
+                      icon: const Icon(Icons.add_a_photo_outlined),
+                      label: Text(l10n.addPhoto),
+                    ),
+                  ),
+                const SizedBox(height: 12),
                 TextFormField(
                   controller: _place,
                   maxLength: 120,

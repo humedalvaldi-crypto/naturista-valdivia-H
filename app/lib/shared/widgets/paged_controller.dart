@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../features/social/domain/models.dart';
 
-typedef PageLoader<T> = Future<Page<T>> Function(String? cursor);
+typedef PageLoader<T> = Future<ResultPage<T>> Function(String? cursor);
 
 /// Lista paginada por cursor con estados de carga y error.
 class PagedController<T> extends ChangeNotifier {

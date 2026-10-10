@@ -71,7 +71,7 @@
   "moduleCommunities": "Comunidades",
   "moduleCommunitiesBody": "Grupos temáticos. Disponible (requiere el servidor).",
   "moduleMessages": "Mensajes",
-  "moduleMessagesBody": "Conversaciones privadas. La API ya está lista; la pantalla llega en la siguiente entrega.",
+  "moduleMessagesBody": "Conversaciones privadas. Disponible (requiere el servidor).",
   "moduleNotifications": "Notificaciones",
   "moduleNotificationsBody": "Avisos de actividad guardados en el servidor. Disponible (requiere el servidor).",
   "moduleProfile": "Perfil",
@@ -275,5 +275,55 @@
   },
   "notifOther": "Tienes una novedad",
   "signInToParticipate": "Inicia sesión para publicar, comentar y dar me gusta.",
-  "someone": "Alguien"
+  "someone": "Alguien",
+  "addPhoto": "Agregar foto",
+  "removePhoto": "Quitar foto",
+  "photoUnsupported": "Solo se admiten fotos JPG, PNG o WebP.",
+  "uploadingPhoto": "Subiendo foto…",
+  "messagesTitle": "Mensajes",
+  "messagesEmpty": "Aún no tienes conversaciones. Escribe a alguien desde su perfil.",
+  "messageHint": "Escribe un mensaje…",
+  "sendMessage": "Enviar mensaje",
+  "chatEmpty": "Escribe el primer mensaje.",
+  "chatRefreshNote": "Los mensajes nuevos se cargan cada 10 segundos.",
+  "followers": "{count, plural, =1{1 seguidor} other{{count} seguidores}}",
+  "@followers": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "followingCount": "{count} siguiendo",
+  "@followingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "postsCount": "{count, plural, =1{1 publicación} other{{count} publicaciones}}",
+  "@postsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "follow": "Seguir",
+  "unfollow": "Dejar de seguir",
+  "blockUser": "Bloquear",
+  "blockConfirm": "¿Bloquear a {name}? Dejarán de seguirse y no podrán ver sus publicaciones ni escribirse.",
+  "@blockConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "blocked": "Persona bloqueada.",
+  "reportUser": "Denunciar",
+  "reported": "Gracias. Revisaremos la denuncia.",
+  "profileRestricted": "Este perfil solo lo ven sus seguidores.",
+  "personPosts": "Publicaciones"
 }

@@ -55,10 +55,16 @@ class ApiClient {
     return '$baseUrl$path';
   }
 
+  /// Sube bytes tal cual (archivos) con su tipo real.
+  Future<Map<String, dynamic>> upload(String path, List<int> bytes, String contentType) =>
+      _send('POST', path, rawBody: bytes, rawContentType: contentType);
+
   Future<Map<String, dynamic>> _send(
     String method,
     String path, {
     Map<String, Object?>? body,
+    List<int>? rawBody,
+    String? rawContentType,
     bool authenticated = true,
   }) async {
     if (!isConfigured) {
@@ -68,6 +74,7 @@ class ApiClient {
     Future<http.Response> attempt({required bool forceRefresh}) async {
       final headers = <String, String>{'Accept': 'application/json'};
       if (body != null) headers['Content-Type'] = 'application/json';
+      if (rawBody != null) headers['Content-Type'] = rawContentType ?? 'application/octet-stream';
       if (authenticated) {
         final token = await _auth.idToken(forceRefresh: forceRefresh);
         if (token == null) throw const ApiException(401, 'unauthorized', 'Inicia sesión para continuar.');
@@ -75,6 +82,7 @@ class ApiClient {
       }
       final request = http.Request(method, _uri(path))..headers.addAll(headers);
       if (body != null) request.body = jsonEncode(body);
+      if (rawBody != null) request.bodyBytes = rawBody;
       return http.Response.fromStream(await _http.send(request));
     }
 

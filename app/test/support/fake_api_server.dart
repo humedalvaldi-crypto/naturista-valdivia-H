@@ -12,6 +12,10 @@ class FakeApiServer {
   final communities = <Map<String, dynamic>>[];
   final notifications = <Map<String, dynamic>>[];
   final requests = <String>[];
+  final requestBodies = <String, Map<String, dynamic>>{};
+  final people = <String, Map<String, dynamic>>{};
+  final conversations = <Map<String, dynamic>>[];
+  final messages = <String, List<Map<String, dynamic>>>{};
   bool failNext = false;
   int _seq = 0;
 
@@ -36,6 +40,17 @@ class FakeApiServer {
     return p;
   }
 
+  Map<String, dynamic> addPerson(String id, String name, {int followers = 0}) => people[id] = {
+        'id': id,
+        'name': name,
+        'username': null,
+        'profile': {'photo': null, 'bio': 'Observadora de aves'},
+        'restricted': false,
+        'counts': {'followers': followers, 'following': 0, 'posts': 0},
+        'followedByMe': false,
+        'isMe': false,
+      };
+
   http.Response _json(Object body, [int status = 200]) =>
       http.Response(jsonEncode(body), status, headers: {'content-type': 'application/json; charset=utf-8'});
 
@@ -49,7 +64,11 @@ class FakeApiServer {
             failNext = false;
             return _json({'error': {'code': 'internal_error', 'message': 'Error interno del servidor.'}}, 500);
           }
+          if (req.method == 'POST' && path == '/media') {
+            return _json({'data': {'id': 'm-${_seq++}', 'contentType': req.headers['content-type'], 'size': req.bodyBytes.length}}, 201);
+          }
           final body = req.body.isEmpty ? <String, dynamic>{} : jsonDecode(req.body) as Map<String, dynamic>;
+          requestBodies['${req.method} $path'] = body;
           final seg = path.split('/').where((s) => s.isNotEmpty).toList();
 
           if (req.method == 'GET' && path == '/me') return _json({'data': {}});
@@ -57,6 +76,7 @@ class FakeApiServer {
             if (seg.length == 1 && req.method == 'GET') return _json({'data': posts, 'nextCursor': null});
             if (seg.length == 1 && req.method == 'POST') {
               final p = addPost(body['body'] as String, authorId: 'u1', authorName: 'Eva');
+              if (body['mediaAssetId'] != null) p['image'] = '/api/v1/media/${body['mediaAssetId']}';
               return _json({'data': p}, 201);
             }
             final post = posts.firstWhere((p) => p['id'] == seg[1]);
@@ -82,6 +102,32 @@ class FakeApiServer {
             c['memberCount'] = (c['memberCount'] as int) + (join ? 1 : -1);
             c['myRole'] = join ? 'member' : null;
             return _json({'data': c});
+          }
+          if (seg.first == 'users') {
+            final u = people[seg[1]]!;
+            if (seg.length == 2) return _json({'data': u});
+            final follow = req.method == 'PUT';
+            final counts = u['counts'] as Map<String, dynamic>;
+            if (follow != u['followedByMe']) counts['followers'] = (counts['followers'] as int) + (follow ? 1 : -1);
+            u['followedByMe'] = follow;
+            return _json({'data': {'following': follow, 'counts': counts}});
+          }
+          if (seg.first == 'conversations') {
+            if (seg.length == 1 && req.method == 'GET') return _json({'data': conversations});
+            if (seg.length == 1 && req.method == 'POST') {
+              final other = people[body['userId']]!;
+              final existing = conversations.where((c) => (c['with'] as Map)['id'] == other['id']);
+              if (existing.isNotEmpty) return _json({'data': {'id': existing.first['id']}}, 201);
+              final c = {'id': 'conv-${_seq++}', 'with': person(other['id'] as String, other['name'] as String), 'lastMessage': null, 'lastMessageAt': null, 'unread': 0};
+              conversations.add(c);
+              return _json({'data': {'id': c['id']}}, 201);
+            }
+            final list = messages[seg[1]] ??= [];
+            if (seg[2] == 'read') return http.Response('', 204);
+            if (req.method == 'GET') return _json({'data': list, 'nextCursor': null});
+            final m = {'id': 'msg-${_seq++}', 'body': body['body'], 'mine': true, 'createdAt': DateTime.utc(2026).toIso8601String()};
+            list.insert(0, m);
+            return _json({'data': m}, 201);
           }
           if (path == '/me/notifications' && req.method == 'GET') return _json({'data': notifications, 'nextCursor': null});
           if (path == '/me/notifications/read') {

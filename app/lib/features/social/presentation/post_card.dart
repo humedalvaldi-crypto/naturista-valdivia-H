@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/l10n/l10n.dart';
 import '../data/social_api.dart';
@@ -38,6 +39,7 @@ class PostCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           ListTile(
+            onTap: () => context.push('/people/${post.author.id}'),
             leading: PersonAvatar(person: post.author, imageUrl: api.url(post.author.photo)),
             title: Text(post.author.name, style: theme.textTheme.titleSmall),
             subtitle: Text(

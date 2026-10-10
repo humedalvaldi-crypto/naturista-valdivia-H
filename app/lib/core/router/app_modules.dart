@@ -78,7 +78,6 @@ final List<AppModule> appModules = [
     icon: Icons.chat_bubble_outline,
     title: (l) => l.moduleMessages,
     description: (l) => l.moduleMessagesBody,
-    phase: 5,
   ),
   AppModule(
     id: 'notifications',
