@@ -92,6 +92,8 @@ jobs:
                   for j, l in enumerate(window):
                       if 'EXCEPTION CAUGHT' in l:
                           parts.extend(window[j:j + 25])
+                  if not parts:
+                      parts = window[-40:]
                   detail = '%0A'.join(l.replace('::', ': ').replace('%', '%25') for l in parts[:120])
                   print(f"::error title={line.strip()[:200]}::{detail}")
           if not found:
