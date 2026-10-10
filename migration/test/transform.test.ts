@@ -168,6 +168,9 @@ describe('plan sobre una instantánea de prueba', () => {
     expect(JSON.parse(byId['antiguo-1']!['data_json'] as string)).toEqual({ text: 'Título de campo', size: 40, color: '#2E5B2A', bold: true, italic: true, align: 'center' });
     expect(byId['antiguo-2']).toMatchObject({ type: 'photo' });
     expect(byId['antiguo-3']).toBeUndefined(); // blob: no se puede copiar
+    expect(byId['antiguo-4']).toMatchObject({ type: 'sticker' }); // ilustración de la app antigua → la misma de la nueva
+    expect(JSON.parse(byId['antiguo-4']!['data_json'] as string)).toEqual({ asset: 'assets/illustrations/aves/chucao.jpg' });
+    expect(JSON.parse(byId['pegatina']!['data_json'] as string)).toMatchObject({ text: '🐸', size: 96 });
     expect(JSON.parse(byId['especie']!['data_json'] as string).label).toBe('Chucao (Scelorchilus rubecula)');
     expect(JSON.parse(byId['texto']!['data_json'] as string).text).toBe('Cantaba en el sotobosque\n\nDía nublado, 8 °C');
     expect(report.collections['notebook_pages']!.unmappedFields).not.toHaveProperty('elements');

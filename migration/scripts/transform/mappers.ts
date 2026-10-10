@@ -36,6 +36,9 @@ export const PERSONAL_FIELDS = new Set([
   'birthdate', 'birthdatePublic', 'age', 'ageVerified', 'rutVerified', 'edad',
 ]);
 
+const assetKey = (p: string) =>
+  (p.split('?')[0]!.split('/').pop() ?? '').replace(/\.[a-z0-9]+$/i, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
 /** Contexto compartido entre colecciones. */
 export class Context {
   readonly users = new Set<string>();
@@ -45,9 +48,17 @@ export class Context {
   readonly slugs = new Set<string>();
   readonly speciesByName = new Map<string, CatalogSpecies>();
   readonly migratedAt = new Date().toISOString();
+  /** Ilustraciones y pegatinas de la app nueva por nombre de archivo (sin extensión), para enlazar rutas antiguas. */
+  readonly assetsByName = new Map<string, string>();
 
-  constructor(readonly plan: Plan, catalog: CatalogSpecies[]) {
+  constructor(readonly plan: Plan, catalog: CatalogSpecies[], assets: string[] = []) {
     for (const s of catalog) this.addSpecies(s);
+    for (const a of assets) this.assetsByName.set(assetKey(a), a);
+  }
+
+  /** Ruta antigua tipo `/illustrations/aves/chucao.jpg` → asset de la app nueva, si existe uno con ese nombre. */
+  assetFor(path: string): string | null {
+    return this.assetsByName.get(assetKey(path)) ?? null;
   }
 
   addSpecies(s: CatalogSpecies) {
@@ -513,7 +524,9 @@ function mapPage(ctx: Context, d: SnapshotDoc, nb: { id: string; owner: string; 
     const localId = `antiguo-${i + 1}`;
     const image = typeof e['imageUrl'] === 'string' ? (e['imageUrl'] as string) : null;
     const content = typeof e['content'] === 'string' ? (e['content'] as string) : null;
-    if (image) {
+    if (image && image.startsWith('/') && ctx.assetFor(image)) {
+      element(ctx, id, localId, 'sticker', box, { asset: ctx.assetFor(image) }, null);
+    } else if (image) {
       const asset = ctx.plan.mediaFrom(image, { ownerId: nb.owner, purpose: 'notebook-photo', visibility, collection: c, docId: d.id, field: `elements[${i}]` });
       if (asset) element(ctx, id, localId, 'photo', box, {}, asset);
     } else if (content) {
@@ -546,9 +559,12 @@ function mapPage(ctx: Context, d: SnapshotDoc, nb: { id: string; owner: string; 
     if (asset) element(ctx, id, 'dibujo', 'photo', { x: 0, y: 0, width: 1000, height: 1414, z: 0, rotation: 0 }, { legacy: 'drawing' }, asset);
   }
   const photo = r.str('imageUrl', 'photoUrl', 'photoURL', 'image');
-  if (photo) {
+  const photoBox = elements.length ? { x: 100, y: 1060, width: 480, height: 340, z: z++, rotation: 0 } : { x: 100, y: 760, width: 800, height: 560, z: z++, rotation: 0 };
+  if (photo && photo.startsWith('/') && ctx.assetFor(photo)) {
+    element(ctx, id, 'ilustracion', 'sticker', photoBox, { asset: ctx.assetFor(photo) }, null);
+  } else if (photo) {
     const asset = ctx.plan.mediaFrom(photo, { ownerId: nb.owner, purpose: 'notebook-photo', visibility, collection: c, docId: d.id, field: 'imageUrl' });
-    if (asset) element(ctx, id, 'foto', 'photo', elements.length ? { x: 100, y: 1060, width: 480, height: 340, z: z++, rotation: 0 } : { x: 100, y: 760, width: 800, height: 560, z: z++, rotation: 0 }, {}, asset);
+    if (asset) element(ctx, id, 'foto', 'photo', photoBox, {}, asset);
   }
   const texts = [r.str('content', 'text', 'notes', 'body', 'texto', 'notas'), r.str('description', 'descripcion'), r.str('datoPersonalizado')].filter(
     (t): t is string => !!t,
@@ -562,10 +578,20 @@ function mapPage(ctx: Context, d: SnapshotDoc, nb: { id: string; owner: string; 
   }
   if (r.str('audioNoteUrl', 'audioUrl')) ctx.plan.skip(c, 'nota de audio: el editor nuevo aún no tiene audio (no se migra)');
   const sticker = r.str('sticker', 'stickerId');
+  const stickerBox = { x: 760, y: 40, width: 200, height: 200, z: z++, rotation: 0 };
   if (sticker) {
-    // Nombre de pegatina de la app antigua (no es dato personal): se anota para buscarle equivalente.
-    const name = /^[\w\-./ ]{1,60}$/.test(sticker) ? sticker : '(otro formato)';
-    ctx.plan.skip(c, `pegatina antigua «${name}» sin equivalente (no se migra)`);
+    const local = sticker.startsWith('/') ? ctx.assetFor(sticker) : null;
+    if (local) {
+      element(ctx, id, 'pegatina', 'sticker', stickerBox, { asset: local }, null);
+    } else if (sticker.startsWith('data:image') || /^https:\/\//.test(sticker)) {
+      const asset = ctx.plan.mediaFrom(sticker, { ownerId: nb.owner, purpose: 'notebook-photo', visibility, collection: c, docId: d.id, field: 'sticker' });
+      if (asset) element(ctx, id, 'pegatina', 'photo', stickerBox, {}, asset);
+    } else if ([...sticker].length <= 16) {
+      // Emoji o palabra corta: se conserva como texto grande.
+      element(ctx, id, 'pegatina', 'text', stickerBox, { text: sticker, size: 96, color: '#22261F', align: 'center' }, null);
+    } else {
+      ctx.plan.skip(c, 'pegatina antigua en formato desconocido (no se migra)');
+    }
   }
   finish(ctx, c, r);
 }
@@ -574,7 +600,7 @@ function element(
   ctx: Context,
   pageId: string,
   localId: string,
-  type: 'text' | 'photo' | 'species',
+  type: 'text' | 'photo' | 'species' | 'sticker',
   box: { x: number; y: number; width: number; height: number; z: number; rotation?: number },
   data: Doc,
   mediaId: string | null,

@@ -62,9 +62,24 @@ export interface TransformResult {
   files: string[];
 }
 
+/** Ilustraciones y pegatinas incluidas en la app nueva (app/assets), como rutas de asset. */
+export function appAssets(appDir: string): string[] {
+  const out: string[] = [];
+  const walk = (dir: string, rel: string) => {
+    if (!existsSync(dir)) return;
+    for (const f of readdirSync(dir, { withFileTypes: true })) {
+      if (f.isDirectory()) walk(join(dir, f.name), `${rel}/${f.name}`);
+      else if (/\.(png|jpe?g|webp)$/i.test(f.name)) out.push(`${rel}/${f.name}`);
+    }
+  };
+  walk(join(appDir, 'assets/illustrations'), 'assets/illustrations');
+  walk(join(appDir, 'assets/stickers'), 'assets/stickers');
+  return out;
+}
+
 export function transform(snapshotDir: string, outDir: string, migrationsDir: string): TransformResult {
   const plan = new Plan();
-  const ctx = new Context(plan, seedCatalog(migrationsDir));
+  const ctx = new Context(plan, seedCatalog(migrationsDir), appAssets(join(migrationsDir, '../../app')));
   const fsDir = join(snapshotDir, 'firestore');
   const col = (name: string) => readJsonl<SnapshotDoc>(join(fsDir, `${name}.jsonl`));
 

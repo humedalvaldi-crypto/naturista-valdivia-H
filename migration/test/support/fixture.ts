@@ -79,7 +79,9 @@ export function writeFixtureSnapshot(): string {
           { id: 'e1', type: 'text', x: 40, y: 80, width: 400, height: 60, rotation: -5, content: 'Título de campo', style: { align: 'center', color: '#2E5B2A', fontSize: 32, fontWeight: 700, italic: true } },
           { id: 'e2', type: 'image', x: 100, y: 200, width: 600, height: 400, rotation: 0, imageUrl: 'data:image/png;base64,' + PNG_1x1 },
           { id: 'e3', type: 'image', x: 0, y: 0, width: 10, height: 10, rotation: 0, imageUrl: 'blob:https://app/xyz' },
+          { id: 'e4', type: 'image', x: 0, y: 700, width: 200, height: 200, rotation: 0, imageUrl: '/illustrations/aves/chucao.jpg' },
         ],
+        sticker: '🐸',
       },
     },
   ]);
