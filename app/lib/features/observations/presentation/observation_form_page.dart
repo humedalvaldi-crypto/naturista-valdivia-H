@@ -273,8 +273,12 @@ class _ObservationFormPageState extends State<ObservationFormPage> {
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 720),
-            child: ListView(
+            // Columna completa (no lista perezosa): así el minimapa no se
+            // destruye ni se vuelve a crear con el mismo controlador al desplazarse.
+            child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+              child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // ── Especie ──
                 Text(l10n.speciesLabel, style: theme.textTheme.titleMedium),
@@ -469,6 +473,7 @@ class _ObservationFormPageState extends State<ObservationFormPage> {
                   label: Text(l10n.saveObservation),
                 ),
               ],
+              ),
             ),
           ),
         ),
