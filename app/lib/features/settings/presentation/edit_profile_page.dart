@@ -271,8 +271,11 @@ class _EditProfileBodyState extends State<_EditProfileBody> {
                       labelText: l10n.profileUsername,
                       prefixText: '@',
                       helperText: l10n.profileUsernameHint,
-                      errorText: _usernameError,
                     ),
+                    forceErrorText: _usernameError,
+                    onChanged: (_) {
+                      if (_usernameError != null) setState(() => _usernameError = null);
+                    },
                     validator: (v) {
                       final value = (v ?? '').trim().toLowerCase();
                       if (value.isEmpty) return null;
