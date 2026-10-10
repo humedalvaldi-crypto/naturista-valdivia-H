@@ -11,20 +11,26 @@ void main() {
 
   Iterable<String> messageKeys(Map<String, dynamic> arb) => arb.keys.where((k) => !k.startsWith('@'));
 
-  Set<String> placeholders(String text) =>
-      RegExp(r'\{(\w+)\}').allMatches(text).map((m) => m.group(1)!).toSet();
-
   test('es y en tienen las mismas claves', () {
     final es = load('es');
     final en = load('en');
     expect(messageKeys(en).toSet(), messageKeys(es).toSet());
   });
 
-  test('los marcadores coinciden en cada mensaje', () {
+  test('los marcadores declarados aparecen en ambos idiomas', () {
     final es = load('es');
     final en = load('en');
     for (final key in messageKeys(es)) {
-      expect(placeholders(en[key] as String), placeholders(es[key] as String), reason: key);
+      final meta = es['@$key'];
+      final declared = meta is Map<String, dynamic> && meta['placeholders'] is Map<String, dynamic>
+          ? (meta['placeholders'] as Map<String, dynamic>).keys
+          : const <String>[];
+      for (final name in declared) {
+        // `{name}` simple o `{name, plural, ...}`.
+        final pattern = RegExp('\\{$name[,}]');
+        expect(pattern.hasMatch(es[key] as String), isTrue, reason: 'es.$key usa {$name}');
+        expect(pattern.hasMatch(en[key] as String), isTrue, reason: 'en.$key usa {$name}');
+      }
     }
   });
 
