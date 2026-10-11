@@ -41,7 +41,8 @@ espera o toma otra tarea.
 |---|---|---|---|---|---|
 | Contratos de búsqueda, sugerencias, «te sigue», editar | Claude | Hecho | `worker/src/routes/{people,posts}.ts`, `repositories/social.ts`, migración 0013 | `worker/test/people-search.test.ts` (4) | — |
 | Idiomas (12 + mapudungun borrador) | Claude | Hecho | `app/l10n/`, `settings_sections.dart` | `l10n_test`, `settings_test` | revisión por hablantes |
-| Buscador de personas | Copilot | Por asignar | ver issue | — | — |
-| «Te sigue» en perfil | Copilot | Por asignar | ver issue | — | — |
-| Editar y compartir publicaciones | Copilot | Por asignar | ver issue | — | — |
-| Sincronización Firebase → Cloudflare + panel técnico | Claude | En curso | `migration/`, `worker/` | — | — |
+| Buscador de personas (#1) | Claude (reasignado desde Copilot) | Hecho | `people/presentation/search_people_page.dart`, `social_api.dart`, `models.dart`, `app_router.dart` | `test/people_search_test.dart` (4) | — |
+| «Te sigue» en perfil (#2) | Claude (reasignado) | Hecho | `person_page.dart`, `follow_confirm.dart` | `test/people_search_test.dart` (3) | — |
+| Editar y compartir publicaciones (#3) | Claude (reasignado) | Hecho | `post_actions.dart`, `post_card.dart`, `post_detail_page.dart`, `social_page.dart` | `test/people_search_test.dart` (2) | — |
+| Publicación en Google Play | Claude + dueña de la cuenta | Preparado | `.github/workflows/android-release.yml`, `app/store/`, `app/branding_android/`, `docs/play-store.md` | CI comprueba ícono, nombre y parche de firma | cuenta Play, clave de subida, Firebase Android, prueba cerrada |
+| Sincronización Firebase → Cloudflare + panel técnico | Claude | Pendiente | `migration/`, `worker/` | — | requiere autorización para escrituras recurrentes |
