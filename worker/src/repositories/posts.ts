@@ -8,6 +8,7 @@ export interface PostRow {
   media_asset_id: string | null;
   community_id: string | null;
   visibility: 'public' | 'followers';
+  edited_at?: string | null;
   location_name: string | null;
   comment_count: number;
   reaction_count: number;
@@ -122,6 +123,23 @@ export class PostsRepository {
     params.push(limit + 1);
     const sql = `${POST_SELECT} WHERE ${where.join(' AND ')} ORDER BY p.created_at DESC, p.id DESC LIMIT ?${params.length}`;
     return (await this.db.prepare(sql).bind(...params).all<PostRow>()).results;
+  }
+
+  /** Editar texto, lugar o visibilidad, solo por su autor. Devuelve false si no existe o no es suyo. */
+  async update(id: string, authorId: string, fields: { body?: string; visibility?: string; locationName?: string | null }): Promise<boolean> {
+    const res = await this.db
+      .prepare(
+        `UPDATE posts SET
+           body          = COALESCE(?3, body),
+           visibility    = COALESCE(?4, visibility),
+           location_name = CASE WHEN ?6 = 1 THEN ?5 ELSE location_name END,
+           edited_at     = ?7,
+           updated_at    = ?7
+         WHERE id = ?1 AND author_id = ?2 AND deleted_at IS NULL`,
+      )
+      .bind(id, authorId, fields.body ?? null, fields.visibility ?? null, fields.locationName ?? null, 'locationName' in fields ? 1 : 0, new Date().toISOString())
+      .run();
+    return res.meta.changes > 0;
   }
 
   /** Borrado lógico, solo por su autor. */

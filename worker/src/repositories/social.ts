@@ -88,6 +88,65 @@ export class SocialRepository {
   }
 
   /** Lista seguidores o seguidos, con su perfil público, paginada por fecha. */
+  /**
+   * Personas por nombre o usuario (sin distinguir mayúsculas). Excluye perfiles
+   * privados, cuentas no activas y bloqueos en ambos sentidos. Orden estable por
+   * nombre e id para paginar con cursor (sin límite fijo de resultados).
+   */
+  async search(viewer: string | null, query: string, limit: number, after: { name: string; id: string } | null) {
+    const like = `%${query.toLowerCase().replace(/[\\%_]/g, (m) => `\\${m}`)}%`;
+    const rows = await this.db
+      .prepare(
+        `SELECT u.id, pr.username, pr.full_name, pr.photo_asset_id, u.display_name,
+                lower(COALESCE(pr.full_name, u.display_name, pr.username, '')) AS sort_name,
+                EXISTS (SELECT 1 FROM follows f WHERE f.follower_id = ?1 AND f.followed_id = u.id) AS followed_by_me,
+                EXISTS (SELECT 1 FROM follows f WHERE f.follower_id = u.id AND f.followed_id = ?1) AS follows_me
+         FROM users u
+         LEFT JOIN profiles pr ON pr.user_id = u.id
+         WHERE u.status = 'active'
+           AND COALESCE(pr.visibility, 'public') <> 'private'
+           AND (lower(COALESCE(pr.username, '')) LIKE ?2 ESCAPE '\\'
+                OR lower(COALESCE(pr.full_name, '')) LIKE ?2 ESCAPE '\\'
+                OR lower(COALESCE(u.display_name, '')) LIKE ?2 ESCAPE '\\')
+           AND NOT EXISTS (SELECT 1 FROM blocks b WHERE (b.blocker_id = ?1 AND b.blocked_id = u.id) OR (b.blocker_id = u.id AND b.blocked_id = ?1))
+           AND (?3 IS NULL OR (lower(COALESCE(pr.full_name, u.display_name, pr.username, '')), u.id) > (?3, ?4))
+         ORDER BY sort_name, u.id
+         LIMIT ?5`,
+      )
+      .bind(viewer ?? '', like, after?.name ?? null, after?.id ?? null, limit + 1)
+      .all<PersonSearchRow>();
+    return rows.results;
+  }
+
+  /**
+   * Sugerencias reales: personas que siguen quienes sigo (y cuántas de ellas),
+   * excluyendo a quien ya sigo, a mí y bloqueos. Sin datos inventados: si no
+   * hay red, la lista queda vacía.
+   */
+  async suggestions(viewer: string, limit: number) {
+    const rows = await this.db
+      .prepare(
+        `SELECT u.id, pr.username, pr.full_name, pr.photo_asset_id, u.display_name, count(*) AS mutuals,
+                0 AS followed_by_me,
+                EXISTS (SELECT 1 FROM follows f3 WHERE f3.follower_id = u.id AND f3.followed_id = ?1) AS follows_me
+         FROM follows f1
+         JOIN follows f2 ON f2.follower_id = f1.followed_id
+         JOIN users u ON u.id = f2.followed_id
+         LEFT JOIN profiles pr ON pr.user_id = u.id
+         WHERE f1.follower_id = ?1
+           AND u.id <> ?1 AND u.status = 'active'
+           AND COALESCE(pr.visibility, 'public') <> 'private'
+           AND NOT EXISTS (SELECT 1 FROM follows f4 WHERE f4.follower_id = ?1 AND f4.followed_id = u.id)
+           AND NOT EXISTS (SELECT 1 FROM blocks b WHERE (b.blocker_id = ?1 AND b.blocked_id = u.id) OR (b.blocker_id = u.id AND b.blocked_id = ?1))
+         GROUP BY u.id
+         ORDER BY mutuals DESC, u.id
+         LIMIT ?2`,
+      )
+      .bind(viewer, limit)
+      .all<PersonSearchRow & { mutuals: number }>();
+    return rows.results;
+  }
+
   async listBlocked(userId: string) {
     const rows = await this.db
       .prepare(
@@ -133,4 +192,15 @@ export class SocialRepository {
       .all<{ id: string; created_at: string; username: string | null; full_name: string | null; photo_asset_id: string | null; display_name: string | null }>();
     return rows.results;
   }
+}
+
+export interface PersonSearchRow {
+  id: string;
+  username: string | null;
+  full_name: string | null;
+  photo_asset_id: string | null;
+  display_name: string | null;
+  sort_name?: string;
+  followed_by_me: number;
+  follows_me: number;
 }

@@ -270,10 +270,29 @@ void main() {
 
   testWidgets('idioma y región: reloj de 12 horas', (tester) async {
     await pumpTestApp(tester, at: '/settings/language');
+    await _scrollTo(tester, find.byKey(const Key('settings-24h')));
     await tester.tap(find.byKey(const Key('settings-24h')));
     await tester.pumpAndSettle();
     expect((await SharedPreferences.getInstance()).getBool(LocalSettingsRepository.use24hKey), isFalse);
     expect(MediaQuery.of(tester.element(find.byKey(const Key('settings-24h')))).alwaysUse24HourFormat, isFalse);
+  });
+
+  testWidgets('elegir mapudungun: textos traducidos, el resto en español y aviso de borrador', (tester) async {
+    await pumpTestApp(tester, at: '/settings/language');
+    expect(find.text('Mapudungun'), findsOneWidget);
+    expect(find.text('Português'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('language-arn')));
+    await tester.pumpAndSettle();
+    expect((await SharedPreferences.getInstance()).getString(LocalSettingsRepository.languageKey), 'arn');
+    expect(find.textContaining('Mapudungun en borrador'), findsOneWidget);
+    expect(find.text('Dungun (idioma)'), findsOneWidget); // traducido
+    expect(find.text('Idioma y región'), findsWidgets); // aún en español
+  });
+
+  testWidgets('árabe se muestra de derecha a izquierda', (tester) async {
+    await pumpTestApp(tester, at: '/settings/language', language: 'ar');
+    expect(Directionality.of(tester.element(find.byKey(const Key('language-es')))), TextDirection.rtl);
+    expect(find.text('اللغة والمنطقة'), findsWidgets);
   });
 
   testWidgets('ayuda: las preguntas se despliegan', (tester) async {

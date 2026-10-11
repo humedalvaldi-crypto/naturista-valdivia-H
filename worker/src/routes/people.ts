@@ -2,10 +2,10 @@ import { Hono } from 'hono';
 import { ACHIEVEMENTS, AlbumRepository } from '../repositories/album';
 import { NotificationsRepository } from '../repositories/notifications';
 import { ProfilesRepository } from '../repositories/profiles';
-import { SocialRepository } from '../repositories/social';
+import { SocialRepository, type PersonSearchRow } from '../repositories/social';
 import { UsersRepository } from '../repositories/users';
 import { personDto } from '../services/dto';
-import { badRequest, notFound } from '../services/http-error';
+import { badRequest, HttpError, notFound } from '../services/http-error';
 import { parseLimit } from '../services/pagination';
 import type { AppBindings } from '../types/env';
 import { speciesDto } from './observations';
@@ -13,12 +13,52 @@ import { toProfileDto } from './profiles';
 
 /**
  * /api/v1/users/:id — relaciones con otra persona (por UID).
- * GET        /:id                 resumen público (perfil, contadores, si la sigo)
+ * GET        /?q=texto&cursor=    buscar personas (paginado, sin límite total)
+ * GET        /suggestions         sugerencias de la propia red (sesión)
+ * GET        /:id                 resumen público (perfil, contadores, si la sigo y si me sigue)
  * PUT|DELETE /:id/follow          seguir / dejar de seguir
  * PUT|DELETE /:id/block           bloquear / desbloquear
  * GET        /:id/album           álbum de especies y logros (lo privado solo para la propia persona)
  */
+const searchDto = (r: PersonSearchRow & { mutuals?: number }) => ({
+  ...personDto(r),
+  followedByMe: r.followed_by_me === 1,
+  followsMe: r.follows_me === 1,
+  ...(r.mutuals !== undefined ? { mutuals: r.mutuals } : {}),
+});
+
 export const peopleRoutes = new Hono<AppBindings>()
+  .get('/', async (c) => {
+    const q = (c.req.query('q') ?? '').trim();
+    if (q.length < 2) throw badRequest('Escribe al menos 2 letras para buscar.');
+    if (q.length > 60) throw badRequest('La búsqueda es demasiado larga.');
+    const limit = parseLimit(c.req.query('limit'));
+    let after: { name: string; id: string } | null = null;
+    const raw = c.req.query('cursor');
+    if (raw) {
+      try {
+        const parsed = JSON.parse(atob(raw)) as { n?: unknown; i?: unknown };
+        if (typeof parsed.n !== 'string' || typeof parsed.i !== 'string') throw new Error();
+        after = { name: parsed.n, id: parsed.i };
+      } catch {
+        throw badRequest('Cursor inválido.');
+      }
+    }
+    const viewer = c.get('maybeUser')?.uid ?? null;
+    const rows = await new SocialRepository(c.env.DB).search(viewer, q, limit, after);
+    const items = rows.slice(0, limit);
+    const last = items[items.length - 1];
+    return c.json({
+      data: items.filter((r) => r.id !== viewer).map(searchDto),
+      nextCursor: rows.length > limit && last ? btoa(JSON.stringify({ n: last.sort_name ?? '', i: last.id })) : null,
+    });
+  })
+  .get('/suggestions', async (c) => {
+    const viewer = c.get('maybeUser')?.uid;
+    if (!viewer) throw new HttpError(401, 'unauthorized', 'Inicia sesión para ver sugerencias.');
+    const rows = await new SocialRepository(c.env.DB).suggestions(viewer, Math.min(parseLimit(c.req.query('limit')), 20));
+    return c.json({ data: rows.map(searchDto) });
+  })
   .get('/:id/album', async (c) => {
     const id = c.req.param('id');
     const viewer = c.get('maybeUser')?.uid ?? null;
@@ -79,6 +119,7 @@ export const peopleRoutes = new Hono<AppBindings>()
         restricted: !canSee,
         counts: await social.counts(id),
         followedByMe: following,
+        followsMe: viewer && viewer !== id ? await social.isFollowing(id, viewer) : false,
         isMe: viewer === id,
       },
     });

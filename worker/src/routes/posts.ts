@@ -8,7 +8,7 @@ import { mediaPath, parseBody, personDto } from '../services/dto';
 import { badRequest, notFound, unauthorized } from '../services/http-error';
 import { decodeCursor, encodeCursor, paginate, parseLimit } from '../services/pagination';
 import type { AppBindings } from '../types/env';
-import { createCommentSchema, createPostSchema } from '../validators/social';
+import { createCommentSchema, createPostSchema, updatePostSchema } from '../validators/social';
 
 export const postDto = (p: PostRow) => ({
   id: p.id,
@@ -29,6 +29,7 @@ export const postDto = (p: PostRow) => ({
   likedByMe: p.liked_by_me === 1,
   bookmarkedByMe: p.bookmarked_by_me === 1,
   createdAt: p.created_at,
+  editedAt: p.edited_at ?? null,
 });
 
 const commentDto = (c: CommentRow) => ({
@@ -53,6 +54,7 @@ const viewerOf = (c: { get: (k: 'maybeUser' | 'user') => { uid: string } | undef
  * GET    /?scope=all|following|bookmarks&author=<uid>&community=<slug>&limit=&cursor=
  * POST   /                      crear (sesión)
  * GET    /:id                   ver
+ * PATCH  /:id                   editar texto, lugar o visibilidad (autor)
  * DELETE /:id                   borrar (autor)
  * PUT|DELETE /:id/like          me gusta
  * PUT|DELETE /:id/bookmark      guardar
@@ -128,6 +130,14 @@ export const postsRoutes = new Hono<AppBindings>()
     const row = await new PostsRepository(c.env.DB).getVisible(c.req.param('id'), viewerOf(c));
     if (!row) throw notFound('Publicación no encontrada.');
     return c.json({ data: postDto(row) });
+  })
+  .patch('/:id', async (c) => {
+    const input = await parseBody(c, updatePostSchema);
+    const user = c.get('user');
+    const posts = new PostsRepository(c.env.DB);
+    if (!(await posts.update(c.req.param('id'), user.uid, input))) throw notFound('Publicación no encontrada.');
+    const row = await posts.getVisible(c.req.param('id'), user.uid);
+    return c.json({ data: postDto(row!) });
   })
   .delete('/:id', async (c) => {
     const ok = await new PostsRepository(c.env.DB).softDelete(c.req.param('id'), c.get('user').uid);

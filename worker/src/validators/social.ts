@@ -18,6 +18,14 @@ export const createPostSchema = z.strictObject({
   locationName: optionalText(120),
 });
 
+export const updatePostSchema = z
+  .strictObject({
+    body: text(1, 2000).optional(),
+    visibility: z.enum(['public', 'followers']).optional(),
+    locationName: optionalText(120),
+  })
+  .refine((v) => Object.keys(v).length > 0, { message: 'Debe incluir al menos un campo.' });
+
 export const createCommentSchema = z.strictObject({ body: text(1, 1000) });
 
 export const createCommunitySchema = z.strictObject({
