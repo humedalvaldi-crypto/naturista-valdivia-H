@@ -457,7 +457,7 @@
   "faqOfflineQ": "Does it work offline?",
   "faqOfflineA": "Not yet. Maps, notebooks and observations need a connection. We prefer not to show a \"download map\" button until it really works.",
   "faqMissingQ": "Why are some options from the previous app missing?",
-  "faqMissingA": "We only include options that work. Not available yet: SMS two-step verification, signing out of all devices, satellite or offline maps, trading stickers and cards between people, phone or email notifications, and languages other than Spanish and English. We also do not ask for ID numbers, birth date, gender or address: they are not needed.",
+  "faqMissingA": "We only include options that work. Not available yet: SMS two-step verification, satellite or offline maps, trading stickers and cards between people, and phone or email notifications. We also do not ask for ID numbers, birth date, gender or address: they are not needed.",
   "faqContactQ": "How do I report a problem?",
   "faqContactA": "For inappropriate content, use \"Report\" on the post or profile. For bugs or ideas: Settings → Contact.",
   "legalDraftNotice": "Preliminary plain-language version. It describes how the app works today.",
@@ -494,7 +494,7 @@
   "secAppearance": "Appearance",
   "secAppearanceHint": "Light, dark or system theme",
   "secLanguage": "Language and region",
-  "secLanguageHint": "Spanish or English, time format",
+  "secLanguageHint": "App language and time format",
   "secSync": "Sync and storage",
   "secSyncHint": "Server status, space used, copies and trash",
   "secAccessibility": "Accessibility",
@@ -624,5 +624,7 @@
   "consentTermsCheck": "I have read and accept the terms of use and privacy policy.",
   "consentAgeCheck": "I am {age} or older, or I have permission from my parent or guardian.",
   "consentAgeHint": "If you are younger, ask a responsible adult to review it with you.",
-  "consentAccept": "Accept and continue"
+  "consentAccept": "Accept and continue",
+  "languageDraftNote": "Draft translation: it must be reviewed by native speakers. Text not yet translated is shown in Spanish.",
+  "languageMachineNote": "Translation prepared with the help of artificial intelligence; tell us via Contact if something is unclear."
 }

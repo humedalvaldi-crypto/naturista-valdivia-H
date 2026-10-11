@@ -727,7 +727,7 @@
   "faqOfflineQ": "¿Funciona sin internet?",
   "faqOfflineA": "Todavía no. Los mapas, cuadernos y observaciones necesitan conexión. Preferimos no mostrar un botón de \"descargar mapa\" hasta que funcione de verdad.",
   "faqMissingQ": "¿Por qué faltan opciones de la app anterior?",
-  "faqMissingA": "Solo incluimos opciones que funcionan. Aún no están: verificación en dos pasos por SMS, cerrar sesión en todos los dispositivos, mapas satelitales o sin conexión, intercambio de stickers y cartas entre personas, avisos al teléfono o por correo, e idiomas distintos de español e inglés. Tampoco pedimos RUT, fecha de nacimiento, género ni dirección: no hacen falta.",
+  "faqMissingA": "Solo incluimos opciones que funcionan. Aún no están: verificación en dos pasos por SMS, mapas satelitales o sin conexión, intercambio de stickers y cartas entre personas, y avisos al teléfono o por correo. Tampoco pedimos RUT, fecha de nacimiento, género ni dirección: no hacen falta.",
   "faqContactQ": "¿Cómo reporto un problema?",
   "faqContactA": "Para contenido inapropiado, usa \"Reportar\" en la publicación o el perfil. Para fallas o ideas: Configuración → Contacto.",
   "legalDraftNotice": "Versión preliminar en lenguaje simple. Describe cómo funciona la app hoy.",
@@ -771,7 +771,7 @@
   "secAppearance": "Apariencia",
   "secAppearanceHint": "Tema claro, oscuro o del sistema",
   "secLanguage": "Idioma y región",
-  "secLanguageHint": "Español o inglés, formato de hora",
+  "secLanguageHint": "Idioma de la app y formato de hora",
   "secSync": "Sincronización y almacenamiento",
   "secSyncHint": "Estado del servidor, espacio usado, copias y papelera",
   "secAccessibility": "Accesibilidad",
@@ -956,5 +956,7 @@
     }
   },
   "consentAgeHint": "Si eres menor de esa edad, pide a una persona adulta responsable que lo revise contigo.",
-  "consentAccept": "Aceptar y continuar"
+  "consentAccept": "Aceptar y continuar",
+  "languageDraftNote": "Traducción en borrador: la deben revisar personas hablantes. Lo que aún no está traducido se muestra en español.",
+  "languageMachineNote": "Traducción preparada con ayuda de inteligencia artificial; avísanos en Contacto si algo no se entiende."
 }

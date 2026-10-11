@@ -1,0 +1,13 @@
+{
+  "@@locale": "arn",
+  "homeGreeting": "Mari mari, {name}",
+  "settingsLanguage": "Dungun (idioma)",
+  "groupAves": "Üñüm (aves)",
+  "groupFlora": "Anümka (plantas)",
+  "groupPeces": "Challwa (peces)",
+  "contactSent": "Mensaje enviado. ¡Chaltu may!",
+  "onb3Title": "Kimün: compartir y aprender",
+  "loginSubtitle": "Mari mari, naturalista.",
+  "languageDraftNote": "Mapudungun en borrador (grafemario Azümchefe): solo algunas palabras están traducidas y deben revisarlas personas hablantes. El resto se muestra en español. Si puedes ayudar a revisarlo, escríbenos en Contacto.",
+  "languageMachineNote": "Mapudungun en borrador: revisión pendiente por personas hablantes."
+}

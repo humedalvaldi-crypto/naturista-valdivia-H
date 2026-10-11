@@ -755,10 +755,17 @@ class _LanguageSection extends StatelessWidget {
           if (value != null) applySetting(context, () => controller.setLanguage(value));
         },
         child: Column(children: [
-          RadioListTile<AppLanguage>(key: const Key('language-es'), value: AppLanguage.es, title: Text(l10n.languageSpanish)),
-          RadioListTile<AppLanguage>(key: const Key('language-en'), value: AppLanguage.en, title: Text(l10n.languageEnglish)),
+          for (final lang in AppLanguage.values)
+            RadioListTile<AppLanguage>(
+              key: Key('language-${lang.name}'),
+              value: lang,
+              title: Text(lang.nativeName, locale: Locale(lang == AppLanguage.arn ? 'es' : lang.name)),
+              subtitle: lang.draft ? const Icon(Icons.rate_review_outlined, size: 16) : null,
+            ),
         ]),
       ),
+      if (current?.draft ?? false) InfoNote(l10n.languageDraftNote, icon: Icons.rate_review_outlined),
+      if (current?.machine ?? false) InfoNote(l10n.languageMachineNote, icon: Icons.translate),
       SectionHeader(l10n.regionTitle),
       SwitchListTile(
         key: const Key('settings-24h'),

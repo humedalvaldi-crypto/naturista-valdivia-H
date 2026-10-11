@@ -40,4 +40,28 @@ void main() {
       expect((en[key] as String).trim(), isNotEmpty, reason: key);
     }
   });
+
+  test('las traducciones completas tienen todas las claves y los mismos marcadores', () {
+    final es = load('es');
+    for (final lang in ['pt', 'fr', 'de', 'it', 'zh', 'ja', 'ko', 'ar', 'ru', 'hi']) {
+      final tr = load(lang);
+      expect(messageKeys(tr).toSet(), messageKeys(es).toSet(), reason: lang);
+      for (final key in messageKeys(es)) {
+        final meta = es['@$key'];
+        final declared = meta is Map<String, dynamic> && meta['placeholders'] is Map<String, dynamic>
+            ? (meta['placeholders'] as Map<String, dynamic>).keys
+            : const <String>[];
+        for (final name in declared) {
+          expect(RegExp('\\{$name[,}]').hasMatch(tr[key] as String), isTrue, reason: '$lang.$key usa {$name}');
+        }
+      }
+    }
+  });
+
+  test('el mapudungun es un borrador parcial: solo claves existentes y aviso de revisión', () {
+    final es = load('es');
+    final arn = load('arn');
+    expect(messageKeys(arn).every(es.containsKey), isTrue);
+    expect(arn['languageDraftNote'], contains('hablantes'));
+  });
 }

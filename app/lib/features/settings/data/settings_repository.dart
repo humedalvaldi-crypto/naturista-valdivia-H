@@ -1,9 +1,31 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Idiomas admitidos. Debe coincidir con `l10n/app_*.arb` y con la API.
+/// Idiomas admitidos. Debe coincidir con `l10n/app_*.arb`.
+/// [nativeName] se muestra siempre en el propio idioma.
 enum AppLanguage {
-  es,
-  en;
+  es('Español'),
+  en('English'),
+  arn('Mapudungun', draft: true),
+  pt('Português', machine: true),
+  fr('Français', machine: true),
+  de('Deutsch', machine: true),
+  it('Italiano', machine: true),
+  zh('中文（简体）', machine: true),
+  ja('日本語', machine: true),
+  ko('한국어', machine: true),
+  ar('العربية', machine: true),
+  ru('Русский', machine: true),
+  hi('हिन्दी', machine: true);
+
+  const AppLanguage(this.nativeName, {this.draft = false, this.machine = false});
+
+  final String nativeName;
+
+  /// Traducción parcial que deben revisar hablantes (lo demás, en español).
+  final bool draft;
+
+  /// Traducción completa preparada con ayuda de IA.
+  final bool machine;
 
   static AppLanguage? tryParse(String? code) {
     for (final value in AppLanguage.values) {

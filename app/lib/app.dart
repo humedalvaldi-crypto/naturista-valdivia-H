@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 
 import 'core/config/app_config.dart';
+import 'core/l10n/fallback_localizations.dart';
 import 'core/l10n/generated/app_localizations.dart';
 import 'core/network/api_client.dart';
 import 'core/network/api_scope.dart';
@@ -98,6 +99,9 @@ class _NaturistaAppState extends State<NaturistaApp> {
                 GlobalMaterialLocalizations.delegate,
                 GlobalWidgetsLocalizations.delegate,
                 GlobalCupertinoLocalizations.delegate,
+                FallbackMaterialLocalizationsDelegate(),
+                FallbackCupertinoLocalizationsDelegate(),
+                FallbackWidgetsLocalizationsDelegate(),
               ],
                 routerConfig: _router,
                 // Tamaño de texto y movimiento elegidos en Configuración.
