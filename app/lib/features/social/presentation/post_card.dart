@@ -5,6 +5,7 @@ import '../../../core/l10n/l10n.dart';
 import '../data/social_api.dart';
 import '../domain/models.dart';
 import 'person_avatar.dart';
+import 'post_actions.dart';
 
 /// Tarjeta de publicación (lámina, sección 11 "Perfil y comunidad").
 class PostCard extends StatelessWidget {
@@ -15,6 +16,7 @@ class PostCard extends StatelessWidget {
     required this.onLike,
     required this.onOpen,
     this.onDelete,
+    this.onEdit,
   });
 
   final Post post;
@@ -25,12 +27,16 @@ class PostCard extends StatelessWidget {
   /// Solo se pasa cuando quien mira es el autor.
   final VoidCallback? onDelete;
 
+  /// Solo se pasa cuando quien mira es el autor.
+  final VoidCallback? onEdit;
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final image = api.url(post.image);
     final onDelete = this.onDelete;
+    final onEdit = this.onEdit;
 
     return Card(
       key: Key('post-${post.id}'),
@@ -47,16 +53,26 @@ class PostCard extends StatelessWidget {
                 formatWhen(context, post.createdAt),
                 if (post.locationName != null) post.locationName!,
                 if (post.visibility == 'followers') l10n.visibilityFollowers,
+                if (post.editedAt != null) l10n.editedLabel,
               ].join(' · '),
             ),
-            trailing: onDelete == null
-                ? null
-                : PopupMenuButton<String>(
-                    onSelected: (_) => onDelete(),
-                    itemBuilder: (context) => [
-                      PopupMenuItem(value: 'delete', child: Text(l10n.deletePost)),
-                    ],
-                  ),
+            trailing: PopupMenuButton<String>(
+              key: Key('post-menu-${post.id}'),
+              onSelected: (v) {
+                if (v == 'edit') {
+                  onEdit?.call();
+                } else if (v == 'delete') {
+                  onDelete?.call();
+                } else {
+                  sharePost(context, post);
+                }
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(key: const Key('post-share'), value: 'share', child: Text(l10n.sharePost)),
+                if (onEdit != null) PopupMenuItem(key: const Key('post-edit'), value: 'edit', child: Text(l10n.editPost)),
+                if (onDelete != null) PopupMenuItem(key: const Key('post-delete'), value: 'delete', child: Text(l10n.deletePost)),
+              ],
+            ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),

@@ -626,5 +626,19 @@
   "consentAgeHint": "If you are younger, ask a responsible adult to review it with you.",
   "consentAccept": "Accept and continue",
   "languageDraftNote": "Draft translation: it must be reviewed by native speakers. Text not yet translated is shown in Spanish.",
-  "languageMachineNote": "Translation prepared with the help of artificial intelligence; tell us via Contact if something is unclear."
+  "languageMachineNote": "Translation prepared with the help of artificial intelligence; tell us via Contact if something is unclear.",
+  "searchPeopleTitle": "Search people",
+  "searchPeopleHint": "Name or @username",
+  "searchPeopleMinChars": "Type at least 2 letters to search.",
+  "searchPeopleEmpty": "No people found with that name.",
+  "suggestionsTitle": "Suggested for you",
+  "mutualsCount": "{count, plural, =1{1 in common} other{{count} in common}}",
+  "followsYou": "Follows you",
+  "followBack": "Follow back",
+  "unfollowConfirm": "Unfollow {name}?",
+  "editPost": "Edit post",
+  "postUpdated": "Post updated.",
+  "editedLabel": "edited",
+  "sharePost": "Share",
+  "linkCopied": "Link copied."
 }

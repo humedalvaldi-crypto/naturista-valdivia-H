@@ -626,5 +626,19 @@
   "consentAgeHint": "إذا كنت أصغر سنًا، فاطلب من شخص بالغ مسؤول أن يراجعها معك.",
   "consentAccept": "موافقة ومتابعة",
   "languageDraftNote": "ترجمة أولية: يجب أن يراجعها متحدثون أصليون. يظهر النص غير المترجَم بعد بالإسبانية.",
-  "languageMachineNote": "أُعدّت هذه الترجمة بمساعدة الذكاء الاصطناعي؛ أخبرنا عبر «التواصل» إن كان شيء غير واضح."
+  "languageMachineNote": "أُعدّت هذه الترجمة بمساعدة الذكاء الاصطناعي؛ أخبرنا عبر «التواصل» إن كان شيء غير واضح.",
+  "searchPeopleTitle": "البحث عن أشخاص",
+  "searchPeopleHint": "الاسم أو ‎@اسم_المستخدم",
+  "searchPeopleMinChars": "اكتب حرفين على الأقل للبحث.",
+  "searchPeopleEmpty": "لم نعثر على أشخاص بهذا الاسم.",
+  "suggestionsTitle": "مقترحات لك",
+  "mutualsCount": "{count, plural, =1{شخص مشترك واحد} other{{count} مشتركون}}",
+  "followsYou": "يتابعك",
+  "followBack": "تابِع أيضًا",
+  "unfollowConfirm": "إلغاء متابعة {name}؟",
+  "editPost": "تعديل المنشور",
+  "postUpdated": "تم تحديث المنشور.",
+  "editedLabel": "معدَّل",
+  "sharePost": "مشاركة",
+  "linkCopied": "تم نسخ الرابط."
 }

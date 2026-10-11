@@ -16,6 +16,7 @@ import '../../features/home/presentation/home_page.dart';
 import '../../features/messages/presentation/chat_page.dart';
 import '../../features/messages/presentation/messages_page.dart';
 import '../../features/people/presentation/person_page.dart';
+import '../../features/people/presentation/search_people_page.dart';
 import '../../features/notebooks/presentation/notebook_detail_page.dart';
 import '../../features/notebooks/presentation/notebooks_page.dart';
 import '../../features/notifications/presentation/notifications_page.dart';
@@ -185,6 +186,7 @@ GoRouter buildRouter({
         path: '/community/new',
         builder: (context, state) => ComposePostPage(communitySlug: state.uri.queryParameters['community']),
       ),
+      GoRoute(path: '/people/search', builder: (context, state) => const SearchPeoplePage()),
       GoRoute(
         path: '/people/:id',
         builder: (context, state) => PersonPage(userId: state.pathParameters['id']!),

@@ -55,6 +55,16 @@ class SocialApi {
 
   Future<void> deletePost(String id) => _api.delete('/posts/$id');
 
+  /// Edita una publicación propia; el servidor devuelve la versión guardada.
+  Future<Post> updatePost(String id, {String? body, String? visibility, String? locationName}) async {
+    final res = await _api.patch('/posts/$id', {
+      'body': ?body,
+      'visibility': ?visibility,
+      if (locationName != null) 'locationName': locationName.trim().isEmpty ? null : locationName.trim(),
+    });
+    return Post.fromJson(res['data'] as Map<String, dynamic>);
+  }
+
   Future<ResultPage<Comment>> comments(String postId, {String? cursor}) async {
     final body = await _api.get('/posts/$postId/comments${_q({'cursor': cursor, 'limit': '50'})}', authenticated: _api.hasSession);
     return ResultPage(_list(body).map(Comment.fromJson).toList(), body['nextCursor'] as String?);
@@ -116,6 +126,16 @@ class SocialApi {
       await _api.delete('/users/$userId/follow');
     }
   }
+
+  /// Busca personas por nombre o usuario (mínimo 2 letras), paginado.
+  Future<ResultPage<PersonResult>> searchPeople(String query, {String? cursor}) async {
+    final body = await _api.get('/users${_q({'q': query, 'cursor': cursor, 'limit': '20'})}', authenticated: _api.hasSession);
+    return ResultPage(_list(body).map(PersonResult.fromJson).toList(), body['nextCursor'] as String?);
+  }
+
+  /// Personas que siguen quienes sigo (requiere sesión).
+  Future<List<PersonResult>> suggestions() async =>
+      _list(await _api.get('/users/suggestions')).map(PersonResult.fromJson).toList();
 
   Future<void> block(String userId) => _api.put('/users/$userId/block');
 

@@ -9,6 +9,7 @@ import '../../../shared/widgets/state_views.dart';
 import '../../auth/application/auth_controller.dart';
 import '../data/social_api.dart';
 import '../domain/models.dart';
+import 'post_actions.dart';
 import 'post_card.dart';
 
 /// Pestaña Comunidad: feed "Todo" y "Siguiendo", publicar, me gusta.
@@ -40,6 +41,12 @@ class _SocialFeedPageState extends State<SocialFeedPage> {
         appBar: AppBar(
           title: Text(l10n.navCommunity),
           actions: [
+            IconButton(
+              key: const Key('search-people'),
+              tooltip: l10n.searchPeopleTitle,
+              icon: const Icon(Icons.person_search_outlined),
+              onPressed: () => context.push('/people/search'),
+            ),
             IconButton(
               tooltip: l10n.communitiesTitle,
               icon: const Icon(Icons.groups_outlined),
@@ -179,6 +186,15 @@ class FeedListState extends State<FeedList> {
     }
   }
 
+  Future<void> _edit(Post post) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
+    final saved = await editPost(context, widget.api, post);
+    if (saved == null) return;
+    _controller.replace((p) => p.id == post.id, saved);
+    messenger.showSnackBar(SnackBar(content: Text(l10n.postUpdated)));
+  }
+
   Future<void> _open(Post post) async {
     final updated = await context.push<Post>('/posts/${post.id}');
     if (updated != null) _controller.replace((p) => p.id == post.id, updated);
@@ -223,6 +239,7 @@ class FeedListState extends State<FeedList> {
                     onLike: () => _toggleLike(post),
                     onOpen: () => _open(post),
                     onDelete: post.author.id == me ? () => _delete(post) : null,
+                    onEdit: post.author.id == me ? () => _edit(post) : null,
                   ),
                 ),
               );

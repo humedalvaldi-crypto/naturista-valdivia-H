@@ -626,5 +626,19 @@
   "consentAgeHint": "Si vous êtes plus jeune, demandez à un adulte responsable de le lire avec vous.",
   "consentAccept": "Accepter et continuer",
   "languageDraftNote": "Traduction provisoire : elle doit être relue par des locuteurs natifs. Le texte non traduit s'affiche en espagnol.",
-  "languageMachineNote": "Traduction préparée avec l'aide de l'intelligence artificielle ; signalez-nous via Contact si quelque chose n'est pas clair."
+  "languageMachineNote": "Traduction préparée avec l'aide de l'intelligence artificielle ; signalez-nous via Contact si quelque chose n'est pas clair.",
+  "searchPeopleTitle": "Rechercher des personnes",
+  "searchPeopleHint": "Nom ou @identifiant",
+  "searchPeopleMinChars": "Saisissez au moins 2 lettres pour rechercher.",
+  "searchPeopleEmpty": "Aucune personne trouvée avec ce nom.",
+  "suggestionsTitle": "Suggestions pour vous",
+  "mutualsCount": "{count, plural, =1{1 en commun} other{{count} en commun}}",
+  "followsYou": "Vous suit",
+  "followBack": "Suivre en retour",
+  "unfollowConfirm": "Ne plus suivre {name} ?",
+  "editPost": "Modifier la publication",
+  "postUpdated": "Publication mise à jour.",
+  "editedLabel": "modifié",
+  "sharePost": "Partager",
+  "linkCopied": "Lien copié."
 }

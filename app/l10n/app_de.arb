@@ -626,5 +626,19 @@
   "consentAgeHint": "Wenn du jünger bist, bitte eine verantwortliche erwachsene Person, es mit dir durchzugehen.",
   "consentAccept": "Akzeptieren und fortfahren",
   "languageDraftNote": "Übersetzungsentwurf: Er muss von Muttersprachlern geprüft werden. Noch nicht übersetzter Text erscheint auf Spanisch.",
-  "languageMachineNote": "Übersetzung mit Hilfe künstlicher Intelligenz erstellt; sag uns über Kontakt Bescheid, wenn etwas unklar ist."
+  "languageMachineNote": "Übersetzung mit Hilfe künstlicher Intelligenz erstellt; sag uns über Kontakt Bescheid, wenn etwas unklar ist.",
+  "searchPeopleTitle": "Personen suchen",
+  "searchPeopleHint": "Name oder @Nutzername",
+  "searchPeopleMinChars": "Gib mindestens 2 Buchstaben ein.",
+  "searchPeopleEmpty": "Keine Personen mit diesem Namen gefunden.",
+  "suggestionsTitle": "Vorschläge für dich",
+  "mutualsCount": "{count, plural, =1{1 gemeinsam} other{{count} gemeinsam}}",
+  "followsYou": "Folgt dir",
+  "followBack": "Zurückfolgen",
+  "unfollowConfirm": "{name} nicht mehr folgen?",
+  "editPost": "Beitrag bearbeiten",
+  "postUpdated": "Beitrag aktualisiert.",
+  "editedLabel": "bearbeitet",
+  "sharePost": "Teilen",
+  "linkCopied": "Link kopiert."
 }

@@ -626,5 +626,19 @@
   "consentAgeHint": "如果你未满此年龄，请让一位负责任的成年人和你一起阅读。",
   "consentAccept": "接受并继续",
   "languageDraftNote": "翻译草稿：需由母语者审校。尚未翻译的文字以西班牙语显示。",
-  "languageMachineNote": "本翻译借助人工智能完成；如有不清楚之处，请通过“联系我们”告诉我们。"
+  "languageMachineNote": "本翻译借助人工智能完成；如有不清楚之处，请通过“联系我们”告诉我们。",
+  "searchPeopleTitle": "搜索用户",
+  "searchPeopleHint": "姓名或 @用户名",
+  "searchPeopleMinChars": "请至少输入 2 个字符进行搜索。",
+  "searchPeopleEmpty": "没有找到该名字的用户。",
+  "suggestionsTitle": "为你推荐",
+  "mutualsCount": "{count, plural, other{{count} 位共同关注}}",
+  "followsYou": "关注了你",
+  "followBack": "回关",
+  "unfollowConfirm": "取消关注 {name}？",
+  "editPost": "编辑动态",
+  "postUpdated": "动态已更新。",
+  "editedLabel": "已编辑",
+  "sharePost": "分享",
+  "linkCopied": "链接已复制。"
 }

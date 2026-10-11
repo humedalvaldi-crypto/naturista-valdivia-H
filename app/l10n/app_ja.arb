@@ -626,5 +626,19 @@
   "consentAgeHint": "この年齢に満たない場合は、責任ある大人にいっしょに読んでもらってください。",
   "consentAccept": "同意して続ける",
   "languageDraftNote": "翻訳の下書きです：ネイティブ話者による確認が必要です。まだ翻訳されていない文はスペイン語で表示されます。",
-  "languageMachineNote": "この翻訳は人工知能の助けを借りて作成しました。わかりにくい点があれば「お問い合わせ」からお知らせください。"
+  "languageMachineNote": "この翻訳は人工知能の助けを借りて作成しました。わかりにくい点があれば「お問い合わせ」からお知らせください。",
+  "searchPeopleTitle": "ユーザーを検索",
+  "searchPeopleHint": "名前または @ユーザー名",
+  "searchPeopleMinChars": "2文字以上入力して検索してください。",
+  "searchPeopleEmpty": "その名前のユーザーは見つかりませんでした。",
+  "suggestionsTitle": "おすすめ",
+  "mutualsCount": "{count, plural, other{共通 {count} 人}}",
+  "followsYou": "フォローされています",
+  "followBack": "フォローバック",
+  "unfollowConfirm": "{name} さんのフォローを解除しますか？",
+  "editPost": "投稿を編集",
+  "postUpdated": "投稿を更新しました。",
+  "editedLabel": "編集済み",
+  "sharePost": "共有",
+  "linkCopied": "リンクをコピーしました。"
 }

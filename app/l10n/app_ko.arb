@@ -626,5 +626,19 @@
   "consentAgeHint": "이 나이보다 어리다면 책임 있는 어른과 함께 읽어 보세요.",
   "consentAccept": "동의하고 계속하기",
   "languageDraftNote": "번역 초안입니다. 원어민의 검토가 필요합니다. 아직 번역되지 않은 글은 스페인어로 표시됩니다.",
-  "languageMachineNote": "이 번역은 인공지능의 도움을 받아 만들었습니다. 이해하기 어려운 부분이 있으면 문의로 알려 주세요."
+  "languageMachineNote": "이 번역은 인공지능의 도움을 받아 만들었습니다. 이해하기 어려운 부분이 있으면 문의로 알려 주세요.",
+  "searchPeopleTitle": "사람 검색",
+  "searchPeopleHint": "이름 또는 @사용자명",
+  "searchPeopleMinChars": "검색하려면 2글자 이상 입력하세요.",
+  "searchPeopleEmpty": "해당 이름의 사람을 찾지 못했습니다.",
+  "suggestionsTitle": "추천",
+  "mutualsCount": "{count, plural, other{함께 아는 사람 {count}명}}",
+  "followsYou": "나를 팔로우함",
+  "followBack": "맞팔로우",
+  "unfollowConfirm": "{name} 님을 언팔로우할까요?",
+  "editPost": "게시물 수정",
+  "postUpdated": "게시물이 수정되었습니다.",
+  "editedLabel": "수정됨",
+  "sharePost": "공유",
+  "linkCopied": "링크가 복사되었습니다."
 }

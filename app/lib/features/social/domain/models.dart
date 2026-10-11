@@ -38,6 +38,7 @@ class Post {
     this.likeCount = 0,
     this.likedByMe = false,
     this.bookmarkedByMe = false,
+    this.editedAt,
   });
 
   factory Post.fromJson(Map<String, dynamic> j) => Post(
@@ -53,6 +54,7 @@ class Post {
         likedByMe: j['likedByMe'] as bool? ?? false,
         bookmarkedByMe: j['bookmarkedByMe'] as bool? ?? false,
         createdAt: _date(j['createdAt']),
+        editedAt: j['editedAt'] == null ? null : _date(j['editedAt']),
       );
 
   final String id;
@@ -68,6 +70,9 @@ class Post {
   final bool bookmarkedByMe;
   final DateTime createdAt;
 
+  /// Última edición por su autor (null si nunca se editó).
+  final DateTime? editedAt;
+
   Post copyWith({int? likeCount, bool? likedByMe, int? commentCount, bool? bookmarkedByMe}) => Post(
         id: id,
         author: author,
@@ -81,6 +86,7 @@ class Post {
         likedByMe: likedByMe ?? this.likedByMe,
         bookmarkedByMe: bookmarkedByMe ?? this.bookmarkedByMe,
         createdAt: createdAt,
+        editedAt: editedAt,
       );
 }
 
@@ -186,6 +192,7 @@ class PersonSummary {
     required this.posts,
     required this.followedByMe,
     required this.isMe,
+    this.followsMe = false,
     this.bio,
     this.location,
   });
@@ -205,6 +212,7 @@ class PersonSummary {
       following: (counts['following'] as num?)?.toInt() ?? 0,
       posts: (counts['posts'] as num?)?.toInt() ?? 0,
       followedByMe: j['followedByMe'] as bool? ?? false,
+      followsMe: j['followsMe'] as bool? ?? false,
       isMe: j['isMe'] as bool? ?? false,
       bio: profile?['bio'] as String?,
       location: profile?['location'] as String?,
@@ -217,9 +225,34 @@ class PersonSummary {
   final int following;
   final int posts;
   final bool followedByMe;
+
+  /// Esta persona me sigue.
+  final bool followsMe;
   final bool isMe;
   final String? bio;
   final String? location;
+}
+
+/// Resultado de búsqueda o sugerencia de personas.
+class PersonResult {
+  const PersonResult({required this.person, this.followedByMe = false, this.followsMe = false, this.mutuals});
+
+  factory PersonResult.fromJson(Map<String, dynamic> j) => PersonResult(
+        person: Person.fromJson(j),
+        followedByMe: j['followedByMe'] as bool? ?? false,
+        followsMe: j['followsMe'] as bool? ?? false,
+        mutuals: (j['mutuals'] as num?)?.toInt(),
+      );
+
+  final Person person;
+  final bool followedByMe;
+  final bool followsMe;
+
+  /// En sugerencias: cuántas personas que sigo la siguen.
+  final int? mutuals;
+
+  PersonResult copyWith({bool? followedByMe}) =>
+      PersonResult(person: person, followedByMe: followedByMe ?? this.followedByMe, followsMe: followsMe, mutuals: mutuals);
 }
 
 class Conversation {

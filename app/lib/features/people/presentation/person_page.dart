@@ -10,6 +10,7 @@ import '../../social/data/social_api.dart';
 import '../../social/domain/models.dart';
 import '../../social/presentation/person_avatar.dart';
 import '../../social/presentation/social_page.dart';
+import 'follow_confirm.dart';
 
 /// Perfil de otra persona (lámina, pantalla 118): seguir, escribir, bloquear,
 /// denunciar y ver sus publicaciones.
@@ -87,8 +88,11 @@ class _PersonPageState extends State<PersonPage> {
 
   Future<void> _toggleFollow(PersonSummary s) async {
     if (!_requireSignIn()) return;
+    if (s.followedByMe && !await confirmUnfollow(context, s.person.name)) return;
+    if (!mounted) return;
     await _run(() => _api.setFollowing(s.person.id, !s.followedByMe));
-    await _load();
+    // Los contadores se vuelven a leer del servidor.
+    if (mounted) await _load();
   }
 
   Future<void> _message(PersonSummary s) async {
@@ -144,6 +148,11 @@ class _PersonPageState extends State<PersonPage> {
             const SizedBox(height: 10),
             Text(s.person.name, style: theme.textTheme.titleLarge),
             if (s.person.username != null) Text('@${s.person.username}', style: theme.textTheme.bodyMedium),
+            if (s.followsMe && !s.isMe)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Chip(key: const Key('follows-you'), label: Text(l10n.followsYou), visualDensity: VisualDensity.compact),
+              ),
             if (s.bio != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(s.bio!, textAlign: TextAlign.center)),
             const SizedBox(height: 10),
             Wrap(
@@ -160,7 +169,7 @@ class _PersonPageState extends State<PersonPage> {
                 children: [
                   s.followedByMe
                       ? OutlinedButton(key: const Key('unfollow'), onPressed: _busy ? null : () => _toggleFollow(s), child: Text(l10n.unfollow))
-                      : FilledButton(key: const Key('follow'), onPressed: _busy ? null : () => _toggleFollow(s), child: Text(l10n.follow)),
+                      : FilledButton(key: const Key('follow'), onPressed: _busy ? null : () => _toggleFollow(s), child: Text(s.followsMe ? l10n.followBack : l10n.follow)),
                   OutlinedButton.icon(
                     key: const Key('message-person'),
                     onPressed: _busy ? null : () => _message(s),

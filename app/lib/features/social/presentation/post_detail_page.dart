@@ -9,6 +9,7 @@ import '../../auth/application/auth_controller.dart';
 import '../data/social_api.dart';
 import '../domain/models.dart';
 import 'person_avatar.dart';
+import 'post_actions.dart';
 import 'post_card.dart';
 
 /// Publicación con sus comentarios. Al volver devuelve la publicación actualizada.
@@ -123,10 +124,22 @@ class _PostDetailPageState extends State<PostDetailPage> {
     }
   }
 
+  Future<void> _edit() async {
+    final post = _post;
+    if (post == null) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
+    final saved = await editPost(context, _api, post);
+    if (saved == null || !mounted) return;
+    setState(() => _post = saved);
+    messenger.showSnackBar(SnackBar(content: Text(l10n.postUpdated)));
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final post = _post;
+    final me = AuthScope.of(context).user?.uid;
     final signedIn = AuthScope.of(context).isSignedIn;
 
     Widget body;
@@ -143,7 +156,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
             child: ListView(
               padding: const EdgeInsets.all(12),
               children: [
-                PostCard(post: post, api: _api, onLike: _like, onOpen: () {}),
+                PostCard(post: post, api: _api, onLike: _like, onOpen: () {}, onEdit: post.author.id == me ? _edit : null),
                 const SizedBox(height: 16),
                 Text(l10n.commentsTitle, style: Theme.of(context).textTheme.titleMedium),
                 if (_comments.isEmpty)

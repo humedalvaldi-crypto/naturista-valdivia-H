@@ -88,15 +88,28 @@ class FakeApiServer {
     return p;
   }
 
-  Map<String, dynamic> addPerson(String id, String name, {int followers = 0}) => people[id] = {
+  /// Sugerencias que devuelve `/users/suggestions` (id → personas en común).
+  final suggestionMutuals = <String, int>{};
+
+  Map<String, dynamic> addPerson(String id, String name, {int followers = 0, bool followsMe = false, String? username}) => people[id] = {
         'id': id,
         'name': name,
-        'username': null,
+        'username': username,
         'profile': {'photo': null, 'bio': 'Observadora de aves'},
         'restricted': false,
         'counts': {'followers': followers, 'following': 0, 'posts': 0},
         'followedByMe': false,
+        'followsMe': followsMe,
         'isMe': false,
+      };
+
+  Map<String, dynamic> _personRow(Map<String, dynamic> u) => {
+        'id': u['id'],
+        'name': u['name'],
+        'username': u['username'],
+        'photo': null,
+        'followedByMe': u['followedByMe'],
+        'followsMe': u['followsMe'] ?? false,
       };
 
   Map<String, dynamic> addNotebook(String title, {String ownerId = 'u1', List<Map<String, dynamic>> elements = const []}) {
@@ -393,6 +406,14 @@ class FakeApiServer {
               return _json({'data': p}, 201);
             }
             final post = posts.firstWhere((p) => p['id'] == seg[1]);
+            if (seg.length == 2 && req.method == 'PATCH') {
+              if ((post['author'] as Map<String, dynamic>)['id'] != 'u1') return _json({'error': {'code': 'forbidden', 'message': 'No es tuya.'}}, 403);
+              for (final k in ['body', 'visibility', 'locationName']) {
+                if (body.containsKey(k)) post[k] = body[k];
+              }
+              post['editedAt'] = DateTime.utc(2026, 10, 10).toIso8601String();
+              return _json({'data': post});
+            }
             if (seg.length == 2) return _json({'data': post});
             if (seg[2] == 'like') {
               final liked = req.method == 'PUT';
@@ -418,6 +439,22 @@ class FakeApiServer {
           }
           if (seg.first == 'users' && seg.length == 3 && seg[2] == 'album') {
             return _json({'data': album});
+          }
+          if (seg.first == 'users' && seg.length == 1 && req.method == 'GET') {
+            // Búsqueda paginada de a 2 para probar "Cargar más".
+            final q = (req.url.queryParameters['q'] ?? '').toLowerCase();
+            final all = people.values.where((u) => (u['name'] as String).toLowerCase().contains(q) || ((u['username'] as String?) ?? '').contains(q)).toList();
+            final start = int.tryParse(req.url.queryParameters['cursor'] ?? '') ?? 0;
+            final page = all.skip(start).take(2).map(_personRow).toList();
+            final next = start + 2 < all.length ? '${start + 2}' : null;
+            return _json({'data': page, 'nextCursor': next});
+          }
+          if (seg.first == 'users' && seg.length == 2 && seg[1] == 'suggestions') {
+            return _json({
+              'data': [
+                for (final e in suggestionMutuals.entries) {..._personRow(people[e.key]!), 'mutuals': e.value},
+              ],
+            });
           }
           if (seg.first == 'users') {
             final u = people[seg[1]]!;
