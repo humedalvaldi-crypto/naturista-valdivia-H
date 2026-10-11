@@ -35,8 +35,19 @@ export interface CollectionStats {
   excludedPersonalFields: Record<string, number>;
   /** Forma (solo nombres de campos y tipos, nunca valores) de campos sin mapear que son objetos o listas. */
   unmappedShapes: Record<string, string[]>;
+  /**
+   * Distribución de valores de campos de tipo «enumeración» (visibilidad,
+   * categoría, contadores). Solo booleanos, números y textos cortos de una
+   * lista de campos permitidos: nunca nombres, correos ni textos libres.
+   */
+  values: Record<string, Record<string, number>>;
   notes: string[];
 }
+
+/** Campos cuyo valor se puede mostrar en el informe (no son datos personales). */
+export const VALUE_FIELDS: Record<string, string[]> = {
+  notebooks: ['visibility', 'privacy', 'isPublic', 'public', 'category', 'likes', 'likesCount', 'pageCount', 'pagesCount'],
+};
 
 export interface InlineFile {
   name: string;
@@ -56,7 +67,7 @@ export class Plan {
   collection(name: string): CollectionStats {
     let s = this.stats.get(name);
     if (!s) {
-      s = { read: 0, written: {}, skipped: {}, unmappedFields: {}, excludedPersonalFields: {}, unmappedShapes: {}, notes: [] };
+      s = { read: 0, written: {}, skipped: {}, unmappedFields: {}, excludedPersonalFields: {}, unmappedShapes: {}, values: {}, notes: [] };
       this.stats.set(name, s);
     }
     return s;
@@ -90,6 +101,24 @@ export class Plan {
     const s = this.collection(collection);
     const list = (s.unmappedShapes[field] ??= []);
     if (!list.includes(sig) && list.length < 5) list.push(sig);
+  }
+
+  /** Cuenta los valores de los campos permitidos en VALUE_FIELDS. */
+  values(collection: string, doc: Record<string, unknown>) {
+    const fields = VALUE_FIELDS[collection];
+    if (!fields) return;
+    const s = this.collection(collection);
+    for (const f of fields) {
+      const v = doc[f];
+      let key: string;
+      if (v === undefined) continue;
+      if (v === null) key = 'null';
+      else if (typeof v === 'boolean' || typeof v === 'number') key = `${typeof v}:${v}`;
+      else if (typeof v === 'string') key = v.length <= 24 ? `«${v}»` : `texto de ${v.length} letras`;
+      else key = Array.isArray(v) ? `lista(${v.length})` : 'objeto';
+      const m = (s.values[f] ??= {});
+      m[key] = (m[key] ?? 0) + 1;
+    }
   }
 
   excluded(collection: string, field: string) {

@@ -1,1 +1,1 @@
-{ "mode": "migrar", "confirm": "MIGRAR", "nota": "Repetición autorizada: álbumes con nombres alternativos. Idempotente; Firebase no se modifica." }
+{ "mode": "ensayo", "nota": "Ensayo de solo lectura: distribución de valores de visibilidad, categoría y me gusta de los cuadernos." }

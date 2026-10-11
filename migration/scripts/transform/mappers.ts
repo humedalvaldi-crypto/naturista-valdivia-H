@@ -452,6 +452,7 @@ export function mapPost(ctx: Context, d: SnapshotDoc) {
 export function mapNotebook(ctx: Context, d: SnapshotDoc) {
   const c = 'notebooks';
   ctx.plan.collection(c).read++;
+  ctx.plan.values(c, d.data);
   const r = new FieldReader(d.data);
   const owner = ctx.owner(c, r.str('userId', 'ownerId', 'uid'));
   if (!owner) return finish(ctx, c, r);

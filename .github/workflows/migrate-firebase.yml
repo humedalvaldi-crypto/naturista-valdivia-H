@@ -167,6 +167,8 @@ jobs:
               if personal: line += f" · datos personales no copiados: {personal}"
               if unmapped: line += f" · campos sin mapear: {unmapped}"
               lines.append(line)
+              for field, vals in c.get("values", {}).items():
+                  lines.append(f"    valores de {name}.{field}: " + ", ".join(f"{k} ({v})" for k, v in sorted(vals.items(), key=lambda x: -x[1])))
               for field, shapes in c.get("unmappedShapes", {}).items():
                   lines.append(f"    forma de {name}.{field}: " + " || ".join(shapes))
           print("::notice title=Plan de migración::" + "%0A".join(l.replace("%", "%25") for l in lines))
