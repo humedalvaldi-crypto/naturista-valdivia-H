@@ -19,7 +19,7 @@ void main() {
     final server = FakeApiServer()
       ..addPost('Vi un huillín en el Calle-Calle')
       ..addPost('Copihues en flor');
-    await pumpTestApp(tester, at: '/community', api: server.client);
+    await pumpTestApp(tester, at: '/posts', api: server.client);
     expect(find.text('Copihues en flor'), findsOneWidget);
     expect(find.text('Vi un huillín en el Calle-Calle'), findsOneWidget);
   });
@@ -27,7 +27,7 @@ void main() {
   testWidgets('sin sesión, "me gusta" pide iniciar sesión y no llama al servidor', (tester) async {
     final server = FakeApiServer();
     final p = server.addPost('Garza grande');
-    await pumpTestApp(tester, at: '/community', api: server.client);
+    await pumpTestApp(tester, at: '/posts', api: server.client);
     await tester.tap(find.byKey(Key('like-${p['id']}')));
     await tester.pump();
     expect(find.text('Inicia sesión para publicar, comentar y dar me gusta.'), findsOneWidget);
@@ -37,7 +37,7 @@ void main() {
   testWidgets('con sesión, "me gusta" actualiza el contador', (tester) async {
     final server = FakeApiServer();
     final p = server.addPost('Cisnes de cuello negro', likes: 2);
-    await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/community', api: server.client);
+    await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/posts', api: server.client);
     expect(find.text('2 me gusta'), findsOneWidget);
     await tester.tap(find.byKey(Key('like-${p['id']}')));
     await tester.pumpAndSettle();
@@ -47,7 +47,7 @@ void main() {
 
   testWidgets('publicar agrega la publicación arriba del feed', (tester) async {
     final server = FakeApiServer()..addPost('Anterior');
-    await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/community', api: server.client);
+    await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/posts', api: server.client);
     await tester.tap(find.byKey(const Key('new-post')));
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('compose-body')), 'Primer chucao del día');
@@ -73,7 +73,7 @@ void main() {
     final server = FakeApiServer()
       ..addPost('Ranita de Darwin')
       ..failNext = true;
-    await pumpTestApp(tester, at: '/community', api: server.client);
+    await pumpTestApp(tester, at: '/posts', api: server.client);
     expect(find.text('Error interno del servidor.'), findsOneWidget);
     await tester.tap(find.text('Reintentar'));
     await tester.pumpAndSettle();

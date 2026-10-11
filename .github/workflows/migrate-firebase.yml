@@ -167,6 +167,8 @@ jobs:
               if personal: line += f" · datos personales no copiados: {personal}"
               if unmapped: line += f" · campos sin mapear: {unmapped}"
               lines.append(line)
+              for note in c.get("notes", []):
+                  lines.append(f"    {name}: {note}")
               for field, vals in c.get("values", {}).items():
                   lines.append(f"    valores de {name}.{field}: " + ", ".join(f"{k} ({v})" for k, v in sorted(vals.items(), key=lambda x: -x[1])))
               for field, shapes in c.get("unmappedShapes", {}).items():

@@ -110,6 +110,7 @@ class FakeApiServer {
         'photo': null,
         'followedByMe': u['followedByMe'],
         'followsMe': u['followsMe'] ?? false,
+        'followers': (u['counts'] as Map<String, dynamic>)['followers'],
       };
 
   Map<String, dynamic> addNotebook(String title, {String ownerId = 'u1', List<Map<String, dynamic>> elements = const []}) {
@@ -244,8 +245,35 @@ class FakeApiServer {
     return null;
   }
 
-  http.Response? _notebooksRoute(String method, List<String> seg, Map<String, dynamic> body) {
+  /// A quién sigue la cuenta de prueba (para «Siguiendo» en Explorar).
+  final followingIds = <String>{};
+
+  /// Seguidores / seguidos por persona (para las pestañas del perfil).
+  final followersOf = <String, List<String>>{};
+  final followingOf = <String, List<String>>{};
+
+  Map<String, dynamic> _ownerOf(String id) {
+    final u = people[id];
+    return {'id': id, 'name': u?['name'] ?? (id == 'u1' ? 'Eva' : 'Naturalista'), 'username': u?['username'], 'photo': null};
+  }
+
+  http.Response? _notebooksRoute(String method, List<String> seg, Map<String, dynamic> body, [Map<String, String> query = const {}]) {
     if (seg.first == 'notebooks') {
+      if (seg.length == 2 && seg[1] == 'explore' && method == 'GET') {
+        final q = (query['q'] ?? '').toLowerCase();
+        final following = query['following'] == '1';
+        final all = notebooks
+            .where((n) => n['visibility'] == 'public')
+            .where((n) => q.isEmpty || (n['title'] as String).toLowerCase().contains(q))
+            .where((n) => !following || followingIds.contains(n['ownerId']))
+            .toList();
+        final start = int.tryParse(query['cursor'] ?? '') ?? 0;
+        final page = [for (final n in all.skip(start).take(2)) {...n, 'owner': _ownerOf(n['ownerId'] as String)}];
+        return _json({'data': page, 'nextCursor': start + 2 < all.length ? '${start + 2}' : null});
+      }
+      if (seg.length == 1 && method == 'GET' && query['owner'] != null && query['owner'] != 'u1') {
+        return _json({'data': notebooks.where((n) => n['ownerId'] == query['owner'] && n['visibility'] == 'public').toList()});
+      }
       if (seg.length == 2 && seg[1] == 'trash' && method == 'GET') return _json({'data': trashed});
       if (seg.length == 3 && seg[2] == 'restore' && method == 'POST') {
         final t = trashed.where((n) => n['id'] == seg[1]).firstOrNull;
@@ -254,16 +282,22 @@ class FakeApiServer {
         notebooks.add(t..remove('deletedAt'));
         return _json({'data': t});
       }
-      if (seg.length == 1 && method == 'GET') return _json({'data': notebooks});
+      if (seg.length == 1 && method == 'GET') return _json({'data': notebooks.where((n) => n['ownerId'] == 'u1').toList()});
       if (seg.length == 1 && method == 'POST') {
         final nb = addNotebook(body['title'] as String);
         nb['color'] = body['color'] ?? nb['color'];
         nb['description'] = body['description'];
+        nb['visibility'] = body['visibility'] ?? 'private';
+        nb['category'] = body['category'];
         return _json({'data': nb}, 201);
       }
       final nb = notebooks.where((n) => n['id'] == seg[1]).firstOrNull;
       if (nb == null) return null;
-      if (seg.length == 2 && method == 'GET') return _json({'data': nb});
+      if (seg.length == 2 && method == 'GET') {
+        // Como el servidor: un cuaderno privado ajeno no existe.
+        if (nb['visibility'] != 'public' && nb['ownerId'] != 'u1') return _json({'error': {'code': 'not_found', 'message': 'Cuaderno no encontrado.'}}, 404);
+        return _json({'data': {...nb, 'owner': _ownerOf(nb['ownerId'] as String)}});
+      }
       if (seg.length == 3 && seg[2] == 'like') {
         final liked = method == 'PUT';
         if (liked != (nb['likedByMe'] ?? false)) nb['likeCount'] = ((nb['likeCount'] as int?) ?? 0) + (liked ? 1 : -1);
@@ -396,7 +430,7 @@ class FakeApiServer {
           }
           final observationResponse = _observationsRoute(req.method, seg, body, req.url.queryParameters);
           if (observationResponse != null) return observationResponse;
-          final notebookResponse = _notebooksRoute(req.method, seg, body);
+          final notebookResponse = _notebooksRoute(req.method, seg, body, req.url.queryParameters);
           if (notebookResponse != null) return notebookResponse;
           if (seg.first == 'posts') {
             if (seg.length == 1 && req.method == 'GET') return _json({'data': posts, 'nextCursor': null});
@@ -455,6 +489,10 @@ class FakeApiServer {
                 for (final e in suggestionMutuals.entries) {..._personRow(people[e.key]!), 'mutuals': e.value},
               ],
             });
+          }
+          if (seg.first == 'users' && seg.length == 3 && (seg[2] == 'followers' || seg[2] == 'following') && req.method == 'GET') {
+            final ids = (seg[2] == 'followers' ? followersOf : followingOf)[seg[1]] ?? const <String>[];
+            return _json({'data': [for (final id in ids) _personRow(people[id]!)], 'nextBefore': null});
           }
           if (seg.first == 'users') {
             final u = people[seg[1]]!;

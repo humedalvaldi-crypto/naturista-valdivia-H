@@ -47,9 +47,10 @@ void main() {
     testWidgets('con menos de 2 letras no consulta al servidor', (tester) async {
       final server = FakeApiServer()..addPerson('u2', 'Beto Pérez');
       await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/people/search', api: server.client);
+      final before = server.requests.where((r) => r == 'GET /users').length; // directorio inicial
       await _type(tester, 'b');
       expect(find.text('Escribe al menos 2 letras para buscar.'), findsOneWidget);
-      expect(server.requests.where((r) => r == 'GET /users'), isEmpty);
+      expect(server.requests.where((r) => r == 'GET /users').length, before);
     });
 
     testWidgets('sin resultados muestra un aviso', (tester) async {
@@ -112,7 +113,7 @@ void main() {
     testWidgets('edita una publicación propia y muestra "editado"', (tester) async {
       final server = FakeApiServer();
       final p = server.addPost('Garza en el humedal', authorId: 'u1', authorName: 'Eva');
-      await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/community', api: server.client);
+      await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/posts', api: server.client);
 
       await tester.tap(find.byKey(Key('post-menu-${p['id']}')));
       await tester.pumpAndSettle();
@@ -136,7 +137,7 @@ void main() {
       };
       final server = FakeApiServer();
       final p = server.addPost('Huillín en el río');
-      await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/community', api: server.client);
+      await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/posts', api: server.client);
 
       await tester.tap(find.byKey(Key('post-menu-${p['id']}')));
       await tester.pumpAndSettle();

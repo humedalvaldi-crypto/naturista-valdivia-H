@@ -19,6 +19,7 @@ import {
   mapSettings,
   mapSpecies,
   mapUserCollection,
+  publicNotebookMediaStatement,
   recountStatements,
   type AuthUser,
   type CatalogSpecies,
@@ -112,6 +113,9 @@ export function transform(snapshotDir: string, outDir: string, migrationsDir: st
       `UPDATE ${l.table} SET ${l.column} = ${lit(l.assetId)} WHERE ${where} AND ${l.column} IS NULL AND EXISTS (SELECT 1 FROM media_assets WHERE id = ${lit(l.assetId)});`,
     );
   }
+
+  // Archivos de cuadernos públicos (también los corregidos en 095): deben poder verse, como al publicar en la app.
+  plan.statements.get('920-public-notebook-media')!.push(publicNotebookMediaStatement());
 
   const handled = new Set([
     'settings', 'species_catalog', 'user_file_assets', 'profiles', 'groups', 'group_members', 'follows', 'posts',

@@ -1,8 +1,9 @@
 import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
-import { NotebooksRepository, type ElementRow, type NotebookRow, type PageRow } from '../repositories/notebooks';
+import { NotebooksRepository, type ElementRow, type ExploreRow, type NotebookRow, type PageRow } from '../repositories/notebooks';
 import { UsersRepository } from '../repositories/users';
-import { mediaPath, parseBody } from '../services/dto';
+import { mediaPath, parseBody, personDto } from '../services/dto';
+import { parseLimit } from '../services/pagination';
 import { badRequest, HttpError, notFound } from '../services/http-error';
 import type { AppBindings } from '../types/env';
 import {
@@ -26,9 +27,22 @@ const notebookDto = (n: NotebookRow) => ({
   color: n.color,
   cover: mediaPath(n.cover_asset_id),
   visibility: n.visibility,
+  category: n.category ?? null,
   pageCount: n.page_count,
   createdAt: n.created_at,
   updatedAt: n.updated_at,
+  ...(n.like_count !== undefined ? { likeCount: n.like_count, likedByMe: n.liked_by_me === 1 } : {}),
+});
+
+const exploreDto = (n: ExploreRow) => ({
+  ...notebookDto(n),
+  owner: personDto({
+    id: n.owner_id,
+    username: n.owner_username,
+    full_name: n.owner_full_name,
+    display_name: n.owner_display_name,
+    photo_asset_id: n.owner_photo_asset_id,
+  }),
 });
 
 const pageDto = (p: PageRow) => ({
@@ -98,6 +112,7 @@ async function checkMedia(db: D1Database, ownerId: string, ids: string[], makePu
 /**
  * /api/v1/notebooks
  * GET    /?owner=<uid>          cuadernos (míos con sesión; de otra persona, solo públicos)
+ * GET    /explore?q=&following=1&cursor=   cuadernos públicos de la comunidad (paginado)
  * POST   /                      crear
  * GET    /:id                   ver (dueña o público)
  * PATCH  /:id                   editar (dueña)
@@ -116,8 +131,34 @@ export const notebooksRoutes = new Hono<AppBindings>()
     const viewer = viewerOf(c);
     const owner = c.req.query('owner') ?? viewer;
     if (!owner) throw new HttpError(401, 'unauthorized', 'Autenticación requerida.');
-    const rows = await new NotebooksRepository(c.env.DB).listByOwner(owner, owner === viewer);
+    const rows = await new NotebooksRepository(c.env.DB).listByOwner(owner, owner === viewer, viewer);
     return c.json({ data: rows.map(notebookDto) });
+  })
+  .get('/explore', async (c) => {
+    const viewer = viewerOf(c);
+    const q = (c.req.query('q') ?? '').trim();
+    if (q.length > 60) throw badRequest('La búsqueda es demasiado larga.');
+    const following = c.req.query('following') === '1';
+    if (following && !viewer) throw new HttpError(401, 'unauthorized', 'Inicia sesión para ver los cuadernos de quienes sigues.');
+    const limit = parseLimit(c.req.query('limit'));
+    let after: { updatedAt: string; id: string } | null = null;
+    const raw = c.req.query('cursor');
+    if (raw) {
+      try {
+        const parsed = JSON.parse(atob(raw)) as { u?: unknown; i?: unknown };
+        if (typeof parsed.u !== 'string' || typeof parsed.i !== 'string') throw new Error();
+        after = { updatedAt: parsed.u, id: parsed.i };
+      } catch {
+        throw badRequest('Cursor inválido.');
+      }
+    }
+    const rows = await new NotebooksRepository(c.env.DB).explore({ viewer, query: q.length > 0 ? q : null, following, after, limit });
+    const items = rows.slice(0, limit);
+    const last = items[items.length - 1];
+    return c.json({
+      data: items.map(exploreDto),
+      nextCursor: rows.length > limit && last ? btoa(JSON.stringify({ u: last.updated_at, i: last.id })) : null,
+    });
   })
   .post('/', async (c) => {
     const input = await parseBody(c, createNotebookSchema);
@@ -132,6 +173,7 @@ export const notebooksRoutes = new Hono<AppBindings>()
       description: input.description ?? null,
       color: input.color ?? '#2E5B2A',
       visibility: input.visibility ?? 'private',
+      category: input.category ?? null,
     });
     await repo.addPage(id, crypto.randomUUID(), new Date().toISOString().slice(0, 10));
     return c.json({ data: notebookDto((await repo.get(id))!) }, 201);
@@ -151,7 +193,8 @@ export const notebooksRoutes = new Hono<AppBindings>()
     const repo = new NotebooksRepository(c.env.DB);
     const viewer = viewerOf(c);
     const n = await readable(repo, c.req.param('id'), viewer);
-    return c.json({ data: { ...notebookDto(n), ...(await repo.likes(n.id, viewer)) } });
+    const owner = await repo.owner(n.owner_id, viewer);
+    return c.json({ data: { ...notebookDto(n), ...(await repo.likes(n.id, viewer)), ...(owner ? { owner: personDto(owner) } : {}) } });
   })
   .put('/:id/like', async (c) => {
     const repo = new NotebooksRepository(c.env.DB);

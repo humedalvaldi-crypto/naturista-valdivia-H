@@ -93,6 +93,7 @@ export class SocialRepository {
    * privados, cuentas no activas y bloqueos en ambos sentidos. Orden estable por
    * nombre e id para paginar con cursor (sin límite fijo de resultados).
    */
+  /** Busca personas; con `query` vacío lista el directorio completo (paginado por nombre). */
   async search(viewer: string | null, query: string, limit: number, after: { name: string; id: string } | null) {
     const like = `%${query.toLowerCase().replace(/[\\%_]/g, (m) => `\\${m}`)}%`;
     const rows = await this.db
@@ -100,7 +101,8 @@ export class SocialRepository {
         `SELECT u.id, pr.username, pr.full_name, pr.photo_asset_id, u.display_name,
                 lower(COALESCE(pr.full_name, u.display_name, pr.username, '')) AS sort_name,
                 EXISTS (SELECT 1 FROM follows f WHERE f.follower_id = ?1 AND f.followed_id = u.id) AS followed_by_me,
-                EXISTS (SELECT 1 FROM follows f WHERE f.follower_id = u.id AND f.followed_id = ?1) AS follows_me
+                EXISTS (SELECT 1 FROM follows f WHERE f.follower_id = u.id AND f.followed_id = ?1) AS follows_me,
+                (SELECT count(*) FROM follows f WHERE f.followed_id = u.id) AS followers
          FROM users u
          LEFT JOIN profiles pr ON pr.user_id = u.id
          WHERE u.status = 'active'
@@ -128,6 +130,7 @@ export class SocialRepository {
       .prepare(
         `SELECT u.id, pr.username, pr.full_name, pr.photo_asset_id, u.display_name, count(*) AS mutuals,
                 0 AS followed_by_me,
+                (SELECT count(*) FROM follows f5 WHERE f5.followed_id = u.id) AS followers,
                 EXISTS (SELECT 1 FROM follows f3 WHERE f3.follower_id = u.id AND f3.followed_id = ?1) AS follows_me
          FROM follows f1
          JOIN follows f2 ON f2.follower_id = f1.followed_id
@@ -177,19 +180,36 @@ export class SocialRepository {
     return false;
   }
 
-  async listConnections(userId: string, direction: 'followers' | 'following', limit: number, before: string | null) {
+  /**
+   * Seguidores o seguidos de [userId]. Con [viewer], indica la relación de
+   * quien mira con cada persona y oculta a quienes tienen bloqueo con ella.
+   */
+  async listConnections(userId: string, direction: 'followers' | 'following', limit: number, before: string | null, viewer: string | null = null) {
     const [me, other] = direction === 'followers' ? ['followed_id', 'follower_id'] : ['follower_id', 'followed_id'];
     const rows = await this.db
       .prepare(
-        `SELECT f.${other} AS id, f.created_at, pr.username, pr.full_name, pr.photo_asset_id, u.display_name
+        `SELECT f.${other} AS id, f.created_at, pr.username, pr.full_name,
+                CASE WHEN COALESCE(pr.visibility, 'public') = 'public' THEN pr.photo_asset_id END AS photo_asset_id, u.display_name,
+                EXISTS (SELECT 1 FROM follows x WHERE x.follower_id = ?4 AND x.followed_id = f.${other}) AS followed_by_me,
+                EXISTS (SELECT 1 FROM follows x WHERE x.follower_id = f.${other} AND x.followed_id = ?4) AS follows_me
          FROM follows f
          JOIN users u ON u.id = f.${other}
          LEFT JOIN profiles pr ON pr.user_id = f.${other}
-         WHERE f.${me} = ?1 AND (?2 IS NULL OR f.created_at < ?2)
+         WHERE f.${me} = ?1 AND (?2 IS NULL OR f.created_at < ?2) AND u.status = 'active'
+           AND NOT EXISTS (SELECT 1 FROM blocks b WHERE (b.blocker_id = ?4 AND b.blocked_id = f.${other}) OR (b.blocker_id = f.${other} AND b.blocked_id = ?4))
          ORDER BY f.created_at DESC LIMIT ?3`,
       )
-      .bind(userId, before, limit + 1)
-      .all<{ id: string; created_at: string; username: string | null; full_name: string | null; photo_asset_id: string | null; display_name: string | null }>();
+      .bind(userId, before, limit + 1, viewer ?? '')
+      .all<{
+        id: string;
+        created_at: string;
+        username: string | null;
+        full_name: string | null;
+        photo_asset_id: string | null;
+        display_name: string | null;
+        followed_by_me: number;
+        follows_me: number;
+      }>();
     return rows.results;
   }
 }
@@ -203,4 +223,5 @@ export interface PersonSearchRow {
   sort_name?: string;
   followed_by_me: number;
   follows_me: number;
+  followers?: number;
 }

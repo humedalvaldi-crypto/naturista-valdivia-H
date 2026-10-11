@@ -449,6 +449,22 @@ export function mapPost(ctx: Context, d: SnapshotDoc) {
 }
 
 // ── notebooks, notebook_pages ──────────────────────────────────────────────
+/**
+ * Visibilidad de un cuaderno antiguo. La app antigua guarda textos como
+ * «Público»/«Privado»; también se aceptan booleanos. Un valor desconocido
+ * queda PRIVADO (lo más seguro) y se informa.
+ */
+export function notebookVisibility(text: string | null, flag: boolean | null): 'public' | 'private' | null {
+  if (text) {
+    const t = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+    if (['publico', 'publica', 'public', 'todos', 'everyone'].includes(t)) return 'public';
+    if (['privado', 'privada', 'private', 'solo yo', 'only me'].includes(t)) return 'private';
+    return null;
+  }
+  if (flag !== null) return flag ? 'public' : 'private';
+  return 'private';
+}
+
 export function mapNotebook(ctx: Context, d: SnapshotDoc) {
   const c = 'notebooks';
   ctx.plan.collection(c).read++;
@@ -457,13 +473,17 @@ export function mapNotebook(ctx: Context, d: SnapshotDoc) {
   const owner = ctx.owner(c, r.str('userId', 'ownerId', 'uid'));
   if (!owner) return finish(ctx, c, r);
   const id = stableId(`notebooks/${d.id}`);
-  const isPublic = r.bool('isPublic', 'public') === true || r.str('visibility') === 'public';
+  const vis = notebookVisibility(r.str('visibility', 'privacy'), r.bool('isPublic', 'public'));
+  if (vis === null) ctx.plan.skip(c, 'visibilidad desconocida: queda privado (no se omite)');
+  const isPublic = vis === 'public';
   const color = r.str('color', 'coverColor');
+  const category = truncate(r.str('category', 'categoria'), 40);
   const cover = ctx.plan.mediaFrom(r.str('coverImageUrl', 'coverUrl', 'imageUrl'), {
     ownerId: owner, purpose: 'notebook-photo', visibility: isPublic ? 'public' : 'private', collection: c, docId: d.id, field: 'coverImageUrl',
   });
-  r.known('pageCount', 'pagesCount', 'likes', 'likesCount', 'category', 'iconName');
+  r.known('pageCount', 'pagesCount', 'likes', 'likesCount', 'iconName');
   const created = r.date('createdAt', 'timestamp') ?? ctx.migratedAt;
+  const updated = r.date('updatedAt') ?? created;
   ctx.plan.add(
     '090-notebooks',
     c,
@@ -476,11 +496,28 @@ export function mapNotebook(ctx: Context, d: SnapshotDoc) {
       color: isHexColor(color) ? color.toUpperCase() : '#2E5B2A',
       cover_asset_id: ref(ctx, 'notebooks', { id }, 'cover_asset_id', cover),
       visibility: isPublic ? 'public' : 'private',
+      category,
       created_at: created,
-      updated_at: r.date('updatedAt') ?? created,
+      updated_at: updated,
       legacy_id: d.id,
     }),
   );
+  // Correcciones de filas ya copiadas en una corrida anterior (INSERT … DO NOTHING no las toca):
+  // - categoría: solo si aún no tiene;
+  // - visibilidad pública: solo si el cuaderno NO se modificó en la app nueva
+  //   (updated_at igual al original). Nunca se hace privado algo público ni se
+  //   pisa una decisión tomada en la app nueva.
+  if (category) {
+    ctx.plan.fix('095-notebook-fixes', c, 'categoría si falta', `UPDATE notebooks SET category = ${lit(category)} WHERE legacy_id = ${lit(d.id)} AND category IS NULL;`);
+  }
+  if (isPublic) {
+    ctx.plan.fix(
+      '095-notebook-fixes',
+      c,
+      'hacer público si no se tocó en la app nueva',
+      `UPDATE notebooks SET visibility = 'public' WHERE legacy_id = ${lit(d.id)} AND visibility = 'private' AND deleted_at IS NULL AND updated_at = ${lit(updated)};`,
+    );
+  }
   ctx.notebookOwner.set(d.id, { id, owner, isPublic });
   finish(ctx, c, r);
 }
@@ -999,6 +1036,16 @@ export function mapUserCollection(ctx: Context, d: SnapshotDoc) {
 }
 
 /** Recalcula contadores a partir de lo migrado. */
+/** Hace públicos los archivos de los cuadernos migrados que son públicos (nunca al revés). */
+export function publicNotebookMediaStatement(): string {
+  return `UPDATE media_assets SET visibility = 'public'
+  WHERE visibility <> 'public' AND (
+    id IN (SELECT e.media_asset_id FROM notebook_elements e JOIN notebook_pages p ON p.id = e.page_id JOIN notebooks n ON n.id = p.notebook_id
+           WHERE n.visibility = 'public' AND n.legacy_id IS NOT NULL AND n.deleted_at IS NULL AND e.media_asset_id IS NOT NULL)
+    OR id IN (SELECT cover_asset_id FROM notebooks WHERE visibility = 'public' AND legacy_id IS NOT NULL AND deleted_at IS NULL AND cover_asset_id IS NOT NULL)
+  );`;
+}
+
 export function recountStatements(): string[] {
   return [
     `UPDATE posts SET reaction_count = (SELECT count(*) FROM reactions x WHERE x.post_id = posts.id),

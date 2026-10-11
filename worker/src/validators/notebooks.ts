@@ -16,6 +16,7 @@ export const createNotebookSchema = z.strictObject({
   description: optionalText(500),
   color: hexColor.optional(),
   visibility: z.enum(['private', 'public']).optional(),
+  category: optionalText(40),
 });
 
 export const updateNotebookSchema = z
@@ -25,6 +26,7 @@ export const updateNotebookSchema = z
     color: hexColor.optional(),
     visibility: z.enum(['private', 'public']).optional(),
     coverAssetId: z.uuid().nullable().optional(),
+    category: optionalText(40),
   })
   .refine((v) => Object.keys(v).length > 0, { message: 'Debe incluir al menos un campo.' });
 

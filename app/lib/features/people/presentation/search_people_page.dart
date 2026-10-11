@@ -13,18 +13,33 @@ import '../../social/domain/models.dart';
 import '../../social/presentation/person_avatar.dart';
 import 'follow_confirm.dart';
 
-/// Buscador de personas: resultados reales del servidor, paginados, y
-/// sugerencias basadas en a quién sigues.
-class SearchPeoplePage extends StatefulWidget {
+/// Pantalla completa del buscador de personas.
+class SearchPeoplePage extends StatelessWidget {
   const SearchPeoplePage({super.key});
 
   static const minChars = 2;
 
   @override
-  State<SearchPeoplePage> createState() => _SearchPeoplePageState();
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(context.l10n.searchPeopleTitle)),
+      body: const PeopleSearchView(autofocus: true),
+    );
+  }
 }
 
-class _SearchPeoplePageState extends State<SearchPeoplePage> {
+/// Buscador de personas: resultados reales del servidor, paginados. Sin texto
+/// muestra sugerencias de tu red y el directorio completo (también paginado).
+class PeopleSearchView extends StatefulWidget {
+  const PeopleSearchView({super.key, this.autofocus = false});
+
+  final bool autofocus;
+
+  @override
+  State<PeopleSearchView> createState() => _PeopleSearchViewState();
+}
+
+class _PeopleSearchViewState extends State<PeopleSearchView> {
   late SocialApi _api;
   final _input = TextEditingController();
   Timer? _debounce;
@@ -47,10 +62,13 @@ class _SearchPeoplePageState extends State<SearchPeoplePage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _api = SocialApi(ApiScope.of(context));
-    if (!_suggestionsRequested && _api.isConfigured && AuthScope.read(context).isSignedIn) {
+    if (!_suggestionsRequested && _api.isConfigured) {
       _suggestionsRequested = true;
+      final signedIn = AuthScope.read(context).isSignedIn;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _loadSuggestions();
+        if (!mounted) return;
+        if (signedIn) _loadSuggestions();
+        _search('');
       });
     }
   }
@@ -79,7 +97,7 @@ class _SearchPeoplePageState extends State<SearchPeoplePage> {
 
   Future<void> _search(String q) async {
     final seq = ++_seq;
-    if (q.length < SearchPeoplePage.minChars) {
+    if (q.isNotEmpty && q.length < SearchPeoplePage.minChars) {
       setState(() {
         _query = q;
         _results = [];
@@ -163,16 +181,17 @@ class _SearchPeoplePageState extends State<SearchPeoplePage> {
     }
   }
 
-  Widget _row(PersonResult r, {required bool isMe}) {
+  Widget _row(PersonResult r, {required bool isMe, String keyPrefix = 'person-result'}) {
     final l10n = context.l10n;
     final p = r.person;
     final chips = [
+      if (r.followers != null) l10n.followers(r.followers!),
       if (r.followsMe) l10n.followsYou,
       if (r.mutuals != null && r.mutuals! > 0) l10n.mutualsCount(r.mutuals!),
     ];
     final busy = _busy.contains(p.id);
     return ListTile(
-      key: Key('person-result-${p.id}'),
+      key: Key('$keyPrefix-${p.id}'),
       onTap: () => context.push('/people/${p.id}'),
       leading: PersonAvatar(person: p, imageUrl: _api.url(p.photo)),
       title: Text(p.name),
@@ -194,64 +213,89 @@ class _SearchPeoplePageState extends State<SearchPeoplePage> {
     final me = AuthScope.of(context).user?.uid;
     if (!_api.isConfigured) return const ServerNotConnectedView();
 
-    if (_query.length < SearchPeoplePage.minChars) {
-      final children = <Widget>[
-        Padding(padding: const EdgeInsets.all(16), child: Text(l10n.searchPeopleMinChars)),
-      ];
+    if (_query.isNotEmpty && _query.length < SearchPeoplePage.minChars) {
+      return ListView(children: [Padding(padding: const EdgeInsets.all(16), child: Text(l10n.searchPeopleMinChars))]);
+    }
+    final header = <Widget>[];
+    if (_query.isEmpty) {
       if (_suggestionsError != null) {
-        children.add(ListTile(
+        header.add(ListTile(
           title: Text(apiErrorText(context, _suggestionsError)),
           trailing: TextButton(key: const Key('suggestions-retry'), onPressed: _loadSuggestions, child: Text(l10n.retry)),
         ));
       } else if (_suggestions != null && _suggestions!.isNotEmpty) {
-        children
-          ..add(Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-            child: Text(l10n.suggestionsTitle, style: Theme.of(context).textTheme.titleMedium),
-          ))
-          ..addAll(_suggestions!.map((r) => _row(r, isMe: r.person.id == me)));
+        header
+          ..add(_sectionTitle(l10n.suggestionsTitle))
+          ..addAll(_suggestions!.map((r) => _row(r, isMe: r.person.id == me, keyPrefix: 'suggestion')));
       }
-      return ListView(key: const Key('people-suggestions'), children: children);
+      header.add(_sectionTitle(l10n.peopleDirectoryTitle));
     }
-    if (_loading) return const LoadingView();
-    if (_error != null) return ErrorView(message: apiErrorText(context, _error), onRetry: () => _search(_query));
-    if (_results.isEmpty) return EmptyView(message: l10n.searchPeopleEmpty);
+    if (_loading && header.isEmpty) return const LoadingView();
+    if (_error != null && header.isEmpty) return ErrorView(message: apiErrorText(context, _error), onRetry: () => _search(_query));
+    if (_results.isEmpty && !_loading && _error == null && header.isEmpty) return EmptyView(message: l10n.searchPeopleEmpty);
+    final tail = <Widget>[
+      if (_loading) const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator())),
+      if (_error != null)
+        ListTile(
+          title: Text(apiErrorText(context, _error)),
+          trailing: TextButton(onPressed: () => _search(_query), child: Text(l10n.retry)),
+        ),
+      if (!_loading && _error == null && _results.isEmpty) Padding(padding: const EdgeInsets.all(16), child: Text(l10n.searchPeopleEmpty)),
+    ];
+    final results = _loading || _error != null ? const <PersonResult>[] : _results;
     return ListView.builder(
-      key: const Key('people-results'),
-      itemCount: _results.length + (_cursor != null ? 1 : 0),
-      itemBuilder: (context, i) {
-        if (i == _results.length) {
-          return Center(
-            child: _loadingMore
-                ? const Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator())
-                : TextButton(key: const Key('people-load-more'), onPressed: _loadMore, child: Text(l10n.loadMore)),
-          );
+      key: Key(_query.isEmpty ? 'people-suggestions' : 'people-results'),
+      itemCount: header.length + results.length + tail.length + (_cursor != null && !_loading ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (index < header.length) return header[index];
+        var i = index - header.length;
+        if (i < results.length) {
+          final r = results[i];
+          return _row(r, isMe: r.person.id == me);
         }
-        final r = _results[i];
-        return _row(r, isMe: r.person.id == me);
+        i -= results.length;
+        if (i < tail.length) return tail[i];
+        return Center(
+          child: _loadingMore
+              ? const Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator())
+              : TextButton(key: const Key('people-load-more'), onPressed: _loadMore, child: Text(l10n.loadMore)),
+        );
       },
     );
   }
 
+  Widget _sectionTitle(String text) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+        child: Text(text, style: Theme.of(context).textTheme.titleMedium),
+      );
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return Scaffold(
-      appBar: AppBar(
-        title: TextField(
-          key: const Key('people-search-input'),
-          controller: _input,
-          autofocus: true,
-          textInputAction: TextInputAction.search,
-          onChanged: _onChanged,
-          onSubmitted: (v) {
-            _debounce?.cancel();
-            _search(v.trim());
-          },
-          decoration: InputDecoration(hintText: l10n.searchPeopleHint, border: InputBorder.none),
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+          child: TextField(
+            key: const Key('people-search-input'),
+            controller: _input,
+            autofocus: widget.autofocus,
+            textInputAction: TextInputAction.search,
+            onChanged: _onChanged,
+            onSubmitted: (v) {
+              _debounce?.cancel();
+              _search(v.trim());
+            },
+            decoration: InputDecoration(
+              hintText: l10n.searchPeopleHint,
+              prefixIcon: const Icon(Icons.search),
+              border: const OutlineInputBorder(),
+              isDense: true,
+            ),
+          ),
         ),
-      ),
-      body: _body(),
+        Expanded(child: _body()),
+      ],
     );
   }
 }

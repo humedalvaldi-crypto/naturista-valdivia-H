@@ -235,13 +235,14 @@ class PersonSummary {
 
 /// Resultado de búsqueda o sugerencia de personas.
 class PersonResult {
-  const PersonResult({required this.person, this.followedByMe = false, this.followsMe = false, this.mutuals});
+  const PersonResult({required this.person, this.followedByMe = false, this.followsMe = false, this.mutuals, this.followers});
 
   factory PersonResult.fromJson(Map<String, dynamic> j) => PersonResult(
         person: Person.fromJson(j),
         followedByMe: j['followedByMe'] as bool? ?? false,
         followsMe: j['followsMe'] as bool? ?? false,
         mutuals: (j['mutuals'] as num?)?.toInt(),
+        followers: (j['followers'] as num?)?.toInt(),
       );
 
   final Person person;
@@ -251,8 +252,22 @@ class PersonResult {
   /// En sugerencias: cuántas personas que sigo la siguen.
   final int? mutuals;
 
-  PersonResult copyWith({bool? followedByMe}) =>
-      PersonResult(person: person, followedByMe: followedByMe ?? this.followedByMe, followsMe: followsMe, mutuals: mutuals);
+  /// Número real de seguidores (en búsqueda y directorio).
+  final int? followers;
+
+  /// Al seguir o dejar de seguir, el contador visible se ajusta en uno.
+  PersonResult copyWith({bool? followedByMe}) {
+    final now = followedByMe ?? this.followedByMe;
+    final f = followers;
+    final next = f == null || now == this.followedByMe ? f : f + (now ? 1 : -1);
+    return PersonResult(
+      person: person,
+      followedByMe: now,
+      followsMe: followsMe,
+      mutuals: mutuals,
+      followers: next == null || next >= 0 ? next : 0,
+    );
+  }
 }
 
 class Conversation {

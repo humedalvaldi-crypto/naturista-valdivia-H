@@ -65,11 +65,16 @@ export function writeFixtureSnapshot(): string {
   fs('notebooks', [
     { id: 'nb1', data: { userId: 'uidAna', title: 'Salidas 2025', color: '#2f6f7e', isPublic: true, coverImageUrl: url('user-files/uidAna/notebooks/c.jpg') } },
     { id: 'nb2', data: { userId: 'uidFantasma', title: 'Huérfano' } },
+    // Forma real de la app antigua: visibilidad como texto en español y categoría.
+    { id: 'nb3', data: { userId: 'uidBeto', title: 'Rocura', visibility: 'Público', category: 'Biodiversidad', pagesCount: 1, createdAt: ts('2025-09-01T10:00:00Z'), updatedAt: ts('2025-09-02T10:00:00Z') } },
+    { id: 'nb4', data: { userId: 'uidBeto', title: 'Notas privadas', visibility: 'Privado', category: 'Biodiversidad', updatedAt: ts('2025-09-03T10:00:00Z') } },
+    { id: 'nb5', data: { userId: 'uidBeto', title: 'Editado después', visibility: 'Público', updatedAt: ts('2025-09-04T10:00:00Z') } },
   ]);
   fs('notebook_pages', [
     { id: 'pg-b', data: { notebookId: 'nb1', userId: 'uidAna', pageNumber: 2, content: 'Segunda página', drawing: 'data:image/png;base64,' + PNG_1x1 } },
     { id: 'pg-a', data: { notebookId: 'nb1', userId: 'uidAna', pageNumber: 1, content: 'Canto de chucao', latitude: -39.86, longitude: -73.23, locationSource: 'gps', audioNoteUrl: url('user-files/uidAna/audio/n.m4a') } },
     { id: 'pg-x', data: { notebookId: 'nb2', content: 'perdida' } },
+    { id: 'pg-r', data: { notebookId: 'nb3', userId: 'uidBeto', pageNumber: 1, content: 'Martín pescador', imageUrl: 'data:image/png;base64,' + PNG_1x1 } },
     {
       id: 'pg-c',
       data: {

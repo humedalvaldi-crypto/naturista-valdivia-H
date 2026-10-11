@@ -35,13 +35,32 @@ class NotebooksApi implements PageStore {
 
   Future<List<Notebook>> mine() async => _list(await _api.get('/notebooks')).map(Notebook.fromJson).toList();
 
-  Future<Notebook> create({required String title, String? description, String? color, String? visibility}) async =>
+  /// Cuadernos públicos de una persona.
+  Future<List<Notebook>> byOwner(String userId) async =>
+      _list(await _api.get('/notebooks?owner=${Uri.encodeQueryComponent(userId)}', authenticated: _api.hasSession))
+          .map(Notebook.fromJson)
+          .toList();
+
+  /// Cuadernos públicos de la comunidad, paginados. [following]: solo de quienes sigo.
+  Future<({List<Notebook> items, String? nextCursor})> explore({String? query, bool following = false, String? cursor}) async {
+    final params = <String, String>{
+      'limit': '20',
+      if (query != null && query.trim().isNotEmpty) 'q': query.trim(),
+      if (following) 'following': '1',
+      'cursor': ?cursor,
+    };
+    final body = await _api.get(Uri(path: '/notebooks/explore', queryParameters: params).toString(), authenticated: _api.hasSession || following);
+    return (items: _list(body).map(Notebook.fromJson).toList(), nextCursor: body['nextCursor'] as String?);
+  }
+
+  Future<Notebook> create({required String title, String? description, String? color, String? visibility, String? category}) async =>
       Notebook.fromJson(
         (await _api.post('/notebooks', {
           'visibility': ?visibility,
           'title': title,
           if (description != null && description.trim().isNotEmpty) 'description': description.trim(),
           'color': ?color,
+          if (category != null && category.trim().isNotEmpty) 'category': category.trim(),
         }))['data'] as Map<String, dynamic>,
       );
 

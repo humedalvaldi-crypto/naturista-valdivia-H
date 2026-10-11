@@ -10,6 +10,23 @@ abstract final class PageCanvas {
   static const double height = 1414;
 }
 
+/// Autora de un cuaderno (solo en la comunidad).
+class NotebookOwner {
+  const NotebookOwner({required this.id, required this.name, this.username, this.photo});
+
+  factory NotebookOwner.fromJson(Map<String, dynamic> j) => NotebookOwner(
+        id: j['id'] as String,
+        name: j['name'] as String? ?? '',
+        username: j['username'] as String?,
+        photo: j['photo'] as String?,
+      );
+
+  final String id;
+  final String name;
+  final String? username;
+  final String? photo;
+}
+
 class Notebook {
   const Notebook({
     required this.id,
@@ -23,6 +40,9 @@ class Notebook {
     this.deletedAt,
     this.likeCount = 0,
     this.likedByMe = false,
+    this.category,
+    this.cover,
+    this.owner,
   });
 
   factory Notebook.fromJson(Map<String, dynamic> j) => Notebook(
@@ -37,6 +57,9 @@ class Notebook {
         deletedAt: j['deletedAt'] == null ? null : _date(j['deletedAt']),
         likeCount: (j['likeCount'] as num?)?.toInt() ?? 0,
         likedByMe: j['likedByMe'] as bool? ?? false,
+        category: j['category'] as String?,
+        cover: j['cover'] as String?,
+        owner: j['owner'] is Map<String, dynamic> ? NotebookOwner.fromJson(j['owner'] as Map<String, dynamic>) : null,
       );
 
   Notebook withLikes(int count, bool mine) => Notebook(
@@ -51,6 +74,27 @@ class Notebook {
         deletedAt: deletedAt,
         likeCount: count,
         likedByMe: mine,
+        category: category,
+        cover: cover,
+        owner: owner,
+      );
+
+  /// Copia con los datos editables que devuelve el servidor, conservando la autora.
+  Notebook mergeServer(Notebook server) => Notebook(
+        id: server.id,
+        title: server.title,
+        color: server.color,
+        visibility: server.visibility,
+        pageCount: server.pageCount,
+        updatedAt: server.updatedAt,
+        description: server.description,
+        ownerId: server.ownerId ?? ownerId,
+        deletedAt: server.deletedAt,
+        likeCount: likeCount,
+        likedByMe: likedByMe,
+        category: server.category,
+        cover: server.cover,
+        owner: owner,
       );
 
   final String id;
@@ -59,7 +103,7 @@ class Notebook {
   /// Solo en la papelera: cuándo se eliminó.
   final DateTime? deletedAt;
 
-  /// "Me gusta" (solo al pedir un cuaderno concreto).
+  /// "Me gusta" reales (cuántas personas, y si yo).
   final int likeCount;
   final bool likedByMe;
   final String title;
@@ -68,6 +112,15 @@ class Notebook {
   final String visibility;
   final int pageCount;
   final DateTime updatedAt;
+
+  /// Categoría de la app antigua (p. ej. «Biodiversidad»).
+  final String? category;
+
+  /// Ruta de la portada, si tiene.
+  final String? cover;
+
+  /// Autora (en Explorar).
+  final NotebookOwner? owner;
 }
 
 class PageInfo {

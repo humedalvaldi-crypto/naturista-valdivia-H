@@ -14,11 +14,18 @@ const _publicWebUrl = String.fromEnvironment(
   defaultValue: 'https://humedalvaldi-crypto.github.io/naturista-valdivia-H/',
 );
 
-/// Enlace que abre la publicación en la app web (ruta `/posts/:id`).
-Uri postLink(String postId) {
+/// Enlace a una ruta de la app web (p. ej. `/posts/<id>`).
+Uri appLink(String path) {
   final base = kIsWeb ? Uri.base.removeFragment() : Uri.parse(_publicWebUrl);
-  return base.replace(fragment: '/posts/$postId');
+  return base.replace(fragment: path);
 }
+
+/// Enlace que abre la publicación en la app web (ruta `/posts/:id`).
+Uri postLink(String postId) => appLink('/posts/$postId');
+
+/// Enlace público de un cuaderno (ruta `/explore/notebooks/:id`). Solo abre si
+/// el cuaderno es público o si quien lo abre es su dueña.
+Uri notebookLink(String notebookId) => appLink('/explore/notebooks/$notebookId');
 
 /// Comparte un enlace. Reemplazable en pruebas.
 class LinkSharer {
@@ -38,15 +45,18 @@ class LinkSharer {
   }
 }
 
-Future<void> sharePost(BuildContext context, Post post) async {
+Future<void> sharePost(BuildContext context, Post post) => shareLink(context, postLink(post.id), post.author.name);
+
+/// Comparte [link] con el menú del sistema (o lo copia en la web).
+Future<void> shareLink(BuildContext context, Uri link, String subject) async {
   final messenger = ScaffoldMessenger.of(context);
   final l10n = context.l10n;
   try {
-    final copied = await LinkSharer.share(postLink(post.id), post.author.name);
+    final copied = await LinkSharer.share(link, subject);
     if (copied) messenger.showSnackBar(SnackBar(content: Text(l10n.linkCopied)));
   } catch (_) {
     // Si el sistema no puede compartir, al menos se copia el enlace.
-    await Clipboard.setData(ClipboardData(text: postLink(post.id).toString()));
+    await Clipboard.setData(ClipboardData(text: link.toString()));
     messenger.showSnackBar(SnackBar(content: Text(l10n.linkCopied)));
   }
 }

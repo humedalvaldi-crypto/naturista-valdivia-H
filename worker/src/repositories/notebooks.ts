@@ -8,11 +8,26 @@ export interface NotebookRow {
   color: string;
   cover_asset_id: string | null;
   visibility: 'private' | 'public';
+  category?: string | null;
   page_count: number;
   created_at: string;
   updated_at: string;
   deleted_at?: string | null;
+  like_count?: number;
+  liked_by_me?: number;
 }
+
+/** Cuaderno público con su autora, para la comunidad. */
+export interface ExploreRow extends NotebookRow {
+  owner_username: string | null;
+  owner_full_name: string | null;
+  owner_display_name: string | null;
+  owner_photo_asset_id: string | null;
+}
+
+const LIKE_COLUMNS = (viewerParam: string) => `
+  (SELECT count(*) FROM notebook_likes l WHERE l.notebook_id = n.id) AS like_count,
+  EXISTS (SELECT 1 FROM notebook_likes l WHERE l.notebook_id = n.id AND l.user_id = ${viewerParam}) AS liked_by_me`;
 
 export interface PageRow {
   id: string;
@@ -51,10 +66,10 @@ export class NotebooksRepository {
 
   // ── Cuadernos ───────────────────────────────────────────────────────────
 
-  async create(n: { id: string; ownerId: string; title: string; description: string | null; color: string; visibility: string }) {
+  async create(n: { id: string; ownerId: string; title: string; description: string | null; color: string; visibility: string; category?: string | null }) {
     await this.db
-      .prepare(`INSERT INTO notebooks (id, owner_id, title, description, color, visibility) VALUES (?1, ?2, ?3, ?4, ?5, ?6)`)
-      .bind(n.id, n.ownerId, n.title, n.description, n.color, n.visibility)
+      .prepare(`INSERT INTO notebooks (id, owner_id, title, description, color, visibility, category) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)`)
+      .bind(n.id, n.ownerId, n.title, n.description, n.color, n.visibility, n.category ?? null)
       .run();
   }
 
@@ -62,16 +77,55 @@ export class NotebooksRepository {
     return this.db.prepare(`SELECT * FROM notebooks WHERE id = ?1 AND deleted_at IS NULL`).bind(id).first<NotebookRow>();
   }
 
-  /** Cuadernos de una persona: todos si es la dueña, solo públicos si no. */
-  async listByOwner(ownerId: string, includePrivate: boolean): Promise<NotebookRow[]> {
+  /** Cuadernos de una persona: todos si es la dueña, solo públicos si no. Con sus «me gusta» reales. */
+  async listByOwner(ownerId: string, includePrivate: boolean, viewer: string | null = null): Promise<NotebookRow[]> {
     return (
       await this.db
         .prepare(
-          `SELECT * FROM notebooks WHERE owner_id = ?1 AND deleted_at IS NULL AND (?2 = 1 OR visibility = 'public')
-           ORDER BY updated_at DESC LIMIT 200`,
+          `SELECT n.*, ${LIKE_COLUMNS('?3')}
+           FROM notebooks n WHERE n.owner_id = ?1 AND n.deleted_at IS NULL AND (?2 = 1 OR n.visibility = 'public')
+           ORDER BY n.updated_at DESC LIMIT 200`,
         )
-        .bind(ownerId, includePrivate ? 1 : 0)
+        .bind(ownerId, includePrivate ? 1 : 0, viewer ?? '')
         .all<NotebookRow>()
+    ).results;
+  }
+
+  /**
+   * Cuadernos públicos de la comunidad, del más reciente al más antiguo
+   * (paginado por [updated_at, id]). Excluye bloqueos en ambos sentidos y
+   * cuentas suspendidas. `following`: solo de personas que sigo.
+   */
+  async explore(opts: {
+    viewer: string | null;
+    query: string | null;
+    following: boolean;
+    after: { updatedAt: string; id: string } | null;
+    limit: number;
+  }): Promise<ExploreRow[]> {
+    const like = opts.query ? `%${opts.query.toLowerCase().replace(/[\\%_]/g, (m) => `\\${m}`)}%` : null;
+    return (
+      await this.db
+        .prepare(
+          `SELECT n.*, ${LIKE_COLUMNS('?1')},
+                  pr.username AS owner_username, pr.full_name AS owner_full_name, u.display_name AS owner_display_name,
+                  CASE WHEN COALESCE(pr.visibility, 'public') = 'public' OR n.owner_id = ?1
+                         OR (pr.visibility = 'followers' AND EXISTS (SELECT 1 FROM follows f WHERE f.follower_id = ?1 AND f.followed_id = n.owner_id))
+                       THEN pr.photo_asset_id END AS owner_photo_asset_id
+           FROM notebooks n
+           JOIN users u ON u.id = n.owner_id
+           LEFT JOIN profiles pr ON pr.user_id = n.owner_id
+           WHERE n.visibility = 'public' AND n.deleted_at IS NULL AND u.status = 'active'
+             AND NOT EXISTS (SELECT 1 FROM blocks b WHERE (b.blocker_id = ?1 AND b.blocked_id = n.owner_id) OR (b.blocker_id = n.owner_id AND b.blocked_id = ?1))
+             AND (?2 IS NULL OR lower(n.title) LIKE ?2 ESCAPE '\\' OR lower(COALESCE(n.description, '')) LIKE ?2 ESCAPE '\\'
+                  OR lower(COALESCE(n.category, '')) LIKE ?2 ESCAPE '\\')
+             AND (?3 = 0 OR EXISTS (SELECT 1 FROM follows f WHERE f.follower_id = ?1 AND f.followed_id = n.owner_id))
+             AND (?4 IS NULL OR (n.updated_at, n.id) < (?4, ?5))
+           ORDER BY n.updated_at DESC, n.id DESC
+           LIMIT ?6`,
+        )
+        .bind(opts.viewer ?? '', like, opts.following ? 1 : 0, opts.after?.updatedAt ?? null, opts.after?.id ?? null, opts.limit + 1)
+        .all<ExploreRow>()
     ).results;
   }
 
@@ -82,6 +136,7 @@ export class NotebooksRepository {
       color: 'color',
       visibility: 'visibility',
       coverAssetId: 'cover_asset_id',
+      category: 'category',
     };
     const entries = Object.entries(fields).filter(([k, v]) => k in allowed && v !== undefined);
     if (entries.length === 0) return;
@@ -93,6 +148,20 @@ export class NotebooksRepository {
   }
 
   /** Papelera: cuadernos propios borrados hace menos de [days] días. */
+  /** Autora pública de un cuaderno (la foto solo si su perfil es visible para [viewer]). */
+  async owner(ownerId: string, viewer: string | null) {
+    return this.db
+      .prepare(
+        `SELECT u.id, pr.username, pr.full_name, u.display_name,
+                CASE WHEN COALESCE(pr.visibility, 'public') = 'public' OR u.id = ?2
+                       OR (pr.visibility = 'followers' AND EXISTS (SELECT 1 FROM follows f WHERE f.follower_id = ?2 AND f.followed_id = u.id))
+                     THEN pr.photo_asset_id END AS photo_asset_id
+         FROM users u LEFT JOIN profiles pr ON pr.user_id = u.id WHERE u.id = ?1`,
+      )
+      .bind(ownerId, viewer ?? '')
+      .first<{ id: string; username: string | null; full_name: string | null; display_name: string | null; photo_asset_id: string | null }>();
+  }
+
   async likes(notebookId: string, viewer: string | null): Promise<{ likeCount: number; likedByMe: boolean }> {
     const row = await this.db
       .prepare(

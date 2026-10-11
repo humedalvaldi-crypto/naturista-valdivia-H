@@ -9,11 +9,13 @@ import '../../auth/application/auth_controller.dart';
 import '../../social/data/social_api.dart';
 import '../../social/domain/models.dart';
 import '../../social/presentation/person_avatar.dart';
-import '../../social/presentation/social_page.dart';
+import '../../notebooks/data/notebooks_api.dart';
+import '../../notebooks/domain/notebook_models.dart';
+import '../../notebooks/presentation/notebook_card.dart';
 import 'follow_confirm.dart';
 
 /// Perfil de otra persona (lámina, pantalla 118): seguir, escribir, bloquear,
-/// denunciar y ver sus publicaciones.
+/// denunciar y ver sus cuadernos públicos, seguidores y seguidos.
 class PersonPage extends StatefulWidget {
   const PersonPage({super.key, required this.userId});
 
@@ -190,13 +192,32 @@ class _PersonPageState extends State<PersonPage> {
           ],
         ),
       );
-      body = Column(
-        children: [
-          header,
-          const Divider(height: 1),
-          Expanded(child: FeedList(key: ValueKey('person-${s.person.id}'), api: _api, scope: 'all', author: s.person.id)),
-        ],
-      );
+      body = s.restricted
+          ? SingleChildScrollView(child: header)
+          : DefaultTabController(
+              length: 3,
+              child: NestedScrollView(
+                headerSliverBuilder: (context, _) => [
+                  SliverToBoxAdapter(child: header),
+                  SliverToBoxAdapter(
+                    child: TabBar(
+                      tabs: [
+                        Tab(key: const Key('person-tab-notebooks'), text: l10n.notebooksTitle),
+                        Tab(key: const Key('person-tab-followers'), text: l10n.followersTab),
+                        Tab(key: const Key('person-tab-following'), text: l10n.feedFollowing),
+                      ],
+                    ),
+                  ),
+                ],
+                body: TabBarView(
+                  children: [
+                    _PersonNotebooks(key: ValueKey('nb-${s.person.id}-${s.followers}'), userId: s.person.id),
+                    _Connections(key: ValueKey('followers-${s.person.id}-${s.followers}'), api: _api, userId: s.person.id, followers: true),
+                    _Connections(key: ValueKey('following-${s.person.id}-${s.following}'), api: _api, userId: s.person.id, followers: false),
+                  ],
+                ),
+              ),
+            );
     }
 
     return Scaffold(
@@ -214,6 +235,187 @@ class _PersonPageState extends State<PersonPage> {
         ],
       ),
       body: body,
+    );
+  }
+}
+
+/// Cuadernos públicos de la persona, con «me gusta» reales.
+class _PersonNotebooks extends StatefulWidget {
+  const _PersonNotebooks({super.key, required this.userId});
+
+  final String userId;
+
+  @override
+  State<_PersonNotebooks> createState() => _PersonNotebooksState();
+}
+
+class _PersonNotebooksState extends State<_PersonNotebooks> {
+  late NotebooksApi _api;
+  List<Notebook>? _items;
+  Object? _error;
+  final _liking = <String>{};
+  bool _started = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _api = NotebooksApi(ApiScope.of(context));
+    if (!_started) {
+      _started = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _load();
+      });
+    }
+  }
+
+  Future<void> _load() async {
+    setState(() => _error = null);
+    try {
+      final items = await _api.byOwner(widget.userId);
+      if (mounted) setState(() => _items = items.where((n) => n.visibility == 'public').toList());
+    } catch (e) {
+      if (mounted) setState(() => _error = e);
+    }
+  }
+
+  void _replace(Notebook nb) {
+    if (!mounted) return;
+    setState(() => _items = [for (final n in _items ?? <Notebook>[]) n.id == nb.id ? nb : n]);
+  }
+
+  Future<void> _like(Notebook nb) async {
+    if (!AuthScope.read(context).isSignedIn) {
+      context.go(Uri(path: '/login', queryParameters: {'from': '/people/${widget.userId}'}).toString());
+      return;
+    }
+    final messenger = ScaffoldMessenger.of(context);
+    final want = !nb.likedByMe;
+    setState(() => _liking.add(nb.id));
+    _replace(nb.withLikes(nb.likeCount + (want ? 1 : -1), want));
+    try {
+      final (count, mine) = await _api.setLiked(nb.id, want);
+      _replace(nb.withLikes(count, mine));
+    } catch (e) {
+      _replace(nb);
+      if (mounted) messenger.showSnackBar(SnackBar(content: Text(apiErrorText(context, e))));
+    } finally {
+      if (mounted) setState(() => _liking.remove(nb.id));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final items = _items;
+    if (_error != null) return ErrorView(message: apiErrorText(context, _error), onRetry: _load);
+    if (items == null) return const LoadingView();
+    if (items.isEmpty) return EmptyView(message: l10n.personNoNotebooks);
+    return ListView.separated(
+      key: const Key('person-notebooks'),
+      padding: const EdgeInsets.all(12),
+      itemCount: items.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 12),
+      itemBuilder: (context, i) {
+        final nb = items[i];
+        return Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 640),
+            child: NotebookCard(
+              notebook: nb,
+              showOwner: false,
+              liking: _liking.contains(nb.id),
+              onOpen: () => context.push('/explore/notebooks/${nb.id}'),
+              onLike: () => _like(nb),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Seguidores o seguidos visibles de la persona (paginado).
+class _Connections extends StatefulWidget {
+  const _Connections({super.key, required this.api, required this.userId, required this.followers});
+
+  final SocialApi api;
+  final String userId;
+  final bool followers;
+
+  @override
+  State<_Connections> createState() => _ConnectionsState();
+}
+
+class _ConnectionsState extends State<_Connections> {
+  final _items = <PersonResult>[];
+  String? _next;
+  bool _loading = true;
+  Object? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _load();
+    });
+  }
+
+  Future<void> _load({bool more = false}) async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final page = await widget.api.connections(widget.userId, followers: widget.followers, before: more ? _next : null);
+      if (!mounted) return;
+      setState(() {
+        if (!more) _items.clear();
+        _items.addAll(page.items);
+        _next = page.nextCursor;
+        _loading = false;
+      });
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e;
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    if (_error != null && _items.isEmpty) return ErrorView(message: apiErrorText(context, _error), onRetry: _load);
+    if (_loading && _items.isEmpty) return const LoadingView();
+    if (_items.isEmpty) return EmptyView(message: widget.followers ? l10n.personNoFollowers : l10n.personNoFollowing);
+    final me = AuthScope.of(context).user?.uid;
+    return ListView.builder(
+      key: Key(widget.followers ? 'person-followers' : 'person-following'),
+      itemCount: _items.length + (_next != null ? 1 : 0),
+      itemBuilder: (context, i) {
+        if (i == _items.length) {
+          return Center(
+            child: _loading
+                ? const Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator())
+                : TextButton(onPressed: () => _load(more: true), child: Text(l10n.loadMore)),
+          );
+        }
+        final r = _items[i];
+        final tags = [
+          if (r.person.id == me) l10n.you,
+          if (r.followedByMe) l10n.youFollow,
+          if (r.followsMe) l10n.followsYou,
+        ];
+        return ListTile(
+          key: Key('connection-${r.person.id}'),
+          leading: PersonAvatar(person: r.person, imageUrl: widget.api.url(r.person.photo)),
+          title: Text(r.person.name),
+          subtitle: Text([if (r.person.username != null) '@${r.person.username}', ...tags].join(' · ')),
+          onTap: () => context.push('/people/${r.person.id}'),
+        );
+      },
     );
   }
 }

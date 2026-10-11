@@ -13,7 +13,8 @@ import { toProfileDto } from './profiles';
 
 /**
  * /api/v1/users/:id — relaciones con otra persona (por UID).
- * GET        /?q=texto&cursor=    buscar personas (paginado, sin límite total)
+ * GET        /?q=texto&cursor=    buscar personas (paginado, sin límite total); sin q, directorio
+ * GET        /:id/followers|following  seguidores / seguidos visibles (respeta la privacidad del perfil)
  * GET        /suggestions         sugerencias de la propia red (sesión)
  * GET        /:id                 resumen público (perfil, contadores, si la sigo y si me sigue)
  * PUT|DELETE /:id/follow          seguir / dejar de seguir
@@ -24,13 +25,14 @@ const searchDto = (r: PersonSearchRow & { mutuals?: number }) => ({
   ...personDto(r),
   followedByMe: r.followed_by_me === 1,
   followsMe: r.follows_me === 1,
+  ...(r.followers !== undefined ? { followers: r.followers } : {}),
   ...(r.mutuals !== undefined ? { mutuals: r.mutuals } : {}),
 });
 
 export const peopleRoutes = new Hono<AppBindings>()
   .get('/', async (c) => {
     const q = (c.req.query('q') ?? '').trim();
-    if (q.length < 2) throw badRequest('Escribe al menos 2 letras para buscar.');
+    if (q.length === 1) throw badRequest('Escribe al menos 2 letras para buscar.');
     if (q.length > 60) throw badRequest('La búsqueda es demasiado larga.');
     const limit = parseLimit(c.req.query('limit'));
     let after: { name: string; id: string } | null = null;
@@ -95,6 +97,25 @@ export const peopleRoutes = new Hono<AppBindings>()
           unlocked: counts[a.metric] >= a.target,
         })),
       },
+    });
+  })
+  .get('/:id/:direction{followers|following}', async (c) => {
+    const id = c.req.param('id');
+    const direction = c.req.param('direction') as 'followers' | 'following';
+    const viewer = c.get('maybeUser')?.uid ?? null;
+    const social = new SocialRepository(c.env.DB);
+    if (!(await social.userExists(id))) throw notFound('Persona no encontrada.');
+    if (viewer && viewer !== id && (await social.blockedEitherWay(viewer, id))) throw notFound('Persona no encontrada.');
+    const visibility = (await new ProfilesRepository(c.env.DB).get(id))?.visibility ?? 'public';
+    const canSee = viewer === id || visibility === 'public' || (visibility === 'followers' && viewer !== null && (await social.isFollowing(viewer, id)));
+    if (!canSee) throw new HttpError(403, 'profile_restricted', 'Este perfil es privado.');
+    const limit = parseLimit(c.req.query('limit'));
+    const before = c.req.query('before') ?? null;
+    const rows = await social.listConnections(id, direction, limit, before, viewer);
+    const items = rows.slice(0, limit);
+    return c.json({
+      data: items.map((r) => ({ ...personDto(r), since: r.created_at, followedByMe: r.followed_by_me === 1, followsMe: r.follows_me === 1 })),
+      nextBefore: rows.length > limit ? (items[items.length - 1]?.created_at ?? null) : null,
     });
   })
   .get('/:id', async (c) => {

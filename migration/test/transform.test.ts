@@ -169,10 +169,10 @@ describe('plan sobre una instantánea de prueba', () => {
   it('cuadernos y páginas en orden, con texto y dibujo; huérfanos fuera', () => {
     const db = freshDb();
     applyFiles(db, join(out, 'sql'), files);
-    expect(db.prepare('SELECT title, visibility, color, page_count FROM notebooks').all()).toEqual([
+    expect(db.prepare("SELECT title, visibility, color, page_count FROM notebooks WHERE legacy_id = 'nb1'").all()).toEqual([
       { title: 'Salidas 2025', visibility: 'public', color: '#2F6F7E', page_count: 3 },
     ]);
-    const pages = db.prepare('SELECT legacy_id, position, latitude, location_source FROM notebook_pages ORDER BY position').all();
+    const pages = db.prepare("SELECT legacy_id, position, latitude, location_source FROM notebook_pages WHERE legacy_id <> 'pg-r' ORDER BY position").all();
     expect(pages).toEqual([
       { legacy_id: 'pg-a', position: 0, latitude: -39.86, location_source: 'gps' },
       { legacy_id: 'pg-b', position: 1, latitude: null, location_source: null },
@@ -253,6 +253,39 @@ describe('plan sobre una instantánea de prueba', () => {
     });
   });
 
+  it('cuadernos con la visibilidad en español de la app antigua («Público»/«Privado») y su categoría', () => {
+    const db = freshDb();
+    applyFiles(db, join(out, 'sql'), files);
+    const rows = db.prepare("SELECT legacy_id, visibility, category FROM notebooks WHERE legacy_id IN ('nb3','nb4','nb5') ORDER BY legacy_id").all();
+    expect(rows).toEqual([
+      { legacy_id: 'nb3', visibility: 'public', category: 'Biodiversidad' },
+      { legacy_id: 'nb4', visibility: 'private', category: 'Biodiversidad' },
+      { legacy_id: 'nb5', visibility: 'public', category: null },
+    ]);
+    expect(report.collections['notebooks']!.values['visibility']).toEqual({ '«Público»': 2, '«Privado»': 1 });
+  });
+
+  it('repetir la copia corrige cuadernos públicos copiados como privados, sin pisar cambios hechos en la app nueva', () => {
+    const db = freshDb();
+    applyFiles(db, join(out, 'sql'), files);
+    // Estado de una copia anterior con el error: todo quedó privado y sin categoría.
+    db.exec("UPDATE notebooks SET visibility = 'private', category = NULL WHERE legacy_id IN ('nb3','nb5')");
+    // Foto ya copiada (privada por el error) en la página de «Rocura».
+    db.exec(`INSERT INTO media_assets (id, owner_id, purpose, object_key, content_type, size_bytes, sha256, visibility)
+             VALUES ('foto-rocura', 'uidBeto', 'notebook-photo', 'k/rocura', 'image/png', 10, '${'a'.repeat(64)}', 'private')`);
+    db.exec(`INSERT INTO notebook_elements (id, page_id, type, x, y, width, height, media_asset_id)
+             VALUES ('foto-extra', (SELECT id FROM notebook_pages WHERE legacy_id = 'pg-r'), 'photo', 0, 0, 10, 10, 'foto-rocura')`);
+    // La dueña de «nb5» lo editó en la app nueva después de la copia: su decisión se respeta.
+    db.exec("UPDATE notebooks SET updated_at = '2026-10-01T00:00:00.000Z' WHERE legacy_id = 'nb5'");
+    applyFiles(db, join(out, 'sql'), files);
+    const vis = (id: string) => (db.prepare('SELECT visibility, category FROM notebooks WHERE legacy_id = ?').get(id) as { visibility: string; category: string | null });
+    expect(vis('nb3')).toEqual({ visibility: 'public', category: 'Biodiversidad' });
+    expect(vis('nb4').visibility).toBe('private');
+    expect(vis('nb5').visibility).toBe('private');
+    // Las fotos del cuaderno público vuelven a poder verse; las de cuadernos privados no se tocan.
+    expect(db.prepare("SELECT visibility FROM media_assets WHERE id = 'foto-rocura'").get()).toEqual({ visibility: 'public' });
+  });
+
   it('lugares y humedales con su contorno', () => {
     const db = freshDb();
     applyFiles(db, join(out, 'sql'), files);
@@ -270,7 +303,8 @@ describe('plan sobre una instantánea de prueba', () => {
     expect(byPath('user-files/uidAna/observations/extra.jpg')).toMatchObject({ purpose: 'observation-photo', visibility: 'private', legacyAssetId: 'fa1' });
     expect(byPath('user-files/uidAna/notebooks/c.jpg')).toMatchObject({ visibility: 'public' }); // cuaderno público
     const inline = manifest.filter((m) => m.source.kind === 'inline');
-    expect(inline).toHaveLength(4); // foto del post p2, dibujo, foto de un elemento antiguo y nota de audio
+    expect(inline).toHaveLength(5); // foto del post p2, dibujo, foto de un elemento antiguo, nota de audio y foto de «Rocura»
+    expect(manifest.find((m) => m.source.kind === 'inline' && m.ownerId === 'uidBeto')).toMatchObject({ visibility: 'public' });
     for (const m of inline) expect(existsSync(join(out, 'inline', m.source.file))).toBe(true);
     expect(report.media.externalHosts).toEqual({ 'i.imgur.com': 1, 'blob: (enlace temporal del navegador)': 1 });
   });

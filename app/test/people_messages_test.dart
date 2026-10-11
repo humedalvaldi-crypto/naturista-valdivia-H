@@ -25,7 +25,7 @@ void main() {
   testWidgets('publicar con foto: sube la imagen y la adjunta a la publicación', (tester) async {
     PhotoPicker.pick = () async => PickedPhoto(bytes: _jpeg, contentType: 'image/jpeg', name: 'garza.jpg');
     final server = FakeApiServer();
-    await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/community', api: server.client);
+    await pumpTestApp(tester, repo: FakeAuthRepository(initialUser: _eva), at: '/posts', api: server.client);
 
     await tester.tap(find.byKey(const Key('new-post')));
     await tester.pumpAndSettle();

@@ -133,6 +133,15 @@ class SocialApi {
     return ResultPage(_list(body).map(PersonResult.fromJson).toList(), body['nextCursor'] as String?);
   }
 
+  /// Seguidores o seguidos de una persona (si su perfil es visible), paginados.
+  Future<ResultPage<PersonResult>> connections(String userId, {required bool followers, String? before}) async {
+    final body = await _api.get(
+      '/users/$userId/${followers ? 'followers' : 'following'}${_q({'before': before, 'limit': '30'})}',
+      authenticated: _api.hasSession,
+    );
+    return ResultPage(_list(body).map(PersonResult.fromJson).toList(), body['nextBefore'] as String?);
+  }
+
   /// Personas que siguen quienes sigo (requiere sesión).
   Future<List<PersonResult>> suggestions() async =>
       _list(await _api.get('/users/suggestions')).map(PersonResult.fromJson).toList();

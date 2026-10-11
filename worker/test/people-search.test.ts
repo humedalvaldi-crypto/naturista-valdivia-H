@@ -44,7 +44,7 @@ describe('buscar personas', () => {
     } while (cursor && pages < 10);
     expect(seen).toEqual(['garza0', 'garza1', 'garza2', 'garza3', 'garza4', 'garza5', 'garza6']);
     expect(pages).toBe(3);
-    expect((await yo.json('GET', '/users?q=g')).status).toBe(400);
+    expect((await yo.json('GET', '/users?q=g')).status).toBe(400); // 1 letra
     // Caracteres comodín no se interpretan.
     expect((await yo.json('GET', '/users?q=%25%25')).body.data).toEqual([]);
   });

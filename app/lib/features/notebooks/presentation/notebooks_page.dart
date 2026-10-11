@@ -63,23 +63,10 @@ class _NotebooksPageState extends State<NotebooksPage> {
   }
 
   Future<void> _create() async {
-    final messenger = ScaffoldMessenger.of(context);
-    final visibility = SettingsScope.settingsOf(context).notebookPublic ? 'public' : 'private';
-    final input = await showDialog<_NewNotebook>(context: context, builder: (context) => const _NewNotebookDialog());
-    if (input == null) return;
-    try {
-      final nb = await _api.create(
-        title: input.title,
-        description: input.description,
-        color: input.color,
-        visibility: visibility,
-      );
-      if (!mounted) return;
-      setState(() => _items = [nb, ..._items]);
-      context.push('/notebooks/${nb.id}');
-    } catch (e) {
-      if (mounted) messenger.showSnackBar(SnackBar(content: Text(apiErrorText(context, e))));
-    }
+    final nb = await createNotebookFlow(context, _api);
+    if (nb == null || !mounted) return;
+    setState(() => _items = [nb, ..._items]);
+    context.push('/notebooks/${nb.id}');
   }
 
   @override
@@ -128,6 +115,26 @@ class _NotebooksPageState extends State<NotebooksPage> {
           : null,
       body: body,
     );
+  }
+}
+
+/// Pide los datos de un cuaderno nuevo y lo crea. Devuelve null si se canceló o falló (con aviso).
+Future<Notebook?> createNotebookFlow(BuildContext context, NotebooksApi api) async {
+  final messenger = ScaffoldMessenger.of(context);
+  final visibility = SettingsScope.settingsOf(context).notebookPublic ? 'public' : 'private';
+  final input = await showDialog<_NewNotebook>(context: context, builder: (context) => const _NewNotebookDialog());
+  if (input == null || !context.mounted) return null;
+  try {
+    return await api.create(
+      title: input.title,
+      description: input.description,
+      color: input.color,
+      visibility: input.public ? 'public' : visibility,
+      category: input.category,
+    );
+  } catch (e) {
+    if (context.mounted) messenger.showSnackBar(SnackBar(content: Text(apiErrorText(context, e))));
+    return null;
   }
 }
 
@@ -185,7 +192,7 @@ class _NotebookCover extends StatelessWidget {
 
 const notebookColors = notebookColorOptions;
 
-typedef _NewNotebook = ({String title, String description, String color});
+typedef _NewNotebook = ({String title, String description, String color, String category, bool public});
 
 /// Diálogo de nuevo cuaderno. Es dueño de sus controladores, que se liberan
 /// cuando el diálogo termina de cerrarse (no antes, mientras aún se anima).
@@ -199,19 +206,22 @@ class _NewNotebookDialog extends StatefulWidget {
 class _NewNotebookDialogState extends State<_NewNotebookDialog> {
   final _title = TextEditingController();
   final _description = TextEditingController();
+  final _category = TextEditingController();
   late String _color = SettingsScope.settingsOf(context).notebookColor;
+  late bool _public = SettingsScope.settingsOf(context).notebookPublic;
 
   @override
   void dispose() {
     _title.dispose();
     _description.dispose();
+    _category.dispose();
     super.dispose();
   }
 
   void _submit() {
     final title = _title.text.trim();
     if (title.isEmpty) return;
-    Navigator.pop(context, (title: title, description: _description.text.trim(), color: _color));
+    Navigator.pop(context, (title: title, description: _description.text.trim(), color: _color, category: _category.text.trim(), public: _public));
   }
 
   @override
@@ -221,7 +231,8 @@ class _NewNotebookDialogState extends State<_NewNotebookDialog> {
       title: Text(l10n.newNotebook),
       content: SizedBox(
         width: 400,
-        child: Column(
+        child: SingleChildScrollView(
+         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
@@ -232,6 +243,20 @@ class _NewNotebookDialogState extends State<_NewNotebookDialog> {
               decoration: InputDecoration(labelText: l10n.notebookTitleLabel),
             ),
             TextField(controller: _description, maxLength: 500, decoration: InputDecoration(labelText: l10n.notebookDescriptionLabel)),
+            TextField(
+              key: const Key('notebook-category'),
+              controller: _category,
+              maxLength: 40,
+              decoration: InputDecoration(labelText: l10n.notebookCategoryLabel, hintText: l10n.notebookCategoryHint),
+            ),
+            SwitchListTile(
+              key: const Key('notebook-public'),
+              contentPadding: EdgeInsets.zero,
+              value: _public,
+              onChanged: (v) => setState(() => _public = v),
+              title: Text(l10n.notebookPublishLabel),
+              subtitle: Text(l10n.notebookPublishHint),
+            ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -254,6 +279,7 @@ class _NewNotebookDialogState extends State<_NewNotebookDialog> {
               ],
             ),
           ],
+         ),
         ),
       ),
       actions: [

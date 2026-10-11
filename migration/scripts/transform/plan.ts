@@ -12,6 +12,7 @@ export const STAGES = [
   '070-follows',
   '080-posts',
   '090-notebooks',
+  '095-notebook-fixes',
   '100-notebook-pages',
   '110-notebook-elements',
   '120-observations',
@@ -24,6 +25,7 @@ export const STAGES = [
   '890-respect-deletions',
   '900-recount',
   '910-relink-media',
+  '920-public-notebook-media',
 ] as const;
 export type Stage = (typeof STAGES)[number];
 
@@ -82,6 +84,18 @@ export class Plan {
     this.statements.get(stage)!.push(sql);
     s.written[table] = (s.written[table] ?? 0) + 1;
     return true;
+  }
+
+  /** Sentencia de corrección (UPDATE) que no crea filas: no cuenta en «Filas a crear». */
+  fix(stage: Stage, collection: string, note: string, sql: string) {
+    this.statements.get(stage)!.push(sql);
+    const s = this.collection(collection);
+    const line = `correcciones previstas: ${note}`;
+    const i = s.notes.findIndex((n) => n.startsWith(line));
+    const count = i >= 0 ? Number(s.notes[i]!.match(/\((\d+)\)$/)?.[1] ?? 0) + 1 : 1;
+    const text = `${line} (${count})`;
+    if (i >= 0) s.notes[i] = text;
+    else s.notes.push(text);
   }
 
   skip(collection: string, reason: string) {

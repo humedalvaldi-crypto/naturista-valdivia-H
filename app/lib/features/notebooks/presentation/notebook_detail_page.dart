@@ -10,6 +10,9 @@ import '../../../shared/widgets/state_views.dart';
 import '../../../shared/files/file_export.dart';
 import '../../auth/application/auth_controller.dart';
 import '../../drawing_editor/presentation/page_renderer.dart';
+import '../../social/domain/models.dart' show Person;
+import '../../social/presentation/person_avatar.dart';
+import '../../social/presentation/post_actions.dart';
 import '../data/notebooks_api.dart';
 import '../domain/notebook_models.dart';
 
@@ -198,12 +201,22 @@ class _NotebookDetailPageState extends State<NotebookDetailPage> {
     if (nb == null) return;
     final l10n = context.l10n;
     switch (action) {
+      case 'edit':
+        final updated = await showDialog<Notebook>(context: context, builder: (_) => _EditNotebookDialog(api: _api, notebook: nb));
+        if (updated != null && mounted) setState(() => _notebook = nb.mergeServer(updated));
+      case 'share':
+        await shareLink(context, notebookLink(nb.id), nb.title);
       case 'pdf':
         await _exportPdf();
       case 'visibility':
         await _run(() async {
           final updated = await _api.update(nb.id, {'visibility': nb.visibility == 'public' ? 'private' : 'public'});
-          if (mounted) setState(() => _notebook = updated);
+          if (mounted) {
+            setState(() => _notebook = nb.mergeServer(updated));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(updated.visibility == 'public' ? l10n.notebookPublished : l10n.notebookUnpublished)),
+            );
+          }
         });
       case 'duplicate':
         await _run(() async {
@@ -223,7 +236,7 @@ class _NotebookDetailPageState extends State<NotebookDetailPage> {
 
   Future<void> _toggleLike(Notebook nb) async {
     if (AuthScope.read(context).user == null) {
-      context.go('/login?from=${Uri.encodeComponent('/notebooks/${nb.id}')}');
+      context.go('/login?from=${Uri.encodeComponent('/explore/notebooks/${nb.id}')}');
       return;
     }
     final messenger = ScaffoldMessenger.of(context);
@@ -276,7 +289,8 @@ class _NotebookDetailPageState extends State<NotebookDetailPage> {
               title: Text(p.title?.isNotEmpty ?? false ? p.title! : l10n.pageNumber(i + 1)),
               subtitle: p.pageDate == null ? null : Text(p.pageDate!),
               onTap: () async {
-                await context.push('/notebook-pages/${p.id}');
+                // Las páginas ajenas se abren por la ruta pública (solo lectura).
+                await context.push(owner ? '/notebook-pages/${p.id}' : '/explore/pages/${p.id}');
                 if (mounted) _load();
               },
               trailing: owner
@@ -291,17 +305,19 @@ class _NotebookDetailPageState extends State<NotebookDetailPage> {
                   : null,
             ),
           );
+      final header = _NotebookHeader(notebook: nb);
       body = owner
           ? ReorderableListView.builder(
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 96),
+              header: header,
               itemCount: _pages.length,
               onReorderItem: _reorder,
               itemBuilder: (context, i) => tile(_pages[i], i),
             )
           : ListView.builder(
               padding: const EdgeInsets.all(12),
-              itemCount: _pages.length,
-              itemBuilder: (context, i) => tile(_pages[i], i),
+              itemCount: _pages.length + 1,
+              itemBuilder: (context, i) => i == 0 ? header : tile(_pages[i - 1], i - 1),
             );
     }
     return Scaffold(
@@ -309,6 +325,13 @@ class _NotebookDetailPageState extends State<NotebookDetailPage> {
         title: Text(nb?.title ?? l10n.notebooksTitle),
         actions: [
           if (nb != null && nb.visibility == 'public') _likeButton(nb),
+          if (nb != null && !owner && nb.visibility == 'public')
+            IconButton(
+              key: const Key('notebook-share'),
+              tooltip: l10n.sharePost,
+              icon: const Icon(Icons.share_outlined),
+              onPressed: () => shareLink(context, notebookLink(nb.id), nb.title),
+            ),
           if (nb != null && !owner)
             IconButton(tooltip: l10n.exportPdf, icon: const Icon(Icons.picture_as_pdf_outlined), onPressed: _exportPdf),
           if (owner)
@@ -317,8 +340,15 @@ class _NotebookDetailPageState extends State<NotebookDetailPage> {
               enabled: !_busy,
               onSelected: _notebookAction,
               itemBuilder: (context) => [
+                PopupMenuItem(key: const Key('notebook-edit'), value: 'edit', child: Text(l10n.notebookEditInfo)),
+                if (_notebook?.visibility == 'public')
+                  PopupMenuItem(key: const Key('notebook-share'), value: 'share', child: Text(l10n.sharePost)),
                 PopupMenuItem(key: const Key('export-pdf'), value: 'pdf', child: Text(l10n.exportPdf)),
-                PopupMenuItem(value: 'visibility', child: Text(_notebook?.visibility == 'public' ? l10n.makePrivate : l10n.makePublic)),
+                PopupMenuItem(
+                  key: const Key('notebook-visibility'),
+                  value: 'visibility',
+                  child: Text(_notebook?.visibility == 'public' ? l10n.notebookUnpublish : l10n.notebookPublish),
+                ),
                 PopupMenuItem(value: 'duplicate', child: Text(l10n.duplicate)),
                 PopupMenuItem(value: 'delete', child: Text(l10n.deleteNotebook)),
               ],
@@ -334,6 +364,166 @@ class _NotebookDetailPageState extends State<NotebookDetailPage> {
             )
           : null,
       body: body,
+    );
+  }
+}
+
+/// Encabezado: autora, categoría, descripción, fecha y visibilidad.
+class _NotebookHeader extends StatelessWidget {
+  const _NotebookHeader({required this.notebook});
+
+  final Notebook notebook;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final nb = notebook;
+    final owner = nb.owner;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 0, 4, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (owner != null)
+            InkWell(
+              key: const Key('notebook-owner'),
+              onTap: () => context.push('/people/${owner.id}'),
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    PersonAvatar(
+                      person: Person(id: owner.id, name: owner.name, username: owner.username, photo: owner.photo),
+                      imageUrl: ApiScope.of(context).absolute(owner.photo),
+                      radius: 16,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(owner.name, style: theme.textTheme.titleSmall)),
+                  ],
+                ),
+              ),
+            ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              if (nb.category != null) Chip(label: Text(nb.category!), visualDensity: VisualDensity.compact),
+              Chip(
+                avatar: Icon(nb.visibility == 'public' ? Icons.public : Icons.lock_outline, size: 16),
+                label: Text(nb.visibility == 'public' ? l10n.visibilityPublic : l10n.visibilityPrivate),
+                visualDensity: VisualDensity.compact,
+              ),
+              Chip(label: Text(l10n.pagesCount(nb.pageCount)), visualDensity: VisualDensity.compact),
+            ],
+          ),
+          if (nb.description != null && nb.description!.isNotEmpty)
+            Padding(padding: const EdgeInsets.only(top: 8), child: Text(nb.description!, style: theme.textTheme.bodyMedium)),
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(l10n.notebookUpdated(formatWhen(context, nb.updatedAt)), style: theme.textTheme.bodySmall),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Editar título, descripción y categoría (solo la dueña).
+class _EditNotebookDialog extends StatefulWidget {
+  const _EditNotebookDialog({required this.api, required this.notebook});
+
+  final NotebooksApi api;
+  final Notebook notebook;
+
+  @override
+  State<_EditNotebookDialog> createState() => _EditNotebookDialogState();
+}
+
+class _EditNotebookDialogState extends State<_EditNotebookDialog> {
+  late final _title = TextEditingController(text: widget.notebook.title);
+  late final _description = TextEditingController(text: widget.notebook.description ?? '');
+  late final _category = TextEditingController(text: widget.notebook.category ?? '');
+  bool _saving = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _title.dispose();
+    _description.dispose();
+    _category.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final title = _title.text.trim();
+    if (title.isEmpty) return;
+    final nb = widget.notebook;
+    final fields = <String, Object?>{
+      if (title != nb.title) 'title': title,
+      if (_description.text.trim() != (nb.description ?? '')) 'description': _description.text.trim(),
+      if (_category.text.trim() != (nb.category ?? '')) 'category': _category.text.trim(),
+    };
+    if (fields.isEmpty) {
+      Navigator.pop(context);
+      return;
+    }
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      final saved = await widget.api.update(nb.id, fields);
+      if (mounted) Navigator.pop(context, saved);
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _saving = false;
+          _error = apiErrorText(context, e);
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return AlertDialog(
+      title: Text(l10n.notebookEditInfo),
+      content: SizedBox(
+        width: 400,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                key: const Key('edit-notebook-title'),
+                controller: _title,
+                maxLength: 120,
+                decoration: InputDecoration(labelText: l10n.notebookTitleLabel),
+              ),
+              TextField(
+                key: const Key('edit-notebook-description'),
+                controller: _description,
+                maxLength: 500,
+                maxLines: 3,
+                decoration: InputDecoration(labelText: l10n.notebookDescriptionLabel),
+              ),
+              TextField(
+                key: const Key('edit-notebook-category'),
+                controller: _category,
+                maxLength: 40,
+                decoration: InputDecoration(labelText: l10n.notebookCategoryLabel, hintText: l10n.notebookCategoryHint),
+              ),
+              if (_error != null) Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: _saving ? null : () => Navigator.pop(context), child: Text(l10n.cancel)),
+        FilledButton(key: const Key('edit-notebook-save'), onPressed: _saving ? null : _save, child: Text(l10n.save)),
+      ],
     );
   }
 }

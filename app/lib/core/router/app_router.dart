@@ -17,6 +17,7 @@ import '../../features/messages/presentation/chat_page.dart';
 import '../../features/messages/presentation/messages_page.dart';
 import '../../features/people/presentation/person_page.dart';
 import '../../features/people/presentation/search_people_page.dart';
+import '../../features/notebooks/presentation/notebook_community_page.dart';
 import '../../features/notebooks/presentation/notebook_detail_page.dart';
 import '../../features/notebooks/presentation/notebooks_page.dart';
 import '../../features/notifications/presentation/notifications_page.dart';
@@ -159,7 +160,8 @@ GoRouter buildRouter({
             ),
           ]),
           StatefulShellBranch(routes: [
-            GoRoute(path: '/community', builder: (context, state) => const SocialFeedPage()),
+            // Comunidad = cuadernos de campo (Explorar, Mis cuadernos, Personas).
+            GoRoute(path: '/community', builder: (context, state) => const NotebookCommunityPage()),
           ]),
           StatefulShellBranch(routes: [
             GoRoute(path: '/profile', builder: (context, state) => const ProfilePage()),
@@ -187,6 +189,15 @@ GoRouter buildRouter({
         builder: (context, state) => ComposePostPage(communitySlug: state.uri.queryParameters['community']),
       ),
       GoRoute(path: '/people/search', builder: (context, state) => const SearchPeoplePage()),
+      // Rutas públicas de cuadernos (enlaces compartidos): el servidor solo los
+      // entrega si son públicos o si quien los abre es su dueña.
+      GoRoute(
+        path: '/explore/notebooks/:id',
+        builder: (context, state) => NotebookDetailPage(notebookId: state.pathParameters['id']!),
+      ),
+      GoRoute(path: '/explore/pages/:id', builder: (context, state) => DrawingEditorPage(pageId: state.pathParameters['id']!)),
+      // Publicaciones sueltas (módulo anterior): fuera de la navegación principal.
+      GoRoute(path: '/posts', builder: (context, state) => const SocialFeedPage()),
       GoRoute(
         path: '/people/:id',
         builder: (context, state) => PersonPage(userId: state.pathParameters['id']!),

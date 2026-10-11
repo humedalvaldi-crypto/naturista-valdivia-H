@@ -986,5 +986,37 @@
   "postUpdated": "Publicación actualizada.",
   "editedLabel": "editado",
   "sharePost": "Compartir",
-  "linkCopied": "Enlace copiado."
+  "linkCopied": "Enlace copiado.",
+  "communityExplore": "Explorar",
+  "communityMine": "Mis cuadernos",
+  "communityPeople": "Personas",
+  "communitySignInMine": "Inicia sesión para ver y crear tus cuadernos.",
+  "exploreSearchHint": "Buscar cuadernos por título, descripción o categoría",
+  "exploreEmpty": "Todavía no hay cuadernos públicos.",
+  "exploreNoResults": "No hay cuadernos que coincidan con la búsqueda.",
+  "exploreFollowingEmpty": "Las personas que sigues aún no tienen cuadernos públicos.",
+  "notebookUpdated": "Actualizado {when}",
+  "@notebookUpdated": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "notebookCategoryLabel": "Categoría",
+  "notebookCategoryHint": "Por ejemplo: Biodiversidad, Aves, Flora",
+  "notebookPublishLabel": "Publicar en la comunidad",
+  "notebookPublishHint": "Cualquier persona podrá verlo en Explorar. Puedes retirarlo cuando quieras.",
+  "notebookEditInfo": "Editar información",
+  "notebookPublish": "Publicar en la comunidad",
+  "notebookUnpublish": "Retirar de la comunidad",
+  "notebookPublished": "Cuaderno publicado en la comunidad.",
+  "notebookUnpublished": "El cuaderno ya no es público. No se borró nada.",
+  "peopleDirectoryTitle": "Todas las personas",
+  "personNoNotebooks": "No tiene cuadernos públicos.",
+  "personNoFollowers": "Aún no tiene seguidores.",
+  "personNoFollowing": "Aún no sigue a nadie.",
+  "you": "Tú",
+  "youFollow": "La sigues",
+  "followersTab": "Seguidores"
 }
