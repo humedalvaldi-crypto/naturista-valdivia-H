@@ -114,3 +114,9 @@ npx wrangler d1 migrations list naturista-valdivia-db --local
 ```
 
 Antes de aplicar migraciones a una base remota: ver `backup-and-recovery.md`.
+
+## 0014 — Categoría de cuadernos y Explorar
+
+- `notebooks.category` (texto ≤ 40, opcional): la categoría de la app antigua (todas las conocidas: «Biodiversidad»). Editable por la dueña.
+- Índice parcial `idx_notebooks_public_updated` para `GET /notebooks/explore` (públicos, no borrados, por fecha).
+- La app antigua guardaba `visibility` como «Público»/«Privado». Las copias anteriores las dejaban privadas. La migración ahora las normaliza. La corrección hace público un cuaderno copiado solo si su `updated_at` no cambió en la app nueva; nunca hace privado uno público.
