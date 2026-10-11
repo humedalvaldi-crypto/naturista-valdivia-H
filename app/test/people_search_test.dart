@@ -32,6 +32,11 @@ void main() {
       expect(find.textContaining('Te sigue'), findsOneWidget);
       expect(find.text('Seguir también'), findsOneWidget);
 
+      expect(
+        find.byKey(const Key('people-load-more')),
+        findsOneWidget,
+        reason: 'peticiones: ${server.requests} · textos: ${tester.widgetList<Text>(find.byType(Text)).map((t) => t.data).toList()}',
+      );
       await tester.tap(find.byKey(const Key('people-load-more')));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('person-result-u4')), findsOneWidget);
