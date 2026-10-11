@@ -1,0 +1,146 @@
+# Compila la versión de Google Play (Android App Bundle firmado) y, si se pide,
+# la sube como BORRADOR a una pista de prueba de Play Console.
+#
+# Secretos necesarios (Settings → Secrets and variables → Actions). Nunca se
+# escriben en el repositorio ni en los registros:
+#   ANDROID_UPLOAD_KEYSTORE_BASE64   clave de subida (.jks) en base64
+#   ANDROID_UPLOAD_KEYSTORE_PASSWORD contraseña del almacén
+#   ANDROID_UPLOAD_KEY_ALIAS         alias de la clave
+#   ANDROID_UPLOAD_KEY_PASSWORD      contraseña de la clave
+# Opcional, solo para subir a Play automáticamente:
+#   PLAY_SERVICE_ACCOUNT_JSON        JSON de una cuenta de servicio con acceso a la app
+#
+# Guía completa: docs/play-store.md
+name: Android para Google Play
+
+on:
+  workflow_dispatch:
+    inputs:
+      track:
+        description: 'Subir a Play como borrador (none = solo compilar)'
+        type: choice
+        options: [none, internal, alpha, beta]
+        default: none
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-release
+  cancel-in-progress: false
+
+env:
+  PACKAGE_NAME: cl.naturistavaldivia.naturista_valdivia
+
+jobs:
+  bundle:
+    name: Compilar AAB firmado
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Comprobar que existen los secretos de firma
+        env:
+          KS: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}
+          KSP: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_PASSWORD }}
+          ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
+          KP: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
+        run: |
+          missing=""
+          [ -n "$KS" ] || missing="$missing ANDROID_UPLOAD_KEYSTORE_BASE64"
+          [ -n "$KSP" ] || missing="$missing ANDROID_UPLOAD_KEYSTORE_PASSWORD"
+          [ -n "$ALIAS" ] || missing="$missing ANDROID_UPLOAD_KEY_ALIAS"
+          [ -n "$KP" ] || missing="$missing ANDROID_UPLOAD_KEY_PASSWORD"
+          if [ -n "$missing" ]; then
+            echo "::error::Faltan secretos:$missing. Sigue docs/play-store.md (paso 2)."
+            exit 1
+          fi
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Generar carpeta android
+        run: |
+          if [ ! -d android ]; then
+            flutter create . --platforms=android --project-name naturista_valdivia --org cl.naturistavaldivia
+            rm -f test/widget_test.dart
+          fi
+      - run: bash platform_patches/android_permissions.sh
+      - run: bash platform_patches/android_biometric.sh
+      - run: bash branding_android/apply.sh
+      - run: bash platform_patches/android_release_signing.sh
+      - name: Comprobar el identificador del paquete
+        run: grep -q "applicationId = \"$PACKAGE_NAME\"" android/app/build.gradle.kts
+
+      - name: Preparar la clave de subida (solo en este equipo temporal)
+        env:
+          KS: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}
+          KSP: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_PASSWORD }}
+          ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
+          KP: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
+        run: |
+          umask 077
+          printf '%s' "$KS" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          {
+            echo "storeFile=$RUNNER_TEMP/upload.jks"
+            echo "storePassword=$KSP"
+            echo "keyAlias=$ALIAS"
+            echo "keyPassword=$KP"
+          } > android/key.properties
+
+      - run: flutter pub get
+      - run: flutter gen-l10n
+      - run: flutter test
+
+      - name: Compilar App Bundle
+        run: |
+          API="${{ vars.API_BASE_URL }}"
+          if [ -z "$API" ] && [ -f ../deploy/api-url.txt ]; then API=$(head -1 ../deploy/api-url.txt | tr -d '[:space:]'); fi
+          if [ -z "$API" ]; then echo "::error::No hay API_BASE_URL: la app no tendría servidor."; exit 1; fi
+          FB_ANDROID="${{ vars.FIREBASE_ANDROID_APP_ID }}"
+          extra=()
+          if [ -n "$FB_ANDROID" ]; then
+            extra+=(--dart-define=FIREBASE_ANDROID_APP_ID=$FB_ANDROID)
+          else
+            echo "::warning::Falta la variable FIREBASE_ANDROID_APP_ID: registra el paquete $PACKAGE_NAME en Firebase (docs/play-store.md, paso 6)."
+          fi
+          flutter build appbundle --release \
+            --build-number=$(( 100 + ${{ github.run_number }} )) \
+            --dart-define=API_BASE_URL=$API "${extra[@]}"
+
+      - name: Verificar la firma y mostrar las huellas del certificado
+        # Las huellas SHA-1/SHA-256 son públicas: se registran en Firebase.
+        run: |
+          aab=build/app/outputs/bundle/release/app-release.aab
+          jarsigner -verify "$aab" | tail -n 1
+          keytool -printcert -jarfile "$aab" | grep -E "Owner|SHA1|SHA256" | tee -a "$GITHUB_STEP_SUMMARY"
+          ls -l "$aab"
+
+      - name: Borrar la clave del equipo temporal
+        if: always()
+        run: rm -f "$RUNNER_TEMP/upload.jks" android/key.properties
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: naturista-valdivia-aab-${{ github.run_number }}
+          path: app/build/app/outputs/bundle/release/app-release.aab
+          retention-days: 14
+
+      - name: Subir a Google Play (borrador)
+        if: inputs.track != 'none'
+        uses: r0adkll/upload-google-play@v1.1.3
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: ${{ env.PACKAGE_NAME }}
+          releaseFiles: app/build/app/outputs/bundle/release/app-release.aab
+          track: ${{ inputs.track }}
+          status: draft

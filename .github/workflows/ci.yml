@@ -138,6 +138,7 @@ jobs:
           fi
       - run: bash platform_patches/android_permissions.sh
       - run: bash platform_patches/android_biometric.sh
+      - run: bash branding_android/apply.sh
       - run: flutter pub get
       - run: flutter gen-l10n
       - name: Compilar APK de depuración
@@ -146,7 +147,13 @@ jobs:
         run: |
           grep -q "USE_BIOMETRIC" android/app/src/main/AndroidManifest.xml
           grep -rq "FlutterFragmentActivity" android/app/src/main
+          grep -q 'android:label="Naturista Valdivia"' android/app/src/main/AndroidManifest.xml
           echo "::notice::Android compila con FlutterFragmentActivity y USE_BIOMETRIC."
+      - name: Comprobar que el parche de firma de Play encaja con el proyecto generado
+        # Se aplica después de compilar: sin key.properties la versión release no se firma.
+        run: |
+          bash platform_patches/android_release_signing.sh
+          grep -q 'signingConfigs.getByName("release")' android/app/build.gradle.kts
 
   security:
     name: Seguridad (dependencias y secretos)

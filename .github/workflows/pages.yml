@@ -44,6 +44,8 @@ jobs:
           if [ -z "$API" ] && [ -f ../deploy/api-url.txt ]; then API=$(head -1 ../deploy/api-url.txt | tr -d '[:space:]'); fi
           echo "API_BASE_URL=${API:-(sin servidor)}"
           flutter build web --release --base-href "/${{ github.event.repository.name }}/" --dart-define=API_BASE_URL=$API
+      - name: Agregar páginas públicas (privacidad y eliminación de cuenta, enlazadas desde Google Play)
+        run: cp store/privacidad.html store/eliminar-cuenta.html build/web/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: app/build/web
